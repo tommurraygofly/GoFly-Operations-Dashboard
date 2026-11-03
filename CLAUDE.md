@@ -1,0 +1,77 @@
+# GoFly Operations Dashboard
+
+Private internal operations dashboard for GoFly Aviation, a recreational flight school at
+Caloundra Airport (YCDR), Queensland. The user is Tom Murray, Operations Manager and Senior
+Instructor. It is separate from the public GoFly website.
+
+## Where things are
+
+- `public/index.html`: the entire app (HTML, CSS and JavaScript in one file, no build step).
+- `wrangler.jsonc`: Cloudflare Workers config, Worker name `gofly-ops`, serves `./public` as static assets.
+- Deployment: Cloudflare Workers Builds is connected to this GitHub repo. Every push to `main`
+  deploys to production. Other branches only make preview versions, so merge to `main` when Tom
+  asks for a change to go live.
+- Access: the workers.dev and preview URLs sit behind Cloudflare Access (authorised emails only).
+  Keep it private. Never add public links or sharing.
+
+## Working with Tom
+
+- Usually on his phone. Keep explanations short and practical. Explain your approach briefly,
+  then make sensible decisions instead of asking long lists of questions.
+- Keep version 1 focused. Integrations and extra features come later, when he asks.
+
+## Hard requirements
+
+- Colours: orange #F15A26, black, white and greys. Status colours (red overdue, orange due soon,
+  green complete, dashed grey missing info) are used only for badges and status bands.
+- Australian dates (dd/mm/yyyy), Brisbane time (Australia/Brisbane, AEST, no daylight saving),
+  litres, decimal hours to one place.
+- Never invent compliance rules or calculate due dates. Tom enters all dates and requirements.
+- Engine hours and air time are separate counters. Each maintenance item chooses which one it
+  counts against (or calendar date only).
+- Example data must stay clearly labelled (`example: true`, shown as an "Example" chip) and be
+  removable with "Clear example data". Editing an example record makes it a real record.
+- Works on desktop, tablet and phone (bottom tab bar under 760px), light and dark mode.
+
+## Fleet
+
+Aircraft identifiers: 7788, 1675, 8582, 8515, 8514. Tom has said 1675 is a Sling 2 with Garmin
+G3X, 8515 is a Sling 2 with MGL, and 8514 is a temporary or loan Sling.
+
+## Code structure (inside `public/index.html`)
+
+The script is split into numbered sections:
+
+1. **Utilities**: Brisbane date helpers (`todayISO`, `daysUntil`, `fmtDate`, `fmtStamp`), formatting.
+2. **Storage adapter**: `LocalAdapter` with `load()` and `save(data)` using localStorage key
+   `gofly-ops:v1`. `Store.adapter` is the single swap point for a Cloudflare D1 backend.
+3. **Data model**: `emptyState()`, `normalise()` (migration, always keeps the five aircraft),
+   `applyExamples()`, `clearExamples()`. State lives in `S`. Collections: `aircraft`,
+   `maintenance`, `defects`, `fuelReadings`, `fuelOrders`, `fuelIssues`, `instructors`, `tasks`,
+   plus `settings` (userName, theme, dueSoonDays, hoursWarn, fuelThreshold, tankCapacity,
+   orderTemplate) and `meta`.
+4. **Rules**: all overdue, due soon and missing-info logic (`dateStatus`, `maintStatus`,
+   `orderStatus`, `attentionItems`, `upcoming`, `waitingItems`). Change status logic here only.
+5. **Schemas**: field lists in `SCHEMAS` generate every add/edit form via `openEditor(kind, id)`.
+   To add a field, add it to the schema; the form, saving and validation follow.
+6. **Views**: `renderOverview`, `renderAircraft`, `renderFuel`, `renderInstructors`,
+   `renderTasks`. Hash routing (`#overview`, `#aircraft`, `#fuel`, `#instructors`, `#tasks`).
+   Click handlers use `data-act` (the `ACT` map) or `data-reg` (functions registered per render).
+
+Other conventions: every record gets `id`, `createdAt`, `updatedAt`, `updatedBy`, and `archived`
+where archivable. Changes go through `commit()` (save and re-render). Use `withUndo()` for
+complete, archive and delete. Escape all user text with `esc()`. Fuel order template defaults to
+3,500 L Premium Unleaded 98 from IOR. Export/import of JSON backups is in Data & settings.
+
+## Current limitation and likely next step
+
+Records are saved per browser, so phone and computer don't share data. The planned next step is
+a Cloudflare D1 database with a small Worker API, keeping the same `load()`/`save()` shape (or a
+per-record API), plus a one-off import of Tom's exported backup. Check identity via the
+Cloudflare Access JWT before allowing writes.
+
+## Before pushing
+
+- Keep everything in the one HTML file unless there's a clear reason to split it.
+- Check the page still loads without console errors and still fits a 390px-wide screen.
+- Write a plain-English commit message that says what changed for Tom.
