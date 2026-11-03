@@ -9,8 +9,8 @@ Instructor. It is separate from the public GoFly website.
 - `public/index.html`: the entire app (HTML, CSS and JavaScript in one file, no build step).
 - `wrangler.jsonc`: Cloudflare Workers config, Worker name `gofly-ops`, serves `./public` as static assets.
 - Deployment: Cloudflare Workers Builds is connected to this GitHub repo. Every push to `main`
-  deploys to production. Other branches only make preview versions, so merge to `main` when Tom
-  asks for a change to go live.
+  deploys to production. Tom's standing instruction: commit and push every finished change
+  straight to `main` (no preview branches), after the checks in "Before pushing" pass.
 - Access: the workers.dev and preview URLs sit behind Cloudflare Access (authorised emails only).
   Keep it private. Never add public links or sharing.
 
