@@ -28,7 +28,12 @@ Instructor. It is separate from the public GoFly website.
   litres, decimal hours to one place.
 - Never invent compliance rules or calculate due dates. Tom enters all dates and requirements.
 - Engine hours and air time are separate counters. Each maintenance item chooses which one it
-  counts against (or calendar date only).
+  counts against (or calendar date only). Each aircraft can set its own hours warning
+  (`aircraft.hoursWarn`); blank means use `settings.hoursWarn`. Use `warnFor(ac)`.
+- Calendar deadlines (`dueSoonDays`) and hour-based warnings are reported separately. Low fuel is
+  "Low stock", never "Overdue". Ordered fuel is not added to stock until a new reading is logged.
+- Charts show hours remaining, not percentages, unless interval and start reading are known. No
+  invented trends: the fuel chart only plots logged readings. No tank gauge without a capacity.
 - Example data must stay clearly labelled (`example: true`, shown as an "Example" chip) and be
   removable with "Clear example data". Editing an example record makes it a real record.
 - Works on desktop, tablet and phone (bottom tab bar under 760px), light and dark mode.
@@ -51,10 +56,17 @@ The script is split into numbered sections:
    plus `settings` (userName, theme, dueSoonDays, hoursWarn, fuelThreshold, tankCapacity,
    orderTemplate) and `meta`.
 4. **Rules**: all overdue, due soon and missing-info logic (`dateStatus`, `maintStatus`,
-   `orderStatus`, `attentionItems`, `upcoming`, `waitingItems`). Change status logic here only.
+   `orderStatus`, `checkState`, `attentionItems`, `upcoming`, `waitingItems`, `waitingGroups`,
+   `hourItemFor`). Change status logic here only. `attentionItems()` is the single source for the
+   overview cards, the Priority actions list and the tab badges, so counts always agree. Each item
+   has `sev` (overdue, alert, low, soon, missing, info), `src`, `basis` ('date' or 'hours') and
+   `area` (tab).
 5. **Schemas**: field lists in `SCHEMAS` generate every add/edit form via `openEditor(kind, id)`.
    To add a field, add it to the schema; the form, saving and validation follow.
-6. **Views**: `renderOverview`, `renderAircraft`, `renderFuel`, `renderInstructors`,
+6. **Views**: overview = summary cards, `maintChart()` (HTML bars, one hours scale),
+   `fuelSummary()` (SVG line drawn at real width by `drawCharts()`, tap or arrow keys to read
+   values), Priority actions (top 5), instructor rows, aircraft cards, Waiting on, Coming up.
+   `renderOverview`, `renderAircraft`, `renderFuel`, `renderInstructors`,
    `renderTasks`. Hash routing (`#overview`, `#aircraft`, `#fuel`, `#instructors`, `#tasks`).
    Click handlers use `data-act` (the `ACT` map) or `data-reg` (functions registered per render).
 
@@ -70,8 +82,13 @@ a Cloudflare D1 database with a small Worker API, keeping the same `load()`/`sav
 per-record API), plus a one-off import of Tom's exported backup. Check identity via the
 Cloudflare Access JWT before allowing writes.
 
+## Look and feel
+
+Inter for text, Barlow Condensed for headings and aircraft idents. Status colours only on
+badges, bars and markers. Touch targets about 44px on touch screens.
+
 ## Before pushing
 
 - Keep everything in the one HTML file unless there's a clear reason to split it.
-- Check the page still loads without console errors and still fits a 390px-wide screen.
+- Check the page still loads without console errors and fits 390px, 768px and 1440px widths.
 - Write a plain-English commit message that says what changed for Tom.
