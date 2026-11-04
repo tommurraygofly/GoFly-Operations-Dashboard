@@ -2597,9 +2597,8 @@ function renderOverview() {
   const first = Who ? Who.name : '';
   const lvl = n.overdue || n.due || n.alert ? 'crit' : n.low || n.soon ? 'warn' : 'ok';
   return `<section class="hero"><div class="hero-in"><div class="h-greet">
-      <p class="eyebrow">Operations · Caloundra YCDR</p>
       <h1>${hr < 12 ? 'Good morning' : hr < 17 ? 'Good afternoon' : 'Good evening'}${first ? ', ' + esc(first) : ''}</h1>
-      <p class="hero-date">${esc(longDate)}, Brisbane time</p></div>
+      <p class="hero-date">${esc(longDate)}</p></div>
     <div class="h-act"><button type="button" class="ops ops-${lvl}" data-act="kpiOverdue"><strong>${{ crit: 'Action needed', warn: 'Watch', ok: 'All clear' }[lvl]}</strong><span>${lvl === 'ok' ? 'Nothing overdue or due soon' : esc(attSub)}</span></button>
     <div class="quick"><button class="btn btn-primary" data-act="add" data-kind="task">Add task</button><button class="btn btn-secondary" data-act="hours">Update hours</button><button class="btn btn-secondary" data-act="add" data-kind="reading">Log fuel reading</button><button class="btn btn-secondary" data-act="addMenu" aria-haspopup="dialog">Add…</button></div></div></div></section>
   <section class="kpis" aria-label="Summary">${k1}${k2}${k3}${k4}${k5}</section>
