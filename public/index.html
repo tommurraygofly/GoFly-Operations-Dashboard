@@ -774,7 +774,7 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
 <div id="login" class="login" role="dialog" aria-modal="true" aria-labelledby="lgTitle"></div>
 <header class="top">
   <div class="top-row">
-    <a class="brand" href="#overview" aria-label="GoFly Operations, overview"><img src="brand/gofly-logo-dark-bg.png" alt="GoFly" width="77" height="30"><span class="brand-sub">Operations</span></a>
+    <a class="brand" href="#overview" aria-label="GOD, GoFly Operations Dashboard, overview"><img src="brand/god-logo-dark-bg.png" alt="GOD" width="53" height="30"><span class="brand-sub">GoFly Operations Dashboard</span></a>
     <button type="button" class="who" id="who" data-act="lock" hidden></button>
     <button type="button" class="sync sync-local" id="sync" data-act="syncNow" aria-label="Sync status"><span class="sd"></span><span class="st">This device only</span></button>
     <div class="clock" id="clock" role="group" aria-label="Current time">
@@ -1005,8 +1005,8 @@ function showLogin(msg) {
   const el = $('#login');
   LG.pin = ''; LG.name = null;
   el.innerHTML = `<div class="lg-box">
-    <img src="brand/gofly-logo-dark-bg.png" alt="GoFly" width="113" height="44">
-    <p class="eyebrow">Operations · Caloundra YCDR</p>
+    <img src="brand/god-logo-dark-bg.png" alt="GOD, GoFly Operations Dashboard" width="77" height="44">
+    <p class="eyebrow">GoFly Operations Dashboard</p>
     <h1 id="lgTitle">Who’s using the dashboard?</h1>
     <p class="lg-step">1. Choose your name</p>
     <div class="lg-names" role="group" aria-label="Your name">${USERS.map(u => `<button type="button" data-lgname="${esc(u)}" aria-pressed="false">${esc(u)}</button>`).join('')}</div>
@@ -2210,7 +2210,7 @@ function openBrief() {
 function printBrief(html) {
   let pa = document.getElementById('printArea');
   if (!pa) { pa = document.createElement('div'); pa.id = 'printArea'; document.body.appendChild(pa); }
-  pa.innerHTML = `<img src="brand/gofly-logo-light-bg.png" alt="GoFly" class="pr-logo"><h1 class="pr-h">Daily brief</h1>${html}`;
+  pa.innerHTML = `<img src="brand/god-logo-light-bg.png" alt="GOD, GoFly Operations Dashboard" class="pr-logo"><h1 class="pr-h">Daily brief</h1>${html}`;
   closeDlg();
   setTimeout(() => window.print(), 60);
 }

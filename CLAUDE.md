@@ -175,9 +175,11 @@ complete, archive and delete. Escape all user text with `esc()`. Fuel order temp
 
 ## Look and feel
 
-GoFly-branded tiles and widgets. Logos and app icons are in `public/brand/` (made from Tom's
-supplied logos; `gofly-logo-dark-bg.png` for black backgrounds, `gofly-logo-light-bg.png` for
-light). Black header and an overview welcome band with an overall status (Action needed / Watch /
+GoFly-branded tiles and widgets. The app's logo is **GOD** (GoFly Operations Dashboard): the
+orange "GO" from Tom's GoFly logo plus a matching slanted "D" built from the O, white on dark
+(`public/brand/god-logo-dark-bg.png`) and near-black on light (`god-logo-light-bg.png`). The
+favicon and home-screen icons (`favicon-64.png`, `apple-touch-icon.png`, `icon-512.png`) are GOD
+on black. The original GoFly logos are kept in `public/brand/` but not used. Black header and an overview welcome band with an overall status (Action needed / Watch /
 All clear), summary tiles tinted red or orange when they need attention, and widgets with icon
 headings (`ICO(name)`, icons in `ICONS`). Inter for text; Barlow Condensed bold italic uppercase
 for headings and aircraft idents, echoing the logo. Status shown by colour plus icon plus words
