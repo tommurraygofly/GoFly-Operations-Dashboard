@@ -1347,7 +1347,10 @@ const instExpiries = p => EXPIRIES.map(([k, label, mand]) => ({ k, label, mand, 
   .concat((p.quals || []).filter(q => q.expiry).map(q => ({ k: null, label: q.label || 'Other expiry', mand: false, st: expState(q.expiry, false) })));
 /* Aircraft registration and insurance expiries (entered by Tom; missing = flagged). */
 const AC_EXPIRIES = [['regoExpiry', 'Registration'], ['insuranceExpiry', 'Insurance']];
-const acExpiries = ac => AC_EXPIRIES.map(([k, label]) => ({ k, label, st: expState(ac[k], true) }));
+// Cross-hired aircraft can mark insurance as not applicable, so it isn't flagged.
+const insuranceNA = ac => ac.insuranceNA === 'yes';
+const acExpiries = ac => AC_EXPIRIES.map(([k, label]) => ({ k, label,
+  st: k === 'insuranceExpiry' && insuranceNA(ac) ? { s: 'ok', na: true, d: null, due: null, txt: 'N/A, cross-hired' } : expState(ac[k], true) }));
 
 /* Documents and compliance: each has an expiry date or a next review date, entered by Tom.
    Optional review interval (months): "Mark reviewed" then sets the next review date. */
@@ -1538,7 +1541,8 @@ const SCHEMAS = {
       { k: 'engineHours', l: 'Engine hours', t: 'hours' },
       { k: 'airTime', l: 'Air time (where applicable)', t: 'hours', hint: 'Leave blank if this aircraft doesn’t track air time.' },
       { k: 'regoExpiry', l: 'Registration expiry', t: 'date' },
-      { k: 'insuranceExpiry', l: 'Insurance expiry', t: 'date' },
+      { k: 'insuranceNA', l: 'Insurance', t: 'select', o: [['no', 'Tracked'], ['yes', 'N/A (cross-hired)']], hint: 'Choose N/A for cross-hired aircraft so insurance isn’t flagged.' },
+      { k: 'insuranceExpiry', l: 'Insurance expiry', t: 'date', hint: 'Not needed when insurance is N/A.' },
       { k: 'restrictions', l: 'Restrictions', t: 'textarea', wide: true },
       { k: 'notes', l: 'Maintenance notes', t: 'textarea', wide: true }
     ]
@@ -2545,7 +2549,7 @@ function renderOverview() {
     return `<button class="strip st-${esc(ac.status)}" data-reg="${reg(() => goAircraft(ac.ident))}"><span class="band">${esc(AC_SHORT[ac.status] || ac.status)}</span><span class="in">
       <span class="hd"><span class="id">${esc(ac.ident)}</span>${ac.type ? `<span class="ty">${esc(ac.type)}</span>` : ''}</span>
       <span class="hrs"><span>Engine <b>${ac.engineHours != null ? fmtH(ac.engineHours) : 'Not entered'}</b></span>${ac.airTime != null ? `<span>Air <b>${fmtH(ac.airTime)}</b></span>` : ''}</span>
-      <span class="acx">${acExpiries(ac).map(x => `<span class="ex-r"><span class="dot dot-${x.st.s === 'ok' ? 'ok-g' : x.st.s}"></span><span class="ex-n">${x.k === 'regoExpiry' ? 'Rego' : 'Insurance'}</span><span class="ex-d ist-${x.st.s}">${x.st.due ? fmtDate(x.st.due) : 'Not entered'}</span></span>`).join('')}</span>
+      <span class="acx">${acExpiries(ac).map(x => `<span class="ex-r"><span class="dot dot-${x.st.na ? 'na' : x.st.s === 'ok' ? 'ok-g' : x.st.s}"></span><span class="ex-n">${x.k === 'regoExpiry' ? 'Rego' : 'Insurance'}</span><span class="ex-d ist-${x.st.s}${x.st.na ? ' muted' : ''}">${x.st.na ? 'N/A' : x.st.due ? fmtDate(x.st.due) : 'Not entered'}</span></span>`).join('')}</span>
       ${ac.restrictions && ac.status !== 'serviceable' ? `<span class="restr">${esc(trunc(ac.restrictions, 80))}</span>` : ''}
       <span class="nx"><span class="k">Next maintenance</span>${nx ? `<span>${esc(nx.m.title)}</span><span>${nx.st.parts.map(p => badge(p.s, p.txt)).join(' ')}</span>` : '<span class="muted">None entered</span>'}</span>
       ${defects ? `<span class="ln">${plural(defects, 'open defect')}</span>` : ''}

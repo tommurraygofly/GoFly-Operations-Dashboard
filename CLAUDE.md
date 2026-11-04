@@ -48,7 +48,8 @@ Instructor. It is separate from the public GoFly website.
   (missing = flagged); first aid and CPR are optional (tracked once entered). Plus free-form
   "other expiries" (`quals`). Warning window `expiryWarnDays` (30).
 - Aircraft registration and insurance expiries (`regoExpiry`, `insuranceExpiry`, `acExpiries`),
-  entered by Tom; missing = flagged. Never infer availability from them.
+  entered by Tom; missing = flagged. Never infer availability from them. Cross-hired aircraft
+  can set insurance to N/A (`insuranceNA: 'yes'`), which stops insurance being flagged.
 - Documents and compliance (Docs tab, collection `documents`, `renderDocs`, `docState`): each
   document has a type (`DOC_CATS`), tracks an expiry or a next review date (Tom enters it), and
   an optional review interval in months that "Mark reviewed" uses to set the next date.
