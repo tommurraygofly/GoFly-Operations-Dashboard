@@ -31,6 +31,15 @@ Instructor. It is separate from the public GoFly website.
 - Australian dates (dd/mm/yyyy), Brisbane time (Australia/Brisbane, AEST, no daylight saving),
   litres, decimal hours to one place.
 - Never invent compliance rules or calculate due dates. Tom enters all dates and requirements.
+  The one exception is the instructor check intervals Tom gave (RAAus), which are editable in
+  settings:
+  - S&P (Standards and Proficiency) check every 90 days for every instructor (`spDays`).
+  - Instructor renewal every 24 months for Junior instructors (`renewJuniorMonths`).
+  - Senior instructor renewal every 12 months for Senior, Supervising Senior, DCFI and CFI
+    (`renewSeniorMonths`).
+  Next due = last completed + interval (`spDue`, `renewDue`); a renewal expiry typed from the
+  certificate (`renewalExpiry`) overrides the calculated date. Warning windows: `dueSoonDays`
+  for S&P, `renewWarnDays` (30) for renewals.
 - Engine hours and air time are separate counters. Each maintenance item chooses which one it
   counts against (or calendar date only). Each aircraft can set its own hours warning
   (`aircraft.hoursWarn`); blank means use `settings.hoursWarn`. Use `warnFor(ac)`.
@@ -80,6 +89,9 @@ The script is split into numbered sections:
    overview cards, the Priority actions list and the tab badges, so counts always agree. Each item
    has `sev` (overdue, alert, low, soon, missing, info), `src`, `basis` ('date' or 'hours') and
    `area` (tab).
+   Instructor profiles: `grade` (junior, senior, supervising, dcfi, cfi), `raausNo`, `lastCheck`
+   (last S&P), `lastRenewal`, `renewalExpiry`, `checks` history (logged with `logCheck`, shown in
+   `openInstructor`). Old free-text `role` values are mapped to a grade in `normalise()`.
 5. **Schemas**: field lists in `SCHEMAS` generate every add/edit form via `openEditor(kind, id)`.
    To add a field, add it to the schema; the form, saving and validation follow.
 6. **Views**: overview = summary cards, `maintChart()` (HTML bars, one hours scale),

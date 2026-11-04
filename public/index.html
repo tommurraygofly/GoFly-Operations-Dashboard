@@ -456,6 +456,50 @@ main{max-width:1320px;margin:0 auto;padding:var(--mainpad) var(--mainpad) 48px}
 .callout.dark{border-left-color:var(--ink)}
 .meta{font-size:.8rem;color:var(--muted);margin:0}
 
+/* ===== Instructor board + profile ===== */
+.ins-sum{grid-template-columns:repeat(4,minmax(0,1fr));margin:0 0 14px}
+.ins-sum.fstats div:last-child{grid-column:auto}
+.fstats .soonc{background:var(--soon-bg);border-color:var(--soon-line)}
+.fstats .soonc b{color:var(--soon-ink)}
+.ins{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+.ins-row{display:grid;grid-template-columns:4px minmax(0,1.25fr) minmax(0,1fr) minmax(0,1fr) 220px;gap:8px 18px;align-items:center;padding:14px 18px 14px 0;border-top:1px solid var(--line)}
+.ins-row:first-child{border-top:0}
+.ins-row>.mk{align-self:stretch;border-radius:0 2px 2px 0;background:var(--line-strong)}
+.ins-hd{padding-top:10px;padding-bottom:10px;font-size:.68rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);background:var(--surface-2)}
+.ins-who{background:none;border:0;padding:0;text-align:left;cursor:pointer;color:inherit;display:grid;gap:4px;min-width:0}
+.ins-who .nm{font-weight:700;font-size:1rem}
+.ins-who:hover .nm{text-decoration:underline;text-underline-offset:3px}
+.ins-meta{display:flex;flex-wrap:wrap;gap:4px 8px;align-items:center;font-size:.8rem;color:var(--muted)}
+.ins-q{font-size:.78rem;color:var(--soon-ink)}
+.ins-c{display:grid;gap:2px;min-width:0}
+.ins-l{display:none;font-size:.68rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.ins-due{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;font-weight:600}
+.ins-last{font-size:.78rem;color:var(--muted)}
+.ins-a{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}
+@media (max-width:980px){
+  .ins-sum{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .ins-hd{display:none}
+  .ins-row{grid-template-columns:4px minmax(0,1fr) minmax(0,1fr);padding:14px 14px 14px 0}
+  .ins-row>.mk{grid-row:span 3}
+  .ins-who{grid-column:2/-1}
+  .ins-l{display:block}
+  .ins-a{grid-column:2/-1;justify-content:flex-start}
+}
+@media (max-width:480px){.ins-row{grid-template-columns:4px minmax(0,1fr)}.ins-row>.mk{grid-row:span 4}.ins-a .btn{flex:1}}
+.ist2{display:grid;gap:2px;justify-items:end}
+.irow .nm .cchip{margin-left:4px;vertical-align:1px}
+.ip-head{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;margin:0 0 12px;font-size:.88rem}
+.ip-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:520px){.ip-grid{grid-template-columns:1fr}}
+.ip-card{display:grid;gap:4px;align-content:start;border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--surface-2)}
+.ip-card .btn{margin-top:6px;justify-self:start}
+.ip-overdue{background:var(--crit-bg);border-color:var(--crit-line)}
+.ip-soon{background:var(--soon-bg);border-color:var(--soon-line)}
+.ip-missing{border-style:dashed;border-color:var(--line-strong)}
+.ip-t{font-size:.7rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.ip-due{font:700 1.4rem/1.15 var(--font)}
+.ip-m{font-size:.78rem;color:var(--muted)}
+
 /* ===== Waiting on ===== */
 .wg{border-top:1px solid var(--line);padding:10px 0}
 .list li:first-child .wg{border-top:0;padding-top:2px}
@@ -677,7 +721,7 @@ function emptyState() {
   return {
     schema: SCHEMA,
     settings: {
-      userName: '', theme: 'auto', dueSoonDays: 14, hoursWarn: 10, fuelThreshold: 1500, tankCapacity: 5000, rwy05Mag: 50, rwy12Mag: 120, magVar: 11,
+      userName: '', theme: 'auto', dueSoonDays: 14, hoursWarn: 10, fuelThreshold: 1500, tankCapacity: 5000, rwy05Mag: 50, rwy12Mag: 120, magVar: 11, spDays: 90, renewJuniorMonths: 24, renewSeniorMonths: 12, renewWarnDays: 30,
       orderTemplate: { product: 'Premium Unleaded 98', litres: 3500, supplier: 'IOR', notes: '' }
     },
     aircraft: AIRCRAFT_IDS.map(blankAircraft),
@@ -693,6 +737,14 @@ function normalise(d) {
     settings: { ...b.settings, ...ds, orderTemplate: { ...b.settings.orderTemplate, ...(ds.orderTemplate || {}) } },
     meta: { ...b.meta, ...(d.meta || {}) } };
   LISTS.forEach(k => { if (!Array.isArray(o[k])) o[k] = []; });
+  // Instructor profiles: RAAus grade and check history. Older records had a free-text role.
+  o.instructors.forEach(p => {
+    if (!Array.isArray(p.checks)) p.checks = [];
+    if (p.grade === undefined) {
+      const r = String(p.role || '').toLowerCase();
+      p.grade = /deputy|dcfi/.test(r) ? 'dcfi' : /chief|\bcfi\b/.test(r) ? 'cfi' : /supervis/.test(r) ? 'supervising' : /senior/.test(r) ? 'senior' : /junior/.test(r) ? 'junior' : '';
+    }
+  });
   // Tom's IOR tank: max safe fill 5,000 L (replaces the old optional/example capacity).
   if (o.settings.tankCapacity == null || o.settings.exampleCapacity) { o.settings.tankCapacity = 5000; delete o.settings.exampleCapacity; }
   o.fuelReadings.forEach(r => { if (r.example && r.litres > o.settings.tankCapacity) r.litres = 4800; });
@@ -743,9 +795,10 @@ function applyExamples() {
     E({ title: 'Bowser hose reel retracts slowly', equipment: 'Bowser', reported: D(-3), status: 'open', waitingOn: '', notes: 'Still usable. Check spring tension.' })
   );
   S.instructors.push(
-    E({ name: 'Alex Example', role: 'Chief Flying Instructor', lastCheck: D(-340), nextCheck: D(25), quals: [{ label: 'Class 1 medical', expiry: D(60) }, { label: 'ASIC', expiry: D(210) }], restrictions: '', paperwork: '', notes: '' }),
-    E({ name: 'Jordan Example', role: 'Flight instructor', lastCheck: D(-372), nextCheck: D(-7), quals: [{ label: 'Class 1 medical', expiry: D(12) }], restrictions: 'Supervised instruction only.', paperwork: 'Signed check form not yet filed.', notes: '' }),
-    E({ name: 'Sam Example', role: 'Flight instructor', lastCheck: null, nextCheck: null, quals: [{ label: 'Class 1 medical', expiry: D(150) }], restrictions: '', paperwork: '', notes: 'New starter. Enter check dates once known.' })
+    E({ name: 'Alex Example', grade: 'cfi', raausNo: '', lastCheck: D(-70), lastRenewal: D(-340), checks: [{ id: uid(), type: 'sp', date: D(-70), by: 'Example examiner', notes: '' }, { id: uid(), type: 'renewal', date: D(-340), by: 'Example examiner', notes: '' }], quals: [{ label: 'Medical', expiry: D(60) }, { label: 'ASIC', expiry: D(210) }], restrictions: '', paperwork: '', notes: '' }),
+    E({ name: 'Jordan Example', grade: 'junior', raausNo: '', lastCheck: D(-97), lastRenewal: D(-700), checks: [{ id: uid(), type: 'sp', date: D(-97), by: 'Alex Example', notes: '' }], quals: [{ label: 'Medical', expiry: D(12) }], restrictions: 'Supervised instruction only.', paperwork: 'Signed check form not yet filed.', notes: '' }),
+    E({ name: 'Riley Example', grade: 'dcfi', raausNo: '', lastCheck: D(-82), lastRenewal: D(-200), checks: [], quals: [], restrictions: '', paperwork: '', notes: '' }),
+    E({ name: 'Sam Example', grade: 'senior', raausNo: '', lastCheck: null, lastRenewal: null, checks: [], quals: [{ label: 'Medical', expiry: D(150) }], restrictions: '', paperwork: '', notes: 'New starter. Log their checks once known.' })
   );
   S.tasks.push(
     E({ title: 'Chase landing light part for 1675', category: 'Maintenance follow-up', owner: 'Ops Manager', due: D(-1), priority: 'high', status: 'waiting', waitingOn: 'Parts supplier', notes: '' }),
@@ -792,7 +845,7 @@ const RANK = { overdue: 0, soon: 1, missing: 2, info: 3, ok: 4, complete: 5 };
 const BADGE = { overdue: 'Overdue', soon: 'Due soon', complete: 'Complete', missing: 'Not entered', ok: 'On track', info: 'Note', waiting: 'Waiting', low: 'Low stock', alert: 'Alert' };
 // Priority order for the action list. Low stock and unserviceable aircraft sit just below overdue.
 const PRI = { overdue: 0, alert: 1, low: 1, soon: 2, missing: 3, info: 4, ok: 5, complete: 6 };
-const AREA = { task: 'tasks', aircraft: 'aircraft', maint: 'aircraft', defect: 'aircraft', fuel: 'fuel', order: 'fuel', issue: 'fuel', check: 'instructors', qual: 'instructors', paperwork: 'instructors' };
+const AREA = { task: 'tasks', aircraft: 'aircraft', maint: 'aircraft', defect: 'aircraft', fuel: 'fuel', order: 'fuel', issue: 'fuel', check: 'instructors', renewal: 'instructors', qual: 'instructors', paperwork: 'instructors' };
 const AC_SHORT = { serviceable: 'Available', restricted: 'Restricted', maintenance: 'In maintenance', unserviceable: 'Unserviceable' };
 
 const badge = (s, txt) => `<span class="b b-${s}">${esc(txt || BADGE[s])}</span>`;
@@ -872,11 +925,36 @@ function nextOrder() {
     .sort((a, b) => String(a.confirmedDate || a.requestedDate || '9').localeCompare(String(b.confirmedDate || b.requestedDate || '9')))[0] || null;
 }
 const isLowStock = fr => !!(fr && S.settings.fuelThreshold != null && fr.litres < S.settings.fuelThreshold);
-function checkState(p) {
-  if (!p.nextCheck) return { s: 'missing', d: null, txt: 'Date missing' };
-  const d = daysUntil(p.nextCheck);
-  return { s: dateStatus(p.nextCheck), d, txt: d < 0 ? `${plural(-d, 'day')} overdue` : d === 0 ? 'Due today' : `Due in ${plural(d, 'day')}` };
+/* Instructor checks, using the intervals Tom gave (RAAus, editable in settings):
+   S&P (Standards and Proficiency) check every 90 days for everyone.
+   Instructor renewal every 24 months (junior); senior instructor renewal every 12 months
+   (senior, supervising senior, DCFI, CFI). Next due = last completed + interval,
+   unless a renewal expiry from the certificate is entered. */
+const GRADES = [['', 'Not set'], ['junior', 'Junior instructor'], ['senior', 'Senior instructor'], ['supervising', 'Supervising senior instructor'], ['dcfi', 'Deputy CFI'], ['cfi', 'CFI']];
+const GRADE_SHORT = { junior: 'Junior', senior: 'Senior', supervising: 'Supv senior', dcfi: 'DCFI', cfi: 'CFI' };
+const isSeniorGrade = g => ['senior', 'supervising', 'dcfi', 'cfi'].includes(g);
+const renewalName = p => isSeniorGrade(p.grade) ? 'Senior instructor renewal' : 'Instructor renewal';
+const renewMonths = p => isSeniorGrade(p.grade) ? (Number(S.settings.renewSeniorMonths) || 12) : (Number(S.settings.renewJuniorMonths) || 24);
+function addMonths(iso, n) {
+  const [y, m, d] = iso.split('-').map(Number);
+  const last = new Date(Date.UTC(y, m - 1 + n + 1, 0)).getUTCDate();
+  return new Date(Date.UTC(y, m - 1 + n, Math.min(d, last))).toISOString().slice(0, 10);
 }
+const spDue = p => p.lastCheck ? addDays(p.lastCheck, Number(S.settings.spDays) || 90) : (p.nextCheck || null);
+const renewDue = p => p.renewalExpiry || (p.lastRenewal && p.grade ? addMonths(p.lastRenewal, renewMonths(p)) : null);
+function dueState(iso, warn) {
+  if (!iso) return { s: 'missing', d: null, due: null, txt: 'Date missing' };
+  const d = daysUntil(iso);
+  return { s: d < 0 ? 'overdue' : d <= warn ? 'soon' : 'ok', d, due: iso, txt: d < 0 ? `${plural(-d, 'day')} overdue` : d === 0 ? 'Due today' : `Due in ${plural(d, 'day')}` };
+}
+function checkState(p) { return dueState(spDue(p), Number(S.settings.dueSoonDays) || 14); }
+function renewState(p) {
+  if (!p.grade) return { s: 'missing', d: null, due: null, txt: 'Grade not set' };
+  return dueState(renewDue(p), Number(S.settings.renewWarnDays ?? 30));
+}
+const worstOf = (...st) => st.reduce((w, x) => RANK[x.s] < RANK[w.s] ? x : w);
+const instOrder = p => { const a = checkState(p), b = renewState(p), w = worstOf(a, b); return [RANK[w.s], Math.min(a.d ?? 1e6, b.d ?? 1e6)]; };
+const sortInst = (a, b) => { const x = instOrder(a), y = instOrder(b); return x[0] - y[0] || x[1] - y[1] || String(a.name).localeCompare(String(b.name)); };
 
 /* Everything that needs action, in priority order. Each item records:
    sev    overdue | alert | low | soon | missing | info
@@ -937,9 +1015,10 @@ function attentionItems() {
   });
   S.instructors.forEach(p => {
     if (p.archived) return;
-    const fn = () => openEditor('instructor', p.id);
-    const c = checkState(p);
-    if (c.s !== 'ok') push({ sev: c.s, src: 'check', basis: 'date', k: c.d ?? 0, title: `${p.name}: currency check`, detail: c.s === 'missing' ? 'Next check date not entered' : `Next check ${fmtDate(p.nextCheck)}`, badge: c.txt, fn });
+    const fn = () => openInstructor(p.id);
+    const c = checkState(p), r = renewState(p);
+    if (c.s !== 'ok') push({ sev: c.s, src: 'check', basis: 'date', k: c.d ?? 0, title: `${p.name}: S&P check`, detail: c.s === 'missing' ? 'Last S&P check not entered' : `S&P check due ${fmtDate(c.due)}`, badge: c.txt, fn });
+    if (r.s !== 'ok') push({ sev: r.s, src: 'renewal', basis: 'date', k: r.d ?? 0, title: `${p.name}: ${renewalName(p).toLowerCase()}`, detail: !p.grade ? 'Instructor grade not set' : r.s === 'missing' ? 'Last renewal not entered' : `${renewalName(p)} due ${fmtDate(r.due)}`, badge: r.txt, fn });
     (p.quals || []).forEach(q => {
       if (!q.expiry) return;
       const s = dateStatus(q.expiry), d = daysUntil(q.expiry);
@@ -967,8 +1046,9 @@ function upcoming(days) {
   });
   S.instructors.forEach(p => {
     if (p.archived) return;
-    add(p.nextCheck, `${p.name}: currency check`, 'Instructor check due', () => openEditor('instructor', p.id));
-    (p.quals || []).forEach(q => add(q.expiry, `${p.name}: ${q.label || 'Expiry'}`, 'Expires', () => openEditor('instructor', p.id)));
+    add(spDue(p), `${p.name}: S&P check`, 'S&P check due', () => openInstructor(p.id));
+    add(renewDue(p), `${p.name}: ${renewalName(p).toLowerCase()}`, 'Renewal due', () => openInstructor(p.id));
+    (p.quals || []).forEach(q => add(q.expiry, `${p.name}: ${q.label || 'Expiry'}`, 'Expires', () => openInstructor(p.id)));
   });
   return ev.sort((a, b) => a.d - b.d);
 }
@@ -1097,13 +1177,15 @@ const SCHEMAS = {
     ]
   },
   instructor: { title: 'Instructor', coll: 'instructors', archivable: true,
-    defaults: () => ({ quals: [] }),
+    defaults: () => ({ quals: [], checks: [], grade: 'junior' }),
     fields: [
       { k: 'name', l: 'Name', t: 'text', req: true },
-      { k: 'role', l: 'Role', t: 'text', ph: 'e.g. Grade 2 instructor' },
-      { k: 'lastCheck', l: 'Last currency check', t: 'date' },
-      { k: 'nextCheck', l: 'Next check due', t: 'date', hint: 'Enter from the instructor’s records. Nothing is calculated.' },
-      { k: 'quals', l: 'Qualifications, memberships and expiries', t: 'rows', wide: true },
+      { k: 'grade', l: 'Instructor grade', t: 'select', o: GRADES },
+      { k: 'raausNo', l: 'RAAus member number', t: 'text' },
+      { k: 'lastCheck', l: 'Last S&P check', t: 'date', hint: 'Next due is 90 days after this. Use Log S&P check to record new ones.' },
+      { k: 'lastRenewal', l: 'Last instructor renewal', t: 'date', hint: 'Next due 24 months after (junior) or 12 months after (senior, supervising senior, DCFI, CFI).' },
+      { k: 'renewalExpiry', l: 'Renewal expiry on certificate (optional)', t: 'date', hint: 'If entered, this date is used instead of the calculated one.' },
+      { k: 'quals', l: 'Other expiries (medical, ASIC and so on)', t: 'rows', wide: true },
       { k: 'restrictions', l: 'Restrictions', t: 'textarea' },
       { k: 'paperwork', l: 'Outstanding paperwork', t: 'textarea' },
       { k: 'notes', l: 'Notes', t: 'textarea', wide: true }
@@ -1121,7 +1203,11 @@ const SCHEMAS = {
     fields: [
       { k: 'userName', l: 'Your name', t: 'text', hint: 'Recorded against the changes you make.' },
       { k: 'theme', l: 'Appearance', t: 'select', o: THEMES },
-      { k: 'dueSoonDays', l: 'Due soon window (calendar dates)', t: 'number', suffix: 'days', req: true },
+      { k: 'dueSoonDays', l: 'Due soon window (calendar dates)', t: 'number', suffix: 'days', req: true, hint: 'Also the warning window for S&P checks.' },
+      { k: 'spDays', l: 'S&P check interval (all instructors)', t: 'number', suffix: 'days', req: true },
+      { k: 'renewWarnDays', l: 'Renewal warning window', t: 'number', suffix: 'days', req: true },
+      { k: 'renewJuniorMonths', l: 'Instructor renewal interval (junior)', t: 'number', suffix: 'months', req: true },
+      { k: 'renewSeniorMonths', l: 'Senior instructor renewal interval (senior, supervising senior, DCFI, CFI)', t: 'number', suffix: 'months', req: true },
       { k: 'hoursWarn', l: 'Default maintenance hours warning', t: 'hours', req: true, hint: 'Flag items with this many hours or fewer remaining. Each aircraft can set its own.' },
       { k: 'fuelThreshold', l: 'Fuel reorder level (low stock)', t: 'litres', req: true },
       { k: 'rwy05Mag', l: 'YCDR runway 05 heading (magnetic)', t: 'number', suffix: '°', hint: 'Runway 23 is the reciprocal.' },
@@ -1349,6 +1435,70 @@ function openAddMenu() {
     ['issue', 'drop', 'Bowser or pump issue', 'Fuel equipment problem'], ['instructor', 'user', 'Instructor', 'Check dates and expiries'], ['task', 'list', 'Task', 'Something to do or chase']];
   openDlg('Add', `<div class="addmenu">${opts.map(([k, ic, t, d]) => `<button type="button" data-add="${k}">${ICO(ic)}<span><span class="t">${esc(t)}</span><span class="d muted">${esc(d)}</span></span></button>`).join('')}</div>`, [cancelBtn]);
   $$('#dlgBody [data-add]').forEach(b => { b.onclick = () => { const k = b.dataset.add; if (k === 'order') orderFromTemplate(); else openEditor(k); }; });
+}
+
+function instStatusCard(p, kind) {
+  const sp = kind === 'sp', st = sp ? checkState(p) : renewState(p);
+  const last = sp ? p.lastCheck : p.lastRenewal;
+  const title = sp ? 'S&P check' : renewalName(p);
+  const every = sp ? `Every ${Number(S.settings.spDays) || 90} days` : p.grade ? `Every ${renewMonths(p)} months` : 'Set the grade to work this out';
+  return `<div class="ip-card ip-${st.s}"><div class="ip-t">${esc(title)}</div>
+    <div class="ip-due">${st.due ? fmtDate(st.due) : 'Not entered'}</div>
+    <div>${st.s === 'ok' ? `<span class="ist ist-ok">${esc(st.txt)}</span>` : badge(st.s, st.txt)}</div>
+    <div class="ip-m">Last ${last ? fmtDate(last) : 'not entered'} · ${esc(every)}${!sp && p.renewalExpiry ? ' · using certificate expiry' : ''}</div>
+    <button type="button" class="btn btn-sm ${st.s === 'ok' ? 'btn-secondary' : 'btn-primary'}" data-log="${kind}">Log ${sp ? 'S&P check' : 'renewal'}</button></div>`;
+}
+function openInstructor(id) {
+  const p = S.instructors.find(x => x.id === id);
+  if (!p) { toast('That instructor no longer exists.'); return; }
+  const hist = [...(p.checks || [])].sort((a, b) => String(b.date).localeCompare(String(a.date)));
+  const quals = p.quals || [];
+  const body = `${p.example ? '<p class="note-ex">This is example data. Logging a check or saving changes makes it your own record.</p>' : ''}
+    <div class="ip-head"><span class="cchip">${esc(GRADE_SHORT[p.grade] || 'Grade not set')}</span>${p.raausNo ? `<span class="muted">RAAus ${esc(p.raausNo)}</span>` : '<span class="muted">RAAus number not entered</span>'}${p.archived ? '<span class="b b-ok">Archived</span>' : ''}</div>
+    <div class="ip-grid">${instStatusCard(p, 'sp')}${instStatusCard(p, 'renewal')}</div>
+    ${p.restrictions ? `<div class="callout" style="margin-top:12px"><strong>Restrictions:</strong> ${esc(p.restrictions)}</div>` : ''}
+    ${p.paperwork ? `<div class="callout dark" style="margin-top:8px"><strong>Outstanding paperwork:</strong> ${esc(p.paperwork)}</div>` : ''}
+    <h3 class="dlg-sec">Other expiries</h3>
+    ${quals.length ? quals.map(q => `<div class="rowline"><span class="k">${esc(q.label || 'Unnamed')}</span><span>${q.expiry ? `${fmtDate(q.expiry)} ${daysUntil(q.expiry) < 0 ? badge('overdue', 'Expired') : dueBadge(q.expiry)}` : badge('missing', 'No expiry')}</span></div>`).join('') : '<p class="empty">None recorded. Add medical, ASIC and similar under Edit details.</p>'}
+    <h3 class="dlg-sec">Check history</h3>
+    ${hist.length ? `<div class="scroll-x"><table class="hist"><thead><tr><th>Date</th><th>Check</th><th>Conducted by</th><th></th></tr></thead><tbody>${hist.map(c => `<tr><td>${fmtDate(c.date)}</td><td>${c.type === 'sp' ? 'S&P check' : esc(c.label || 'Renewal')}${c.notes ? `<span class="d">${esc(c.notes)}</span>` : ''}</td><td>${esc(c.by || '')}</td><td class="num"><button type="button" class="icon-btn" data-delcheck="${esc(c.id)}" aria-label="Remove this entry">×</button></td></tr>`).join('')}</tbody></table></div>` : '<p class="empty">No checks logged yet.</p>'}
+    ${p.notes ? `<p class="n muted" style="margin-top:12px">${esc(p.notes)}</p>` : ''}
+    <p class="meta" style="margin-top:12px">Updated ${p.updatedAt ? fmtStamp(p.updatedAt) + (p.updatedBy ? ' by ' + esc(p.updatedBy) : '') : 'never'}</p>`;
+  openDlg(p.name, body, [{ label: 'Edit details', cls: 'btn-text', left: true, on: () => openEditor('instructor', p.id) }, { label: 'Close', cls: 'btn btn-secondary', on: () => closeDlg() }]);
+  $$('#dlgBody [data-log]').forEach(b => { b.onclick = () => logCheck(p.id, b.dataset.log); });
+  $$('#dlgBody [data-delcheck]').forEach(b => { b.onclick = async () => {
+    const c = p.checks.find(x => x.id === b.dataset.delcheck); if (!c) return;
+    if (!(await askConfirm(`Remove the ${c.type === 'sp' ? 'S&P check' : 'renewal'} on ${fmtDate(c.date)} from ${p.name}’s history?`, 'Remove'))) return;
+    withUndo('Entry removed', () => {
+      p.checks = p.checks.filter(x => x !== c);
+      const key = c.type === 'sp' ? 'lastCheck' : 'lastRenewal';
+      if (p[key] === c.date) { const rest = p.checks.filter(x => x.type === c.type).map(x => x.date).sort(); p[key] = rest.length ? rest[rest.length - 1] : null; }
+      delete p.example; stamp(p);
+    });
+    openInstructor(p.id);
+  }; });
+}
+function logCheck(id, kind) {
+  const p = S.instructors.find(x => x.id === id); if (!p) return;
+  const sp = kind === 'sp', name = sp ? 'S&P check' : renewalName(p);
+  if (!sp && !p.grade) { toast('Set the instructor grade first, under Edit details.'); return; }
+  const F = [{ k: 'date', l: 'Date completed', t: 'date', req: true }, { k: 'by', l: 'Conducted by', t: 'text', ph: 'Examiner, CFI or DCFI' }, { k: 'notes', l: 'Notes', t: 'textarea', wide: true }];
+  const nextTxt = sp ? `${Number(S.settings.spDays) || 90} days` : `${renewMonths(p)} months`;
+  openDlg(`Log ${name}`, `<p class="hint" style="margin-bottom:12px"><strong>${esc(p.name)}</strong>${p.grade ? `, ${esc(lab(GRADES, p.grade))}` : ''}. The next one will be due ${nextTxt} after the date completed.</p>
+    <div class="form">${F.map(f => fieldHTML(f, { date: todayISO() })).join('')}</div><p class="form-err" id="formErr" hidden></p>`,
+    [{ label: 'Back', cls: 'btn btn-secondary', on: () => openInstructor(p.id) }, { label: `Save ${sp ? 'S&P check' : 'renewal'}`, cls: 'btn btn-primary', on: () => {
+      const { vals, err } = collect(F);
+      if (err) { showErr(err); return; }
+      if (vals.date > todayISO()) { showErr('The date completed can’t be in the future.'); return; }
+      withUndo(`${name} logged`, () => {
+        p.checks = p.checks || [];
+        p.checks.push({ id: uid(), type: sp ? 'sp' : 'renewal', label: sp ? 'S&P check' : name, date: vals.date, by: vals.by, notes: vals.notes, loggedAt: nowStamp(), loggedBy: S.settings.userName || '' });
+        if (sp) { if (!p.lastCheck || vals.date >= p.lastCheck) p.lastCheck = vals.date; }
+        else if (!p.lastRenewal || vals.date >= p.lastRenewal) { p.lastRenewal = vals.date; delete p.renewalExpiry; }
+        delete p.example; stamp(p);
+      });
+      openInstructor(p.id);
+    } }]);
 }
 
 function orderMessage(o) {
@@ -1902,12 +2052,16 @@ function renderOverview() {
     fr ? sub(low ? `<strong>Low stock</strong>, reorder at ${fmtL(thr)}` : `Reorder level ${fmtL(thr)}`) : sub('No reading yet'),
     fr ? sub(`Read ${fmtDate(fr.date)}`, true) : ''], 'data-act="go" data-view="fuel"');
   // 4. Instructors (currency checks; qualifications counted separately)
-  const cs = S.instructors.filter(p => !p.archived).map(checkState);
-  const ci = { overdue: cs.filter(c => c.s === 'overdue').length, soon: cs.filter(c => c.s === 'soon').length, missing: cs.filter(c => c.s === 'missing').length };
+  const actI = S.instructors.filter(p => !p.archived);
+  const ws = actI.map(p => worstOf(checkState(p), renewState(p)).s);
+  const ci = { overdue: ws.filter(x => x === 'overdue').length, soon: ws.filter(x => x === 'soon').length, missing: ws.filter(x => x === 'missing').length };
+  const spN = s => actI.filter(p => checkState(p).s === s).length, rnN = s => actI.filter(p => renewState(p).s === s).length;
+  const part = (n, t) => n ? `${n} ${t}` : '';
   const qn = att.filter(a => a.src === 'qual').length;
-  const k4 = kpi(ci.overdue ? 'overdue' : ci.soon ? 'soon' : ci.missing ? 'missing' : '', 'user', ci.overdue ? ['overdue', 'Action'] : ci.soon ? ['soon', 'Watch'] : ci.missing ? ['missing', 'Check'] : ['ok', 'In date'], 'Instructor checks', String(ci.overdue + ci.soon + ci.missing), [
-    sub([ci.overdue && `${ci.overdue} overdue`, ci.soon && `${ci.soon} due soon`, ci.missing && `${ci.missing} date missing`].filter(Boolean).join(', ') || 'All checks in date', true),
-    qn ? sub(`Plus ${plural(qn, 'qualification')} expiring`) : ''], 'data-act="scroll" data-id="p-inst"');
+  const k4 = kpi(ci.overdue ? 'overdue' : ci.soon ? 'soon' : ci.missing ? 'missing' : '', 'user', ci.overdue ? ['overdue', 'Action'] : ci.soon ? ['soon', 'Watch'] : ci.missing ? ['missing', 'Check'] : ['ok', 'In date'], 'Instructor checks', `${ci.overdue + ci.soon + ci.missing}<small>/ ${actI.length}</small>`, [
+    sub('S&P: ' + ([part(spN('overdue'), 'overdue'), part(spN('soon'), 'due soon'), part(spN('missing'), 'missing')].filter(Boolean).join(', ') || 'all in date'), true),
+    sub('Renewals: ' + ([part(rnN('overdue'), 'overdue'), part(rnN('soon'), 'due soon'), part(rnN('missing'), 'missing')].filter(Boolean).join(', ') || 'all in date'), true),
+    qn ? sub(`Plus ${plural(qn, 'other expiry')} soon`.replace('expirys', 'expiries')) : ''], 'data-act="go" data-view="instructors"');
   // 5. Overdue
   const od = att.filter(a => a.sev === 'overdue');
   const k5 = kpi(od.length ? 'overdue' : '', 'alert', od.length ? ['overdue', 'Action'] : ['ok', 'Clear'], 'Overdue actions', String(od.length), [
@@ -1933,14 +2087,13 @@ function renderOverview() {
     </span></button>`;
   }).join('');
 
-  const inst = S.instructors.filter(p => !p.archived).map(p => ({ p, c: checkState(p) }))
-    .sort((a, b) => { const g = x => x.c.s === 'missing' ? 2 : x.c.d < 0 ? 0 : 1; return g(a) - g(b) || (a.c.d ?? 0) - (b.c.d ?? 0) || String(a.p.name).localeCompare(String(b.p.name)); });
+  const inst = S.instructors.filter(p => !p.archived).sort(sortInst).map(p => ({ p, c: checkState(p), r: renewState(p) }));
   const quals = [];
   S.instructors.forEach(p => { if (!p.archived) (p.quals || []).forEach(q => { if (q.expiry && ['overdue', 'soon'].includes(dateStatus(q.expiry))) quals.push({ p, q, d: daysUntil(q.expiry) }); }); });
   quals.sort((a, b) => a.d - b.d);
-  const instHTML = inst.length ? `<ul class="list">${inst.map(({ p, c }) => `<li><button class="irow" data-reg="${reg(() => openEditor('instructor', p.id))}"><span class="mk mk-${c.s}"></span><span><span class="nm">${esc(p.name)}</span><span class="dt">Next check ${p.nextCheck ? fmtDate(p.nextCheck) : 'not entered'}</span></span><span class="ist ist-${c.s}">${esc(c.txt)}</span></button></li>`).join('')}</ul>`
+  const instHTML = inst.length ? `<ul class="list">${inst.map(({ p, c, r }) => `<li><button class="irow" data-reg="${reg(() => openInstructor(p.id))}"><span class="mk mk-${worstOf(c, r).s}"></span><span><span class="nm">${esc(p.name)} <span class="cchip">${esc(GRADE_SHORT[p.grade] || 'Grade?')}</span></span><span class="dt">S&amp;P ${c.due ? fmtDate(c.due) : 'not entered'} · Renewal ${r.due ? fmtDate(r.due) : 'not entered'}</span></span><span class="ist2"><span class="ist ist-${c.s}">S&amp;P: ${esc(c.txt.toLowerCase())}</span><span class="ist ist-${r.s}">Renewal: ${esc(r.txt.toLowerCase())}</span></span></button></li>`).join('')}</ul>`
     : '<p class="empty">No instructors yet.</p><button class="btn btn-sm btn-secondary" data-act="add" data-kind="instructor">Add instructor</button>';
-  const qualHTML = `<div class="mc-cal"><h3 class="mini-h">Qualification expiries <span class="n2">(not currency checks)</span></h3>${quals.length ? `<ul class="list">${quals.map(({ p, q, d }) => `<li><button class="irow" data-reg="${reg(() => openEditor('instructor', p.id))}"><span class="mk mk-${d < 0 ? 'overdue' : 'soon'}"></span><span><span class="nm">${esc(q.label || 'Qualification')}</span><span class="dt">${esc(p.name)}, expires ${fmtDate(q.expiry)}</span></span><span class="ist ist-${d < 0 ? 'overdue' : 'soon'}">${d < 0 ? `Expired ${plural(-d, 'day')} ago` : d === 0 ? 'Expires today' : `Expires in ${plural(d, 'day')}`}</span></button></li>`).join('')}</ul>` : `<p class="empty">None expiring in the next ${S.settings.dueSoonDays} days.</p>`}</div>`;
+  const qualHTML = `<div class="mc-cal"><h3 class="mini-h">Other expiries <span class="n2">(medical, ASIC, etc.)</span></h3>${quals.length ? `<ul class="list">${quals.map(({ p, q, d }) => `<li><button class="irow" data-reg="${reg(() => openInstructor(p.id))}"><span class="mk mk-${d < 0 ? 'overdue' : 'soon'}"></span><span><span class="nm">${esc(q.label || 'Qualification')}</span><span class="dt">${esc(p.name)}, expires ${fmtDate(q.expiry)}</span></span><span class="ist ist-${d < 0 ? 'overdue' : 'soon'}">${d < 0 ? `Expired ${plural(-d, 'day')} ago` : d === 0 ? 'Expires today' : `Expires in ${plural(d, 'day')}`}</span></button></li>`).join('')}</ul>` : `<p class="empty">None expiring in the next ${S.settings.dueSoonDays} days.</p>`}</div>`;
 
   const up = upcoming(upWindow);
   const days = {};
@@ -2080,28 +2233,36 @@ function renderFuel() {
     </div>`;
 }
 
+function insCell(p, kind) {
+  const sp = kind === 'sp', st = sp ? checkState(p) : renewState(p), last = sp ? p.lastCheck : p.lastRenewal;
+  return `<div class="ins-c"><span class="ins-l">${sp ? 'S&P check' : esc(renewalName(p))}</span>
+    <span class="ins-due">${st.due ? fmtDate(st.due) : '—'} ${st.s === 'ok' ? `<span class="ist ist-ok">${esc(st.txt)}</span>` : badge(st.s, st.txt)}</span>
+    <span class="ins-last">Last ${last ? fmtDate(last) : 'not entered'}${!sp && p.renewalExpiry ? ', certificate expiry' : ''}</span></div>`;
+}
 function renderInstructors() {
-  const list = S.instructors.filter(p => showInstArch || !p.archived).sort((a, b) => String(a.name).localeCompare(String(b.name)));
-  const cards = list.map(p => {
-    const quals = (p.quals || []);
-    return `<article class="card${p.archived ? ' is-arch' : ''}">
-      <div class="card-h"><div><h2>${esc(p.name)}${exChip(p)}</h2><span class="role">${p.role ? esc(p.role) : 'Role not set'}${p.archived ? ', archived' : ''}</span></div><button class="btn btn-sm btn-secondary" data-reg="${reg(() => openEditor('instructor', p.id))}">Edit</button></div>
-      <div>
-        <div class="rowline"><span class="k">Last currency check</span><span>${p.lastCheck ? fmtDate(p.lastCheck) : badge('missing', 'Not entered')}</span></div>
-        <div class="rowline"><span class="k">Next check due</span><span>${p.nextCheck ? `${fmtDate(p.nextCheck)} ${dueBadge(p.nextCheck)}` : badge('missing', 'Not entered')}</span></div>
-        ${quals.map(q => `<div class="rowline"><span class="k">${esc(q.label || 'Unnamed item')}</span><span>${q.expiry ? `${fmtDate(q.expiry)} ${daysUntil(q.expiry) < 0 ? badge('overdue', 'Expired') : dueBadge(q.expiry)}` : badge('missing', 'No expiry')}</span></div>`).join('')}
-        ${!quals.length ? '<div class="rowline"><span class="k">Qualifications and expiries</span><span class="muted">None recorded</span></div>' : ''}
-      </div>
-      ${p.restrictions ? `<div class="callout"><strong>Restrictions:</strong> ${esc(p.restrictions)}</div>` : ''}
-      ${p.paperwork ? `<div class="callout dark"><strong>Outstanding paperwork:</strong> ${esc(p.paperwork)}</div>` : ''}
-      ${p.notes ? `<div class="n muted">${esc(p.notes)}</div>` : ''}
-      <p class="meta">Updated ${p.updatedAt ? fmtStamp(p.updatedAt) + (p.updatedBy ? ' by ' + esc(p.updatedBy) : '') : 'never'}</p>
-    </article>`;
+  const list = S.instructors.filter(p => showInstArch || !p.archived).sort(sortInst);
+  const act = S.instructors.filter(p => !p.archived);
+  const sps = act.map(checkState), rns = act.map(renewState);
+  const cnt = (arr, s) => arr.filter(x => x.s === s).length;
+  const tile = (k, n, cls) => `<div class="${n ? cls : ''}"><span class="k">${k}</span><b>${n}</b></div>`;
+  const rows = list.map(p => {
+    const w = worstOf(checkState(p), renewState(p));
+    const soonQ = (p.quals || []).filter(q => q.expiry && ['overdue', 'soon'].includes(dateStatus(q.expiry)));
+    return `<div class="ins-row${p.archived ? ' is-arch' : ''}"><span class="mk mk-${w.s}"></span>
+      <button type="button" class="ins-who" data-reg="${reg(() => openInstructor(p.id))}"><span class="nm">${esc(p.name)}${exChip(p)}</span>
+        <span class="ins-meta"><span class="cchip">${esc(GRADE_SHORT[p.grade] || 'Grade not set')}</span>${p.raausNo ? `<span>RAAus ${esc(p.raausNo)}</span>` : ''}${p.archived ? '<span>Archived</span>' : ''}</span>
+        ${soonQ.length ? `<span class="ins-q">${soonQ.map(q => `${esc(q.label || 'Expiry')} ${daysUntil(q.expiry) < 0 ? 'expired' : 'expires'} ${fmtDate(q.expiry)}`).join(', ')}</span>` : ''}
+        ${p.restrictions ? `<span class="ins-q">Restriction: ${esc(trunc(p.restrictions, 60))}</span>` : ''}</button>
+      ${insCell(p, 'sp')}${insCell(p, 'renewal')}
+      <div class="ins-a"><button class="btn btn-sm btn-secondary" data-reg="${reg(() => logCheck(p.id, 'sp'))}">+ S&amp;P check</button><button class="btn btn-sm btn-secondary" data-reg="${reg(() => logCheck(p.id, 'renewal'))}">+ Renewal</button></div></div>`;
   }).join('');
   return `${banners()}<div class="view-h"><h1>Instructors</h1><div class="view-actions">
     <button class="btn btn-primary" data-act="add" data-kind="instructor">Add instructor</button>
     <label class="tog"><input type="checkbox" data-act="toggleInstArch"${showInstArch ? ' checked' : ''}> Show archived</label></div></div>
-    ${list.length ? `<div class="cards">${cards}</div>` : '<div class="panel"><p class="empty">No instructors yet. Add each instructor with their check dates and expiries from your records.</p></div>'}`;
+    <div class="fstats ins-sum">${tile('S&P overdue', cnt(sps, 'overdue'), 'warn')}${tile(`S&P due within ${Number(S.settings.dueSoonDays) || 14} days`, cnt(sps, 'soon'), 'soonc')}${tile('Renewals overdue', cnt(rns, 'overdue'), 'warn')}${tile(`Renewals due within ${Number(S.settings.renewWarnDays ?? 30)} days`, cnt(rns, 'soon'), 'soonc')}</div>
+    ${list.length ? `<div class="ins"><div class="ins-row ins-hd" aria-hidden="true"><span></span><span>Instructor</span><span>S&amp;P check (every ${Number(S.settings.spDays) || 90} days)</span><span>Renewal (junior ${Number(S.settings.renewJuniorMonths) || 24} mo, senior ${Number(S.settings.renewSeniorMonths) || 12} mo)</span><span></span></div>${rows}</div>`
+      : '<div class="panel"><p class="empty">No instructors yet. Add each instructor with their grade and last check dates.</p></div>'}
+    <p class="hint" style="margin-top:10px">Sorted with the most urgent first. Select a name to open the profile and check history.</p>`;
 }
 
 function renderTasks() {
