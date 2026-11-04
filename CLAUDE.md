@@ -36,13 +36,14 @@ Instructor. It is separate from the public GoFly website.
 - Never invent compliance rules or calculate due dates. Tom enters all dates and requirements.
   The one exception is the instructor check intervals Tom gave (RAAus), which are editable in
   settings:
-  - S&P (Standards and Proficiency) check every 90 days for every instructor (`spDays`).
-  - Instructor renewal every 24 months for Junior instructors (`renewJuniorMonths`).
-  - Senior instructor renewal every 12 months for Senior, Supervising Senior, DCFI and CFI
-    (`renewSeniorMonths`).
-  Next due = last completed + interval (`spDue`, `renewDue`); a renewal expiry typed from the
+  - Junior: S&P (Standards and Proficiency) check every 90 days (`spDays`) and instructor
+    renewal every 24 months (`renewJuniorMonths`).
+  - Senior and Supervising Senior: SI flight review every 12 months (`renewSeniorMonths`).
+  - DCFI and CFI: SI flight review every 24 months (`renewChiefMonths`).
+  - S&P checks are juniors only (`needsSP`); senior grades show "Not required".
+  Next due = last completed + interval (`spDue`, `renewDue`); an expiry typed from the
   certificate (`renewalExpiry`) overrides the calculated date. Warning windows: `dueSoonDays`
-  for S&P, `renewWarnDays` (30) for renewals.
+  for S&P, `renewWarnDays` (30) for renewals and SI flight reviews.
 - Engine hours and air time are separate counters. Each maintenance item chooses which one it
   counts against (or calendar date only).
 - Hour-based maintenance levels, the same for every aircraft (`hoursState`, `hrsLevels`):
@@ -107,7 +108,7 @@ The script is split into numbered sections:
    has `sev` (overdue, alert, low, soon, missing, info), `src`, `basis` ('date' or 'hours') and
    `area` (tab).
    Instructor profiles: `grade` (junior, senior, supervising, dcfi, cfi), `raausNo`, `lastCheck`
-   (last S&P), `lastRenewal`, `renewalExpiry`, `checks` history (logged with `logCheck`, shown in
+   (last S&P), `lastRenewal` (renewal or SI flight review), `renewalExpiry`, `checks` history (logged with `logCheck`, shown in
    `openInstructor`). Old free-text `role` values are mapped to a grade in `normalise()`.
 5. **Schemas**: field lists in `SCHEMAS` generate every add/edit form via `openEditor(kind, id)`.
    To add a field, add it to the schema; the form, saving and validation follow.
@@ -152,6 +153,8 @@ headings (`ICO(name)`, icons in `ICONS`). Inter for text; Barlow Condensed bold 
 for headings and aircraft idents, echoing the logo. Status shown by colour plus icon plus words
 (red action/overdue, orange watch/due soon/low stock, green OK, dashed grey not entered). The
 GoFly website is for information only; don't copy its theme. Touch targets about 44px.
+Data & settings is grouped (Maintenance, Instructor checks, IOR fuel tank, YCDR runways and
+wind, This device); add new settings to the right group in `openSettings`.
 
 ## Before pushing
 
