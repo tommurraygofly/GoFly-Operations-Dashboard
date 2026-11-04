@@ -17,8 +17,9 @@ Instructor. It is separate from the public GoFly website.
 - Deployment: Cloudflare Workers Builds is connected to this GitHub repo. Every push to `main`
   deploys to production. Tom's standing instruction: commit and push every finished change
   straight to `main` (no preview branches), after the checks in "Before pushing" pass.
-- Access: the workers.dev and preview URLs sit behind Cloudflare Access (authorised emails only).
-  Keep it private. Never add public links or sharing.
+- Access: Tom chose to turn Cloudflare Access off. The PIN sign-in is the only lock, so never put
+  the PIN in code, docs or commits (it lives only in the Cloudflare secret `GOFLY_PIN`). The GitHub
+  repo is public. Never add public links or sharing.
 
 ## Working with Tom
 
@@ -43,8 +44,11 @@ Instructor. It is separate from the public GoFly website.
   certificate (`renewalExpiry`) overrides the calculated date. Warning windows: `dueSoonDays`
   for S&P, `renewWarnDays` (30) for renewals.
 - Engine hours and air time are separate counters. Each maintenance item chooses which one it
-  counts against (or calendar date only). Each aircraft can set its own hours warning
-  (`aircraft.hoursWarn`); blank means use `settings.hoursWarn`. Use `warnFor(ac)`.
+  counts against (or calendar date only).
+- Hour-based maintenance levels, the same for every aircraft (`hoursState`, `hrsLevels`):
+  green "Good" above 50 hrs left, amber "Book soon" at 50 or fewer (`settings.hoursAmber`),
+  red "Verify booking" at 20 or fewer (`settings.hoursRed`), red "Overdue" once passed.
+  Status `due` = the red verify-booking level (ranks just below overdue). Red must stay below amber.
 - IOR fuel tank (Tom's figures): max safe fill 5,000 L (`settings.tankCapacity`), reorder level
   1,500 L (`settings.fuelThreshold`), standard order 3,500 L (`settings.orderTemplate.litres`).
   "Refill" means the delivery is in the tank: it logs a new reading of latest + 3,500 L and marks
@@ -123,16 +127,20 @@ complete, archive and delete. Escape all user text with `esc()`. Fuel order temp
 
 - Sign-in is required every time the dashboard opens (nothing remembered). No accounts: choose a
   name (Tom, Damien, Anne-Maree; `USERS` in the page and `NAMES` in the Worker, keep both in
-  step) and enter the team PIN (7788). `POST /api/login` checks it against the Worker variable
-  `GOFLY_PIN` (default 7788; `keep_vars` keeps a value set in the Cloudflare dashboard). If the
-  Worker can't be reached, the page checks a SHA-256 hash of 7788 (`PIN_SHA256`).
+  step) and enter the team PIN. Only the Worker knows the PIN: Cloudflare secret `GOFLY_PIN`.
+  If it isn't set, nobody can sign in. Local testing: put `GOFLY_PIN=...` in `.dev.vars`
+  (git-ignored).
+- `POST /api/login` returns a random 12-hour session token (D1 table `sessions`); the page keeps
+  it in memory only and sends `Authorization: Bearer <token>` to `/api/sync`, which stores the
+  session's name as `updated_by`. `POST /api/logout` ends it. A 401 from sync sends the person
+  back to the sign-in screen (unsent changes stay queued).
+- Wrong PINs are logged in D1 (`login_fails`): 8 from one IP in 15 minutes, or 40 overall in an
+  hour, pauses sign-in. `/api/wx` only serves YBSU.
 - The signed-in name (`Who`) is the greeting name and is stamped on every change (`updatedBy`).
   The header button shows who is signed in and switches person or locks (`lockApp`).
-- `/api/sync` requires headers `X-GoFly-User` (a known name) and `X-GoFly-Pin`, and stores the
-  name as `updated_by`. Nothing renders and nothing syncs until someone signs in.
-- A 4-digit PIN is light protection; keep Cloudflare Access in front of the site. Optional
-  stronger check: set `ACCESS_TEAM_DOMAIN` and `ACCESS_AUD` and the Worker also requires a valid
-  Access token.
+  Nothing renders and nothing syncs until someone signs in.
+- Optional: if Access is ever turned back on, set `ACCESS_TEAM_DOMAIN` and `ACCESS_AUD` and the
+  Worker also requires a valid Access token.
 
 ## Look and feel
 

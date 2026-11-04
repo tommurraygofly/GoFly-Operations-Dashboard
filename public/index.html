@@ -233,8 +233,8 @@ main{max-width:1320px;margin:0 auto;padding:var(--mainpad) var(--mainpad) 48px}
 /* ===== Status badges (colour + icon + words) ===== */
 .b{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:1px 9px;font:600 .75rem/1.65 var(--font);white-space:nowrap;border:1px solid transparent;vertical-align:middle}
 .b::before{content:none;width:12px;height:12px;flex:none;background:currentColor;-webkit-mask:var(--i) center/contain no-repeat;mask:var(--i) center/contain no-repeat}
-.b-overdue{background:var(--red);color:#fff}
-.b-overdue::before,.b-alert::before{content:"";--i:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill-rule='evenodd' d='M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-1.25 5h2.5v7h-2.5zm0 9h2.5v2.5h-2.5z'/%3E%3C/svg%3E")}
+.b-overdue,.b-due{background:var(--red);color:#fff}
+.b-overdue::before,.b-alert::before,.b-due::before{content:"";--i:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill-rule='evenodd' d='M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-1.25 5h2.5v7h-2.5zm0 9h2.5v2.5h-2.5z'/%3E%3C/svg%3E")}
 .b-soon{background:var(--soon-bg);color:var(--soon-ink);border-color:var(--soon-line)}
 .b-soon::before{content:"";--i:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill-rule='evenodd' d='M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-1.2 4.5h2.4v5l3.6 2.2-1.2 2-4.8-2.9z'/%3E%3C/svg%3E")}
 .b-low{background:var(--orange);color:#000;border-color:var(--orange)}
@@ -242,8 +242,8 @@ main{max-width:1320px;margin:0 auto;padding:var(--mainpad) var(--mainpad) 48px}
 .b-alert{background:var(--surface);color:var(--red);border-color:var(--red)}
 .b-hz{background:var(--soon-bg);color:var(--soon-ink);border-color:var(--soon-line)}
 .b-hz::before{content:"";--i:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill-rule='evenodd' d='M12 2 1 21h22zm-1.2 7h2.4v6h-2.4zm0 7.5h2.4V19h-2.4z'/%3E%3C/svg%3E")}
-.b-complete{background:var(--ok-bg);color:var(--ok-ink)}
-.b-complete::before{content:"";--i:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill-rule='evenodd' d='M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-1.3 14.4-4.4-4.4 1.7-1.7 2.7 2.7 5.6-5.6 1.7 1.7z'/%3E%3C/svg%3E")}
+.b-complete,.b-good{background:var(--ok-bg);color:var(--ok-ink)}
+.b-complete::before,.b-good::before{content:"";--i:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill-rule='evenodd' d='M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-1.3 14.4-4.4-4.4 1.7-1.7 2.7 2.7 5.6-5.6 1.7 1.7z'/%3E%3C/svg%3E")}
 .b-missing{border:1px dashed var(--line-strong);color:var(--muted)}
 .b-ok{background:var(--surface-2);color:var(--muted);border-color:var(--line)}
 .b-info{background:var(--surface-2);color:var(--ink);border-color:var(--line-strong)}
@@ -261,7 +261,7 @@ main{max-width:1320px;margin:0 auto;padding:var(--mainpad) var(--mainpad) 48px}
 .list li:first-child .item{border-top:0}
 .item:hover{background:var(--surface-2)}
 .item .mk{width:4px;align-self:stretch;border-radius:2px;background:var(--line-strong);flex:none}
-.mk-overdue,.mk-alert{background:var(--red)!important}.mk-soon,.mk-low{background:var(--orange)!important}.mk-ok{background:var(--line-strong)}
+.mk-overdue,.mk-alert,.mk-due{background:var(--red)!important}.mk-good{background:var(--green)!important}.mk-soon,.mk-low{background:var(--orange)!important}.mk-ok{background:var(--line-strong)}
 .mk-missing{background:repeating-linear-gradient(180deg,var(--line-strong) 0 4px,transparent 4px 7px)!important}
 .item .tx{flex:1;min-width:0}
 .t{display:block;font-weight:600}
@@ -321,7 +321,7 @@ main{max-width:1320px;margin:0 auto;padding:var(--mainpad) var(--mainpad) 48px}
 /* ===== Maintenance hours chart ===== */
 .mc-legend{display:flex;flex-wrap:wrap;gap:4px 14px;margin:0 0 8px;font-size:.78rem;color:var(--muted)}
 .mc-legend span{display:inline-flex;align-items:center;gap:6px}
-.sw{display:inline-block;width:12px;height:8px;border-radius:2px;background:var(--bar-ok)}
+.sw{display:inline-block;width:12px;height:8px;border-radius:2px;background:var(--green)}
 .sw-soon{background:var(--orange)}.sw-overdue{background:var(--red)}
 .sw-tick{width:0;height:12px;border-left:2px solid var(--ink);border-radius:0;background:none;opacity:.55}
 .mc-row{display:block;width:100%;text-align:left;background:none;border:0;border-top:1px solid var(--line);padding:11px 4px;cursor:pointer;color:inherit}
@@ -336,10 +336,12 @@ main{max-width:1320px;margin:0 auto;padding:var(--mainpad) var(--mainpad) 48px}
 .mc-val.na{font-weight:500;color:var(--muted)}
 .mc-track{display:block;position:relative;height:14px;margin:8px 0 7px;background:var(--track);border-radius:4px}
 .mc-zero{position:absolute;top:-3px;bottom:-3px;width:0;border-left:1px solid var(--ink);opacity:.5}
-.mc-bar{display:block;position:absolute;top:0;bottom:0;background:var(--bar-ok);border-radius:0 4px 4px 0;min-width:2px}
+.mc-bar{display:block;position:absolute;top:0;bottom:0;background:var(--green);border-radius:0 4px 4px 0;min-width:2px}
 .mc-bar.neg{border-radius:4px 0 0 4px}
-.mc-bar.soon{background:var(--orange)}.mc-bar.overdue{background:var(--red)}
+.mc-bar.soon{background:var(--orange)}.mc-bar.due,.mc-bar.overdue{background:var(--red)}
 .mc-warn{position:absolute;top:-3px;bottom:-3px;width:0;border-left:2px solid var(--ink);opacity:.55}
+.mc-warn.a{border-left-color:var(--orange);opacity:.9}.mc-warn.r{border-left-color:var(--red);opacity:.9}
+.mc-val .b{margin-right:6px}
 .mc-na{position:absolute;inset:0;border:1.5px dashed var(--line-strong);border-radius:4px;background:var(--surface)}
 .mc-sub{display:flex;flex-wrap:wrap;align-items:center;gap:2px 8px;font-size:.8rem;color:var(--muted)}
 .mc-sub .t2{color:var(--ink);font-weight:500}
@@ -481,7 +483,7 @@ main{max-width:1320px;margin:0 auto;padding:var(--mainpad) var(--mainpad) 48px}
 .irow .dt{font-size:.83rem;color:var(--muted);display:block}
 .irow:hover .nm{text-decoration:underline;text-underline-offset:3px}
 .ist{font-size:.83rem;font-weight:700;white-space:nowrap;text-align:right}
-.ist-overdue{color:var(--red)}.ist-soon{color:var(--soon-ink)}.ist-missing{color:var(--muted);font-weight:500}.ist-ok{color:var(--muted);font-weight:500}
+.ist-overdue,.ist-due{color:var(--red)}.ist-soon{color:var(--soon-ink)}.ist-missing{color:var(--muted);font-weight:500}.ist-ok{color:var(--muted);font-weight:500}
 .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px;display:grid;gap:10px;align-content:start;box-shadow:var(--shadow)}
 .card-h{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
@@ -764,7 +766,7 @@ function emptyState() {
   return {
     schema: SCHEMA,
     settings: {
-      userName: '', theme: 'auto', dueSoonDays: 14, hoursWarn: 10, fuelThreshold: 1500, tankCapacity: 5000, rwy05Mag: 50, rwy12Mag: 120, magVar: 11, spDays: 90, renewJuniorMonths: 24, renewSeniorMonths: 12, renewWarnDays: 30,
+      userName: '', theme: 'auto', dueSoonDays: 14, hoursAmber: 50, hoursRed: 20, fuelThreshold: 1500, tankCapacity: 5000, rwy05Mag: 50, rwy12Mag: 120, magVar: 11, spDays: 90, renewJuniorMonths: 24, renewSeniorMonths: 12, renewWarnDays: 30,
       orderTemplate: { product: 'Premium Unleaded 98', litres: 3500, supplier: 'IOR', notes: '' }
     },
     aircraft: AIRCRAFT_IDS.map(blankAircraft),
@@ -794,6 +796,9 @@ function normalise(d) {
   const ac = Array.isArray(d.aircraft) ? d.aircraft : [];
   o.aircraft = AIRCRAFT_IDS.map(id => ({ ...blankAircraft(id), ...(ac.find(a => a.ident === id) || {}) }))
     .concat(ac.filter(a => a && !AIRCRAFT_IDS.includes(a.ident)));
+  // Maintenance levels are now the same for every aircraft (amber 50 hrs, red 20 hrs).
+  o.aircraft.forEach(a => { delete a.hoursWarn; });
+  delete o.settings.hoursWarn;
   o.schema = SCHEMA;
   return o;
 }
@@ -871,19 +876,13 @@ function withUndo(msg, mutate) {
 
 /* ---------- 3a. Sign-in ----------
    Required every time the dashboard is opened (nothing is remembered between visits).
-   Choose your name, enter the team PIN. The Worker checks the PIN (POST /api/login) and every
-   sync request carries it, so the shared database only accepts signed-in changes. If the Worker
-   can't be reached (e.g. testing the file locally), the PIN is checked here against a hash.
+   Choose your name, enter the team PIN. Only the Worker knows the PIN (Cloudflare secret
+   GOFLY_PIN); POST /api/login returns a 12-hour session token, kept in memory only, which every
+   sync request sends. The PIN itself is never stored or written in this page.
    The signed-in name is stamped on every change (updatedBy). */
 const USERS = ['Tom', 'Damien', 'Anne-Maree'];
-const PIN_SHA256 = '16740bf13991fe083fbe5820cc8da08a5d88e5a48f44a3cfcc283c27b2797ba7';  // 7788
 let Who = null;
 const LG = { name: null, pin: '', busy: false, fails: 0, until: 0 };
-async function sha256(t) {
-  if (!(window.crypto && crypto.subtle)) return '';
-  const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(t));
-  return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join('');
-}
 function showLogin(msg) {
   const el = $('#login');
   LG.pin = ''; LG.name = null;
@@ -917,24 +916,29 @@ function lgKey(k) {
 async function lgSubmit() {
   LG.busy = true; lgErr('Checking…');
   const pin = LG.pin, name = LG.name;
-  let ok = false;
+  let j = null, status = 0;
   try {
     const r = await fetch('/api/login', { method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin, name }) });
-    if ((r.headers.get('content-type') || '').includes('json') && (r.ok || r.status === 401)) ok = r.ok;
-    else ok = (await sha256(pin)) === PIN_SHA256;          // Worker not available (local testing)
-  } catch (e) { ok = (await sha256(pin)) === PIN_SHA256; }
+    status = r.status;
+    if ((r.headers.get('content-type') || '').includes('json')) j = await r.json();
+  } catch (e) { status = 0; }
   LG.busy = false;
-  if (!ok) {
+  if (status !== 401 && !(j && j.ok)) {          // couldn't check: server, setup or lockout problem
+    LG.pin = ''; lgDots();
+    lgErr(j && j.error ? j.error : 'Can’t reach the GoFly server. Check your connection and try again.');
+    return;
+  }
+  if (!(j && j.ok && j.token)) {
     LG.fails++; LG.pin = ''; lgDots();
     if (LG.fails >= 5) { LG.until = Date.now() + 30000; LG.fails = 0; lgErr('Incorrect PIN. Too many tries, wait 30 seconds.'); }
     else lgErr('Incorrect PIN. Try again.');
     return;
   }
   LG.fails = 0;
-  signIn(name, pin);
+  signIn(name, j.token);
 }
-function signIn(name, pin) {
-  Who = { name, pin };
+function signIn(name, token) {
+  Who = { name, token };
   S.settings.userName = name;
   try { Store.adapter.save(S); } catch (e) {}
   $('#login').classList.remove('show'); $('#login').innerHTML = '';
@@ -945,12 +949,14 @@ function signIn(name, pin) {
   render(); window.scrollTo(0, 0);
   startSync();
 }
-function lockApp() {
+function lockApp(msg) {
   if (dlg.open) closeDlg();
+  if ($('#cfm').open) $('#cfm').close();
+  if (Who && Who.token) fetch('/api/logout', { method: 'POST', headers: { Authorization: 'Bearer ' + Who.token } }).catch(() => {});
   Who = null; $('#who').hidden = true;
   main.innerHTML = '';
   setSync('local');
-  showLogin();
+  showLogin(msg);
 }
 document.addEventListener('keydown', e => {
   if (!$('#login').classList.contains('show') || e.ctrlKey || e.metaKey || e.altKey) return;
@@ -1003,9 +1009,13 @@ function schedulePush(ms = 700) { clearTimeout(Sync.pushT); Sync.pushT = setTime
 async function syncApi(method, body, qs = '') {
   let r;
   try {
-    r = await fetch('/api/sync' + qs, { method, cache: 'no-store', credentials: 'same-origin', headers: { ...(body ? { 'Content-Type': 'application/json' } : {}), ...(Who ? { 'X-GoFly-User': Who.name, 'X-GoFly-Pin': Who.pin } : {}) }, body: body ? JSON.stringify(body) : undefined });
+    r = await fetch('/api/sync' + qs, { method, cache: 'no-store', credentials: 'same-origin', headers: { ...(body ? { 'Content-Type': 'application/json' } : {}), ...(Who && Who.token ? { Authorization: 'Bearer ' + Who.token } : {}) }, body: body ? JSON.stringify(body) : undefined });
   } catch (e) { throw Object.assign(new Error('offline'), { offline: true }); }
-  if (r.status === 401 || r.status === 403) throw Object.assign(new Error('auth'), { auth: true });
+  if (r.status === 401 || r.status === 403) {
+    // Session ended (12 hours, or signed out elsewhere): ask for the PIN again. Unsent changes stay queued.
+    if (Who) setTimeout(() => lockApp('You’ve been signed out. Sign in again to keep going.'), 0);
+    throw Object.assign(new Error('auth'), { auth: true });
+  }
   if (r.status === 404 || r.status === 405 || r.status === 503) throw Object.assign(new Error('missing'), { missing: true });
   if (!(r.headers.get('content-type') || '').includes('json')) throw Object.assign(new Error('not json'), { offline: true });
   const j = await r.json();
@@ -1163,10 +1173,10 @@ const ISSUE_ST = [['open', 'Open'], ['waiting', 'Waiting on someone else'], ['re
 const EQUIP = ['Bowser', 'Bulk pump', 'Hose or nozzle', 'Filters or water check', 'Other'].map(x => [x, x]);
 const THEMES = [['auto', 'Match device'], ['light', 'Light'], ['dark', 'Dark']];
 const lab = (arr, v) => (arr.find(a => a[0] === v) || [null, v || '—'])[1];
-const RANK = { overdue: 0, soon: 1, missing: 2, info: 3, ok: 4, complete: 5 };
-const BADGE = { overdue: 'Overdue', soon: 'Due soon', complete: 'Complete', missing: 'Not entered', ok: 'On track', info: 'Note', waiting: 'Waiting', low: 'Low stock', alert: 'Alert' };
+const RANK = { overdue: 0, due: 0.5, soon: 1, missing: 2, info: 3, ok: 4, good: 4, complete: 5 };
+const BADGE = { overdue: 'Overdue', due: 'Verify booking', good: 'Good', soon: 'Due soon', complete: 'Complete', missing: 'Not entered', ok: 'On track', info: 'Note', waiting: 'Waiting', low: 'Low stock', alert: 'Alert' };
 // Priority order for the action list. Low stock and unserviceable aircraft sit just below overdue.
-const PRI = { overdue: 0, alert: 1, low: 1, soon: 2, missing: 3, info: 4, ok: 5, complete: 6 };
+const PRI = { overdue: 0, due: 0.5, alert: 1, low: 1, soon: 2, missing: 3, info: 4, ok: 5, good: 5, complete: 6 };
 const AREA = { task: 'tasks', aircraft: 'aircraft', maint: 'aircraft', defect: 'aircraft', fuel: 'fuel', order: 'fuel', issue: 'fuel', check: 'instructors', renewal: 'instructors', qual: 'instructors', paperwork: 'instructors' };
 const AC_SHORT = { serviceable: 'Available', restricted: 'Restricted', maintenance: 'In maintenance', unserviceable: 'Unserviceable' };
 
@@ -1194,8 +1204,12 @@ function dueBadge(iso, noDate = 'No date') {
   return s === 'ok' ? '' : badge(s, dueText(iso));
 }
 // Hours warning: the aircraft's own setting if entered, otherwise the default in settings.
-const warnFor = ac => (ac && ac.hoursWarn != null) ? ac.hoursWarn : S.settings.hoursWarn;
-const hoursState = (rem, warn) => rem < 0 ? 'overdue' : rem <= warn ? 'soon' : 'ok';
+// Hour-based maintenance levels (Tom: the same for every aircraft):
+//   green "Good" above 50 hrs left, amber "Book soon" at 50 or fewer,
+//   red "Verify booking" at 20 or fewer, red "Overdue" once passed.
+const hrsLevels = () => ({ amber: Number(S.settings.hoursAmber ?? 50), red: Number(S.settings.hoursRed ?? 20) });
+const hoursState = rem => { const L = hrsLevels(); return rem < 0 ? 'overdue' : rem <= L.red ? 'due' : rem <= L.amber ? 'soon' : 'good'; };
+const HRS_LABEL = { overdue: 'Overdue', due: 'Verify booking', soon: 'Book soon', good: 'Good' };
 function maintStatus(m) {
   if (m.status === 'done') return { s: 'complete', parts: [{ s: 'complete', txt: 'Complete' }] };
   const ac = acById(m.aircraftId);
@@ -1206,7 +1220,8 @@ function maintStatus(m) {
     if (cur == null) parts.push({ s: 'missing', basis: 'hours', txt: `${lab(COUNTERS, m.counter)} not entered` });
     else {
       rem = Math.round((m.dueHours - cur) * 10) / 10;
-      parts.push({ s: hoursState(rem, warnFor(ac)), basis: 'hours', txt: rem < 0 ? `${fmtH(-rem)} hrs over` : `${fmtH(rem)} hrs remaining` });
+      const hs = hoursState(rem);
+      parts.push({ s: hs, basis: 'hours', txt: rem < 0 ? `${fmtH(-rem)} hrs over` : hs === 'good' ? `${fmtH(rem)} hrs left` : `${fmtH(rem)} hrs left, ${HRS_LABEL[hs].toLowerCase()}` });
     }
   }
   if (m.dueDate) {
@@ -1305,7 +1320,7 @@ function attentionItems() {
     if (st.s === 'ok' || st.s === 'complete') return;
     const ac = acById(m.aircraftId);
     const basis = st.parts.some(p => p.s === st.s && p.basis === 'hours') ? 'hours' : 'date';
-    const b = st.s === 'overdue' ? (basis === 'hours' ? 'Over hours' : 'Past due date') : st.s === 'soon' ? (basis === 'hours' ? 'Hours approaching' : 'Due soon') : 'Not entered';
+    const b = st.s === 'overdue' ? (basis === 'hours' ? 'Over hours' : 'Past due date') : st.s === 'due' ? 'Verify booking' : st.s === 'soon' ? (basis === 'hours' ? 'Book soon' : 'Due soon') : 'Not entered';
     push({ sev: st.s, src: 'maint', basis, k: basis === 'hours' ? (st.rem ?? 0) : (daysUntil(m.dueDate) ?? 0),
       title: `${ac ? ac.ident + ' ' : ''}${m.title}`, detail: `${m.counter === 'none' ? 'Calendar' : lab(COUNTERS, m.counter)}: ${st.parts.map(p => p.txt).join(', ')}`, badge: b, fn: () => openEditor('maint', m.id) });
   });
@@ -1350,7 +1365,7 @@ function attentionItems() {
   });
   return out.sort((a, b) => (PRI[a.sev] - PRI[b.sev]) || (a.k - b.k));
 }
-function countBy(list) { const n = { overdue: 0, alert: 0, low: 0, soon: 0, missing: 0, info: 0 }; list.forEach(a => n[a.sev]++); return n; }
+function countBy(list) { const n = { overdue: 0, due: 0, alert: 0, low: 0, soon: 0, missing: 0, info: 0 }; list.forEach(a => n[a.sev]++); return n; }
 
 function upcoming(days) {
   const ev = [];
@@ -1433,7 +1448,6 @@ const SCHEMAS = {
       { k: 'responsible', l: 'Responsible person', t: 'text' },
       { k: 'engineHours', l: 'Engine hours', t: 'hours' },
       { k: 'airTime', l: 'Air time (where applicable)', t: 'hours', hint: 'Leave blank if this aircraft doesn’t track air time.' },
-      { k: 'hoursWarn', l: 'Hours warning for this aircraft', t: 'hours', hint: 'Optional. Leave blank to use the default in Data & settings.' },
       { k: 'restrictions', l: 'Restrictions', t: 'textarea', wide: true },
       { k: 'notes', l: 'Maintenance notes', t: 'textarea', wide: true }
     ]
@@ -1529,7 +1543,8 @@ const SCHEMAS = {
       { k: 'renewWarnDays', l: 'Renewal warning window', t: 'number', suffix: 'days', req: true },
       { k: 'renewJuniorMonths', l: 'Instructor renewal interval (junior)', t: 'number', suffix: 'months', req: true },
       { k: 'renewSeniorMonths', l: 'Senior instructor renewal interval (senior, supervising senior, DCFI, CFI)', t: 'number', suffix: 'months', req: true },
-      { k: 'hoursWarn', l: 'Default maintenance hours warning', t: 'hours', req: true, hint: 'Flag items with this many hours or fewer remaining. Each aircraft can set its own.' },
+      { k: 'hoursAmber', l: 'Maintenance amber, book soon (hours left)', t: 'hours', req: true, hint: 'Same for every aircraft.' },
+      { k: 'hoursRed', l: 'Maintenance red, verify booking (hours left)', t: 'hours', req: true, hint: 'Same for every aircraft. Must be lower than amber.' },
       { k: 'fuelThreshold', l: 'Fuel reorder level (low stock)', t: 'litres', req: true },
       { k: 'rwy05Mag', l: 'YCDR runway 05 heading (magnetic)', t: 'number', suffix: '°', hint: 'Runway 23 is the reciprocal.' },
       { k: 'rwy12Mag', l: 'YCDR runway 12 heading (magnetic)', t: 'number', suffix: '°', hint: 'Runway 30 is the reciprocal.' },
@@ -1731,23 +1746,14 @@ function openThreshold() {
 }
 
 function openWarnings() {
-  const s = S.settings, F = SCHEMAS.settings.fields.filter(f => f.k === 'hoursWarn' || f.k === 'dueSoonDays');
-  const rows = S.aircraft.map(a => `<div class="field"><label for="w_${esc(a.id)}">${esc(a.ident)}</label><div class="suffix"><input id="w_${esc(a.id)}" data-w="${esc(a.id)}" type="number" inputmode="decimal" step="0.1" min="0" placeholder="Default" value="${a.hoursWarn ?? ''}"><span>hrs</span></div></div>`).join('');
-  openDlg('Warning levels', `<p class="hint" style="margin-bottom:12px">Hour-based items turn orange when this many hours or fewer remain, and red once passed. Calendar deadlines use the due soon window.</p>
-    <div class="form">${F.map(f => fieldHTML(f, s)).join('')}</div>
-    <h3 class="dlg-sec">Hours warning by aircraft</h3><p class="hint" style="margin-bottom:10px">Leave blank to use the default. Applies to engine hours and air time items for that aircraft.</p>
-    <div class="form">${rows}</div><p class="form-err" id="formErr" hidden></p>`,
+  const s = S.settings, F = SCHEMAS.settings.fields.filter(f => ['hoursAmber', 'hoursRed', 'dueSoonDays'].includes(f.k));
+  openDlg('Warning levels', `<p class="hint" style="margin-bottom:12px">Hour-based maintenance, the same for every aircraft: green while there’s plenty left, amber “book soon”, red “verify booking”, and red “overdue” once passed. Calendar deadlines use the due soon window.</p>
+    <div class="form">${F.map(f => fieldHTML(f, s)).join('')}</div><p class="form-err" id="formErr" hidden></p>`,
     [cancelBtn, { label: 'Save warning levels', cls: 'btn btn-primary', on: () => {
       const { vals, err } = collect(F);
       if (err) { showErr(err); return; }
-      const ov = [];
-      for (const inp of $$('#dlgBody input[data-w]')) {
-        const a = acById(inp.dataset.w), v = inp.value === '' ? null : Number(inp.value);
-        if (v != null && (isNaN(v) || v < 0)) { showErr(`Check the hours warning for ${a.ident}.`); return; }
-        ov.push([a, v == null ? null : Math.round(v * 10) / 10]);
-      }
+      if (vals.hoursRed >= vals.hoursAmber) { showErr('The red level must be fewer hours than the amber level.'); return; }
       Object.assign(s, vals);
-      ov.forEach(([a, v]) => { if ((a.hoursWarn ?? null) !== v) { a.hoursWarn = v; delete a.example; stamp(a); } });
       closeDlg(); commit(); toast('Warning levels saved');
     } }]);
 }
@@ -1907,6 +1913,7 @@ function openSettings() {
   openDlg('Data and settings', body, [cancelBtn, { label: 'Save settings', cls: 'btn btn-primary', on: () => {
     const { vals, err } = collect(SCHEMAS.settings.fields);
     if (err) { showErr(err); return; }
+    if (vals.hoursRed >= vals.hoursAmber) { showErr('The maintenance red level must be fewer hours than the amber level.'); return; }
     Object.assign(s, vals);
     applyTheme(); closeDlg(); commit(); toast('Settings saved');
   } }]);
@@ -1986,30 +1993,30 @@ function niceScale(lo, hi, n) {
 const fmtTick = v => Number(v).toLocaleString('en-AU', { maximumFractionDigits: 1 }).replace('-', '−');
 
 function maintChart() {
-  const rows = S.aircraft.map(ac => ({ ac, h: hourItemFor(ac), warn: warnFor(ac) }));
+  const L = hrsLevels();
+  const rows = S.aircraft.map(ac => ({ ac, h: hourItemFor(ac) }));
   const vals = rows.filter(r => r.h.rem != null).map(r => r.h.rem);
-  const warns = rows.filter(r => r.h.rem != null && r.warn != null).map(r => r.warn * 2);
-  const sc = niceScale(Math.min(0, ...vals), Math.max(10, ...vals, ...warns), 4);
+  const sc = niceScale(Math.min(0, ...vals), Math.max(10, ...vals, L.amber * 1.2), 4);
   const P = v => (v - sc.lo) / (sc.hi - sc.lo) * 100;
-  const body = rows.map(({ ac, h, warn }) => {
-    const st = h.rem == null ? 'missing' : hoursState(h.rem, warn);
+  const body = rows.map(({ ac, h }) => {
+    const st = h.rem == null ? 'missing' : hoursState(h.rem);
     let bar;
     if (h.rem == null) bar = '<span class="mc-na"></span>';
     else {
       const a = P(Math.min(0, h.rem)), b = P(Math.max(0, h.rem));
-      bar = `<span class="mc-bar${st === 'ok' ? '' : ' ' + st}${h.rem < 0 ? ' neg' : ''}" style="left:${a.toFixed(2)}%;width:${(b - a).toFixed(2)}%"></span>`;
+      bar = `<span class="mc-bar ${st}${h.rem < 0 ? ' neg' : ''}" style="left:${a.toFixed(2)}%;width:${(b - a).toFixed(2)}%"></span>`;
     }
     const zero = sc.lo < 0 ? `<span class="mc-zero" style="left:${P(0).toFixed(2)}%"></span>` : '';
-    const tick = h.rem != null && warn != null && warn <= sc.hi ? `<span class="mc-warn" style="left:${P(warn).toFixed(2)}%"></span>` : '';
+    const tick = h.rem == null ? '' : [['a', L.amber], ['r', L.red]].filter(([, v]) => v <= sc.hi && v >= sc.lo).map(([c, v]) => `<span class="mc-warn ${c}" style="left:${P(v).toFixed(2)}%"></span>`).join('');
     const val = h.rem == null ? 'Not entered' : h.rem < 0 ? `${fmtH(-h.rem)} hrs overdue` : `${fmtH(h.rem)} hrs left`;
     const sub = h.m
       ? `<span class="cchip">${esc(lab(COUNTERS, h.m.counter))}</span><span class="t2">${esc(h.m.title)}</span><span>${h.rem == null ? esc(h.why) : `due at ${fmtH(h.m.dueHours)}, now ${fmtH(h.cur)}`}${h.m.dueDate ? `, or by ${fmtDate(h.m.dueDate)}` : ''}${h.others ? `. ${h.others} more item${h.others === 1 ? '' : 's'}` : ''}</span>`
       : `<span>${esc(h.why)}</span>`;
     const fn = h.m ? (h.rem == null ? () => openHours() : () => openEditor('maint', h.m.id)) : () => openEditor('maint', null, { aircraftId: ac.id, counter: 'engine' });
-    const aria = `${ac.ident}, ${AC_SHORT[ac.status] || ac.status}. ${val}${h.m ? `, ${lab(COUNTERS, h.m.counter)}, ${h.m.title}` : ''}${st === 'soon' ? ', approaching' : st === 'overdue' ? ', overdue' : ''}`;
+    const aria = `${ac.ident}, ${AC_SHORT[ac.status] || ac.status}. ${val}${h.m ? `, ${lab(COUNTERS, h.m.counter)}, ${h.m.title}` : ''}${HRS_LABEL[st] ? ', ' + HRS_LABEL[st].toLowerCase() : ''}`;
     return `<button type="button" class="mc-row" data-reg="${reg(fn)}" aria-label="${esc(aria)}">
       <span class="mc-top"><span class="mc-who"><span class="mc-id">${esc(ac.ident)}</span><span class="mc-st"><span class="dot dot-${esc(ac.status)}"></span>${esc(AC_SHORT[ac.status] || ac.status)}</span></span>
-        <span class="mc-val${h.rem == null ? ' na' : ''}">${val}</span></span>
+        <span class="mc-val${h.rem == null ? ' na' : ''}">${HRS_LABEL[st] ? badge(st, HRS_LABEL[st]) + ' ' : ''}${val}</span></span>
       <span class="mc-track" aria-hidden="true">${zero}${bar}${tick}</span>
       <span class="mc-sub">${sub}</span></button>`;
   }).join('');
@@ -2020,10 +2027,9 @@ function maintChart() {
     const ac = acById(m.aircraftId), s = dateStatus(m.dueDate);
     return `<li><button class="item" data-reg="${reg(() => openEditor('maint', m.id))}"><span class="mk mk-${s}"></span><span class="tx"><span class="t">${ac ? esc(ac.ident) + ' ' : ''}${esc(m.title)}</span><span class="d">${m.dueDate ? `Due ${fmtDate(m.dueDate)}` : 'Due date not entered'}${m.bookingDate ? `, booked ${fmtDate(m.bookingDate)}` : ''}</span></span><span class="r">${m.dueDate ? (s === 'ok' ? `<span class="ist ist-ok">${esc(dueText(m.dueDate))}</span>` : badge(s, dueText(m.dueDate))) : badge('missing', 'Not entered')}</span></button></li>`;
   }).join('')}</ul>` : '<p class="empty">No calendar-only maintenance items.</p>'}</div>`;
-  const own = S.aircraft.filter(a => a.hoursWarn != null).length;
-  return `<div class="mc-legend" aria-hidden="true"><span><i class="sw"></i>On track</span><span><i class="sw sw-soon"></i>Approaching</span><span><i class="sw sw-overdue"></i>Overdue</span><span><i class="sw sw-tick"></i>Warning level</span></div>
+  return `<div class="mc-legend" aria-hidden="true"><span><i class="sw"></i>Good, over ${+L.amber} hrs</span><span><i class="sw sw-soon"></i>Book soon, ${+L.amber} hrs or less</span><span><i class="sw sw-overdue"></i>Verify booking, ${+L.red} hrs or less, or overdue</span></div>
     <div>${body}</div>${axis}
-    <div class="panel-foot"><span class="hint">Approaching at ${fmtH(S.settings.hoursWarn)} hrs or fewer${own ? `, ${own === 1 ? 'one aircraft has' : own + ' aircraft have'} its own level` : ''}.</span><button class="btn-text" data-act="warnings">Warning levels</button></div>
+    <div class="panel-foot"><span class="hint">Same levels for every aircraft. Lines on each bar mark ${+L.amber} and ${+L.red} hrs.</span><button class="btn-text" data-act="warnings">Warning levels</button></div>
     ${calHTML}`;
 }
 
@@ -2368,10 +2374,11 @@ function renderOverview() {
     sub(`<span class="kpi-tag"><span class="dot dot-restricted"></span>${restr} with restrictions</span>`),
     off ? sub(`${off} off line`, true) : ''], 'data-act="go" data-view="aircraft"');
   // 2. Maintenance
-  const mSoon = att.filter(a => a.src === 'maint' && a.sev === 'soon'), mOver = att.filter(a => a.src === 'maint' && a.sev === 'overdue').length;
+  const mAmber = att.filter(a => a.src === 'maint' && a.sev === 'soon').length, mRed = att.filter(a => a.src === 'maint' && a.sev === 'due').length, mOver = att.filter(a => a.src === 'maint' && a.sev === 'overdue').length;
+  const LV = hrsLevels();
   const near = S.aircraft.map(ac => ({ ac, h: hourItemFor(ac) })).filter(x => x.h.rem != null && x.h.rem >= 0).sort((a, b) => a.h.rem - b.h.rem)[0];
-  const k2 = kpi(mOver ? 'overdue' : mSoon.length ? 'soon' : '', 'wrench', mOver ? ['overdue', 'Action'] : mSoon.length ? ['soon', 'Watch'] : ['ok', 'On track'], 'Maintenance approaching', String(mSoon.length), [
-    sub(`${mSoon.filter(a => a.basis === 'hours').length} by hours, ${mSoon.filter(a => a.basis === 'date').length} by date`, true),
+  const k2 = kpi(mOver || mRed ? 'overdue' : mAmber ? 'soon' : '', 'wrench', mOver ? ['overdue', 'Overdue'] : mRed ? ['overdue', 'Verify booking'] : mAmber ? ['soon', 'Book soon'] : ['ok', 'All good'], 'Maintenance approaching', String(mAmber + mRed), [
+    sub(`<span class="ist-overdue">${mRed} verify booking</span> (≤${+LV.red} hrs), <span class="ist-soon">${mAmber} book soon</span> (≤${+LV.amber} hrs)`, true),
     near ? sub(`Nearest: ${esc(near.ac.ident)}, ${fmtH(near.h.rem)} hrs`) : '',
     mOver ? sub(`<span class="ist-overdue">+${mOver} overdue</span>`) : ''], 'data-act="scroll" data-id="p-maint"');
   // 3. Fuel
@@ -2398,7 +2405,7 @@ function renderOverview() {
 
   const shown = showAllAtt ? att : att.slice(0, 5);
   const attHTML = att.length ? `<ul class="list">${shown.map(a => `<li><button class="item" data-reg="${reg(a.fn)}"><span class="mk mk-${a.sev}"></span><span class="tx"><span class="t">${esc(a.title)}</span><span class="d">${esc(a.detail)}</span></span><span class="r">${badge(a.sev, a.badge)}</span></button></li>`).join('')}</ul>${att.length > 5 ? `<button class="btn-text" data-act="toggleAtt">${showAllAtt ? 'Show top 5' : `View all ${att.length}`}</button>` : ''}` : '<p class="empty">Nothing needs attention right now.</p>';
-  const attSub = [n.overdue && `${n.overdue} overdue`, n.alert && `${n.alert} unserviceable`, n.low && 'low stock', n.soon && `${n.soon} due soon`, n.missing && `${n.missing} not entered`].filter(Boolean).join(', ') || 'All clear';
+  const attSub = [n.overdue && `${n.overdue} overdue`, n.due && `${n.due} verify booking`, n.alert && `${n.alert} unserviceable`, n.low && 'low stock', n.soon && `${n.soon} due soon`, n.missing && `${n.missing} not entered`].filter(Boolean).join(', ') || 'All clear';
 
   const groups = waitingGroups();
   const waitHTML = groups.length ? `<ul class="list">${groups.map(g => `<li><div class="wg"><div class="wg-h"><span>${g.who ? esc(g.who) : '<span class="b b-missing">Who not entered</span>'}</span><span class="c">${g.items.length > 1 ? `${g.items.length} related items` : ''}</span></div>
@@ -2431,7 +2438,7 @@ function renderOverview() {
 
   const hr = Number(new Intl.DateTimeFormat('en-AU', { timeZone: TZ, hour: 'numeric', hourCycle: 'h23' }).format(new Date()));
   const first = Who ? Who.name : '';
-  const lvl = n.overdue || n.alert ? 'crit' : n.low || n.soon ? 'warn' : 'ok';
+  const lvl = n.overdue || n.due || n.alert ? 'crit' : n.low || n.soon ? 'warn' : 'ok';
   const now = new Date();
   return `<section class="hero"><div class="hero-in"><div class="h-greet">
       <p class="eyebrow">Operations · Caloundra YCDR</p>
@@ -2492,7 +2499,7 @@ function renderAircraft() {
           <span class="ac-next"><span class="k">Next maintenance:</span>${nx ? `<strong>${esc(nx.m.title)}</strong> ${nx.st.parts.map(p => badge(p.s, p.txt)).join(' ')}` : '<span class="muted">None entered</span>'}</span></div>
         <dl class="ctr"><div><dt>Engine hours</dt><dd>${ac.engineHours != null ? fmtH(ac.engineHours) : badge('missing', 'Not entered')}</dd></div><div><dt>Air time</dt><dd>${ac.airTime != null ? fmtH(ac.airTime) : '<span class="na muted">Not tracked</span>'}</dd></div></dl>
         <div class="ac-act"><button class="btn btn-sm btn-secondary" data-reg="${reg(() => openEditor('aircraft', ac.id))}">Update record</button></div>
-        <p class="ac-meta">Responsible: ${ac.responsible ? esc(ac.responsible) : badge('missing', 'Not set')}. Hours warning ${fmtH(warnFor(ac))} hrs${ac.hoursWarn != null ? ' (this aircraft)' : ' (default)'}. Updated ${ac.updatedAt ? fmtStamp(ac.updatedAt) + (ac.updatedBy ? ' by ' + esc(ac.updatedBy) : '') : 'never'}.</p>
+        <p class="ac-meta">Responsible: ${ac.responsible ? esc(ac.responsible) : badge('missing', 'Not set')}. Updated ${ac.updatedAt ? fmtStamp(ac.updatedAt) + (ac.updatedBy ? ' by ' + esc(ac.updatedBy) : '') : 'never'}.</p>
       </div>
       ${ac.notes ? `<div class="ac-notes"><strong>Maintenance notes:</strong> ${esc(ac.notes)}</div>` : ''}
       <div class="ac-body">
@@ -2651,7 +2658,7 @@ function updateTabs() {
   $$('.tabs a').forEach(a => { if (a.dataset.view === view) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
   // Same source as the overview cards, so the numbers always agree.
   const c = { overview: 0, aircraft: 0, fuel: 0, instructors: 0, tasks: 0 };
-  attentionItems().forEach(a => { if (a.sev === 'overdue') c.overview++; if (['overdue', 'alert', 'low'].includes(a.sev)) c[a.area]++; });
+  attentionItems().forEach(a => { if (a.sev === 'overdue') c.overview++; if (['overdue', 'due', 'alert', 'low'].includes(a.sev)) c[a.area]++; });
   $$('.tabs .count').forEach(el => { const k = el.dataset.count, v = c[k]; el.textContent = v ? String(v) : ''; el.setAttribute('aria-label', v ? (k === 'overview' ? `${v} overdue` : `${v} need action`) : ''); });
 }
 function route() {

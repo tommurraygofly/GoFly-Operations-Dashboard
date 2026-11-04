@@ -1,11 +1,15 @@
 // GoFly Ops Worker.
 // Serves the dashboard from ./public, plus two API routes:
-//   GET /api/wx?ids=YBSU   latest METAR and TAF from aviationweather.gov, cached for 2 minutes.
-//   POST /api/login        checks the team PIN for one of the named users.
-//   GET/POST /api/sync     shared records in the D1 database (binding DB), so everyone sees the same data.
-// Sign-in is a shared 4-digit PIN plus choosing your name (no accounts). /api/sync only accepts
-// requests with the right PIN and a known name, and records each change against that name.
-// The PIN is the Worker variable GOFLY_PIN (default 7788). Cloudflare Access can still sit in front.
+//   GET  /api/wx           latest YBSU METAR and TAF from aviationweather.gov, cached for 2 minutes.
+//   POST /api/login        team PIN + one of the named users -> a 12-hour session token.
+//   POST /api/logout       ends that session.
+//   GET/POST /api/sync     shared records in the D1 database (binding DB). Needs a session token.
+// The PIN is the only lock (no Cloudflare Access), so:
+//   - the PIN is never in this code: it's the Cloudflare secret GOFLY_PIN. If it isn't set, nobody
+//     can sign in;
+//   - wrong PINs are counted in D1: 8 from one address in 15 minutes, or 40 overall in an hour,
+//     locks sign-in for a while;
+//   - the PIN is only sent once; sync uses a random session token held in memory by the page.
 
 const WX_SOURCE = 'https://aviationweather.gov/api/data';
 const WX_TTL = 120; // seconds
@@ -13,8 +17,9 @@ const WX_TTL = 120; // seconds
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
-    if (url.pathname === '/api/wx') return weather(url, ctx);
+    if (url.pathname === '/api/wx') return weather(ctx);
     if (url.pathname === '/api/login') return login(request, env);
+    if (url.pathname === '/api/logout') return logout(request, env);
     if (url.pathname === '/api/sync') return sync(request, env, url);
     return env.ASSETS.fetch(request);
   }
@@ -36,29 +41,65 @@ async function ensureSchema(db) {
   if (schemaReady) return;
   await db.batch([
     db.prepare('CREATE TABLE IF NOT EXISTS records (coll TEXT NOT NULL, id TEXT NOT NULL, data TEXT, updated_at INTEGER NOT NULL, updated_by TEXT, deleted INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (coll, id))'),
-    db.prepare('CREATE INDEX IF NOT EXISTS records_updated ON records (updated_at)')
+    db.prepare('CREATE INDEX IF NOT EXISTS records_updated ON records (updated_at)'),
+    db.prepare('CREATE TABLE IF NOT EXISTS sessions (token TEXT PRIMARY KEY, name TEXT NOT NULL, expires INTEGER NOT NULL)'),
+    db.prepare('CREATE TABLE IF NOT EXISTS login_fails (ip TEXT NOT NULL, at INTEGER NOT NULL)'),
+    db.prepare('CREATE INDEX IF NOT EXISTS login_fails_at ON login_fails (at)')
   ]);
   schemaReady = true;
 }
 
-/* ---------- Sign-in: shared PIN + name ---------- */
+/* ---------- Sign-in: shared PIN + name -> session ---------- */
 const NAMES = ['Tom', 'Damien', 'Anne-Maree'];
-const pinOk = (env, pin) => typeof pin === 'string' && pin.length > 0 && pin === String(env.GOFLY_PIN || '7788');
+const SESSION_MS = 12 * 3600e3;
 const pause = ms => new Promise(r => setTimeout(r, ms));
+function sameText(a, b) {  // compare without leaking how many characters matched
+  if (typeof a !== 'string' || typeof b !== 'string' || a.length !== b.length) return false;
+  let d = 0; for (let i = 0; i < a.length; i++) d |= a.charCodeAt(i) ^ b.charCodeAt(i); return d === 0;
+}
 async function login(request, env) {
   if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
+  if (!env.DB) return json({ error: 'Shared database not connected' }, 503);
+  if (!env.GOFLY_PIN) return json({ error: 'The PIN hasn’t been set up in Cloudflare yet (secret GOFLY_PIN).', setup: true }, 503);
+  await ensureSchema(env.DB);
+  const ip = request.headers.get('CF-Connecting-IP') || 'unknown', now = Date.now();
+  const [mine, all] = await env.DB.batch([
+    env.DB.prepare('SELECT COUNT(*) AS n FROM login_fails WHERE ip = ?1 AND at > ?2').bind(ip, now - 15 * 60e3),
+    env.DB.prepare('SELECT COUNT(*) AS n FROM login_fails WHERE at > ?1').bind(now - 3600e3)
+  ]);
+  if (mine.results[0].n >= 8 || all.results[0].n >= 40) { await pause(800); return json({ error: 'Too many wrong PINs. Sign-in is paused for 15 minutes.', locked: true }, 429); }
   let b; try { b = await request.json(); } catch (e) { return json({ error: 'Bad JSON' }, 400); }
-  if (!b || !NAMES.includes(b.name) || !pinOk(env, String(b.pin || ''))) { await pause(800); return json({ error: 'Incorrect PIN' }, 401); }
-  return json({ ok: true, name: b.name });
+  if (!b || !NAMES.includes(b.name) || !sameText(String(b.pin || ''), String(env.GOFLY_PIN))) {
+    await env.DB.prepare('INSERT INTO login_fails (ip, at) VALUES (?1, ?2)').bind(ip, now).run();
+    await pause(800);
+    return json({ error: 'Incorrect PIN' }, 401);
+  }
+  const bytes = crypto.getRandomValues(new Uint8Array(32));
+  const token = [...bytes].map(x => x.toString(16).padStart(2, '0')).join('');
+  await env.DB.batch([
+    env.DB.prepare('INSERT INTO sessions (token, name, expires) VALUES (?1, ?2, ?3)').bind(token, b.name, now + SESSION_MS),
+    env.DB.prepare('DELETE FROM sessions WHERE expires < ?1').bind(now),
+    env.DB.prepare('DELETE FROM login_fails WHERE at < ?1').bind(now - 24 * 3600e3)
+  ]);
+  return json({ ok: true, name: b.name, token, expires: now + SESSION_MS });
+}
+const bearer = request => (request.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '').trim();
+async function logout(request, env) {
+  if (request.method !== 'POST' || !env.DB) return json({ ok: true });
+  const t = bearer(request);
+  if (t) { await ensureSchema(env.DB); await env.DB.prepare('DELETE FROM sessions WHERE token = ?1').bind(t).run(); }
+  return json({ ok: true });
 }
 
 async function sync(request, env, url) {
   if (!env.DB) return json({ error: 'Shared database not connected' }, 503);
-  const user = request.headers.get('X-GoFly-User');
-  if (!NAMES.includes(user) || !pinOk(env, request.headers.get('X-GoFly-Pin'))) { await pause(500); return json({ error: 'Sign in with the PIN' }, 401); }
+  await ensureSchema(env.DB);
+  const t = bearer(request);
+  const ses = t && /^[0-9a-f]{64}$/.test(t) ? await env.DB.prepare('SELECT name, expires FROM sessions WHERE token = ?1').bind(t).first() : null;
+  if (!ses || ses.expires < Date.now()) return json({ error: 'Signed out. Sign in again.', expired: true }, 401);
+  const user = ses.name;
   // If Access token checking is switched on (ACCESS_TEAM_DOMAIN + ACCESS_AUD), require it too.
   if (env.ACCESS_TEAM_DOMAIN && env.ACCESS_AUD && !(await identity(request, env))) return json({ error: 'Sign in through Cloudflare Access' }, 401);
-  await ensureSchema(env.DB);
 
   if (request.method === 'GET') {
     const since = Math.max(0, Number(url.searchParams.get('since')) || 0);
@@ -133,8 +174,8 @@ async function getJSON(path) {
   return Array.isArray(j) ? j : [];
 }
 
-async function weather(url, ctx) {
-  const id = (url.searchParams.get('ids') || 'YBSU').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4) || 'YBSU';
+async function weather(ctx) {
+  const id = 'YBSU';  // only YBSU, so the public route can't be used to fetch other stations
   const cache = caches.default;
   const key = new Request(`https://gofly-ops.cache/wx/${id}`);
   const hit = await cache.match(key);
