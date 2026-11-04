@@ -1,9 +1,11 @@
 // GoFly Ops Worker.
 // Serves the dashboard from ./public, plus two API routes:
 //   GET /api/wx?ids=YBSU   latest METAR and TAF from aviationweather.gov, cached for 2 minutes.
+//   POST /api/login        checks the team PIN for one of the named users.
 //   GET/POST /api/sync     shared records in the D1 database (binding DB), so everyone sees the same data.
-// The whole site sits behind Cloudflare Access. /api/sync only accepts requests that carry an
-// Access identity, and records each change against the signed-in email.
+// Sign-in is a shared 4-digit PIN plus choosing your name (no accounts). /api/sync only accepts
+// requests with the right PIN and a known name, and records each change against that name.
+// The PIN is the Worker variable GOFLY_PIN (default 7788). Cloudflare Access can still sit in front.
 
 const WX_SOURCE = 'https://aviationweather.gov/api/data';
 const WX_TTL = 120; // seconds
@@ -12,6 +14,7 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     if (url.pathname === '/api/wx') return weather(url, ctx);
+    if (url.pathname === '/api/login') return login(request, env);
     if (url.pathname === '/api/sync') return sync(request, env, url);
     return env.ASSETS.fetch(request);
   }
@@ -38,10 +41,23 @@ async function ensureSchema(db) {
   schemaReady = true;
 }
 
+/* ---------- Sign-in: shared PIN + name ---------- */
+const NAMES = ['Tom', 'Damien', 'Anne-Maree'];
+const pinOk = (env, pin) => typeof pin === 'string' && pin.length > 0 && pin === String(env.GOFLY_PIN || '7788');
+const pause = ms => new Promise(r => setTimeout(r, ms));
+async function login(request, env) {
+  if (request.method !== 'POST') return json({ error: 'Method not allowed' }, 405);
+  let b; try { b = await request.json(); } catch (e) { return json({ error: 'Bad JSON' }, 400); }
+  if (!b || !NAMES.includes(b.name) || !pinOk(env, String(b.pin || ''))) { await pause(800); return json({ error: 'Incorrect PIN' }, 401); }
+  return json({ ok: true, name: b.name });
+}
+
 async function sync(request, env, url) {
   if (!env.DB) return json({ error: 'Shared database not connected' }, 503);
-  const user = await identity(request, env);
-  if (!user) return json({ error: 'Sign in through Cloudflare Access' }, 401);
+  const user = request.headers.get('X-GoFly-User');
+  if (!NAMES.includes(user) || !pinOk(env, request.headers.get('X-GoFly-Pin'))) { await pause(500); return json({ error: 'Sign in with the PIN' }, 401); }
+  // If Access token checking is switched on (ACCESS_TEAM_DOMAIN + ACCESS_AUD), require it too.
+  if (env.ACCESS_TEAM_DOMAIN && env.ACCESS_AUD && !(await identity(request, env))) return json({ error: 'Sign in through Cloudflare Access' }, 401);
   await ensureSchema(env.DB);
 
   if (request.method === 'GET') {

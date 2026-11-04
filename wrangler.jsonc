@@ -3,6 +3,8 @@
   "name": "gofly-ops",
   "main": "src/worker.js",
   "compatibility_date": "2026-10-01",
+  // Keep variables set in the Cloudflare dashboard (e.g. GOFLY_PIN to change the sign-in PIN).
+  "keep_vars": true,
   "assets": {
     "directory": "./public",
     "binding": "ASSETS"

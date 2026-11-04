@@ -83,7 +83,7 @@ The script is split into numbered sections:
 3b. **Shared sync** (after the data model): every record syncs on its own through `/api/sync`
    (key `coll/id`, settings as `settings/main`; `userName` and `theme` stay per device).
    `persist()` calls `trackChanges()`, which queues differences from the last known server copy
-   (`gofly-ops:sync` in localStorage: base, pending, since). `pushNow()` sends, `pullNow()`
+   (`gofly-ops:sync` in localStorage: base, pending, since). Only runs once signed in. `pushNow()` sends, `pullNow()`
    fetches every 20 s and on focus/online. Unsent local edits aren't overwritten; last write wins
    per record. Remote changes update objects in place and re-render via `scheduleRender()`, which
    waits while a form is open or someone is typing. First connection on a device (`startSync`):
@@ -119,13 +119,20 @@ where archivable. Changes go through `commit()` (save and re-render). Use `withU
 complete, archive and delete. Escape all user text with `esc()`. Fuel order template defaults to
 3,500 L Premium Unleaded 98 from IOR. Export/import of JSON backups is in Data & settings.
 
-## Sharing and identity
+## Sign-in, sharing and identity
 
-Records are shared through D1 for everyone Cloudflare Access lets in. `/api/sync` requires the
-Access token (`Cf-Access-Jwt-Assertion`) and records the signed-in email as `updated_by`. For full
-token signature checks, set Worker variables `ACCESS_TEAM_DOMAIN` (e.g. `<team>.cloudflareaccess.com`)
-and `ACCESS_AUD` (the Access application's Audience tag); until then the Worker relies on Access
-being in front of every URL. Keep Access on for the workers.dev and preview URLs.
+- Sign-in is required every time the dashboard opens (nothing remembered). No accounts: choose a
+  name (Tom, Damien, Anne-Maree; `USERS` in the page and `NAMES` in the Worker, keep both in
+  step) and enter the team PIN (7788). `POST /api/login` checks it against the Worker variable
+  `GOFLY_PIN` (default 7788; `keep_vars` keeps a value set in the Cloudflare dashboard). If the
+  Worker can't be reached, the page checks a SHA-256 hash of 7788 (`PIN_SHA256`).
+- The signed-in name (`Who`) is the greeting name and is stamped on every change (`updatedBy`).
+  The header button shows who is signed in and switches person or locks (`lockApp`).
+- `/api/sync` requires headers `X-GoFly-User` (a known name) and `X-GoFly-Pin`, and stores the
+  name as `updated_by`. Nothing renders and nothing syncs until someone signs in.
+- A 4-digit PIN is light protection; keep Cloudflare Access in front of the site. Optional
+  stronger check: set `ACCESS_TEAM_DOMAIN` and `ACCESS_AUD` and the Worker also requires a valid
+  Access token.
 
 ## Look and feel
 

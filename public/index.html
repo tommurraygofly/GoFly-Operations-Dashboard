@@ -93,6 +93,39 @@ h1,h2,h3{font-family:var(--font-c);font-weight:700;letter-spacing:.01em}
 
 main{max-width:1320px;margin:0 auto;padding:var(--mainpad) var(--mainpad) 48px}
 
+/* ===== Sign-in ===== */
+.login{position:fixed;inset:0;z-index:60;display:none;overflow:auto;background:#000;color:#fff;padding:calc(env(safe-area-inset-top,0px) + 24px) 16px calc(env(safe-area-inset-bottom,0px) + 24px)}
+.login.show{display:grid;place-items:center}
+.login::before{content:"";position:fixed;right:-60px;top:0;bottom:0;width:min(50vw,520px);pointer-events:none;opacity:.6;
+  background:linear-gradient(100deg,transparent 0 30%,var(--orange) 30% 44%,transparent 44% 52%,rgba(255,255,255,.08) 52% 58%,transparent 58% 64%,rgba(241,90,38,.35) 64% 68%,transparent 68%);
+  -webkit-mask-image:linear-gradient(90deg,transparent,#000 50%);mask-image:linear-gradient(90deg,transparent,#000 50%)}
+.lg-box{position:relative;width:min(420px,100%);display:grid;gap:14px;justify-items:center;text-align:center}
+.lg-box img{height:44px;width:auto}
+.lg-box .eyebrow{margin:0}
+.lg-box h1{margin:4px 0 0;font:700 italic 1.9rem/1.05 var(--font-c);text-transform:uppercase}
+.lg-step{margin:6px 0 0;font:700 .72rem var(--font);letter-spacing:.12em;text-transform:uppercase;color:#9A9A9A}
+.lg-names{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;width:100%}
+.lg-names button{min-height:56px;border-radius:12px;border:1px solid #333;background:#141414;color:#fff;font:700 1rem var(--font);cursor:pointer;padding:8px}
+.lg-names button:hover{border-color:#666}
+.lg-names button[aria-pressed="true"]{background:var(--orange);border-color:var(--orange);color:#000}
+.lg-dots{display:flex;gap:14px;justify-content:center;height:22px;align-items:center}
+.lg-dots span{width:16px;height:16px;border-radius:50%;border:2px solid #777}
+.lg-dots span.on{background:var(--orange);border-color:var(--orange)}
+.lg-err{min-height:1.4em;margin:0;color:#FF8D8A;font-weight:600;font-size:.9rem}
+.lg-pad{display:grid;grid-template-columns:repeat(3,72px);gap:12px;justify-content:center}
+.lg-pad button{height:64px;border-radius:50%;border:1px solid #333;background:#141414;color:#fff;font:600 1.6rem var(--font);cursor:pointer;width:72px}
+.lg-pad button:hover{border-color:var(--orange)}
+.lg-pad button:active{background:#262626}
+.lg-pad button:disabled{opacity:.4;cursor:default}
+.lg-pad .lg-k{font-size:1.2rem}
+.lg-note{margin:4px 0 0;font-size:.78rem;color:#8F8F8F}
+.who{display:inline-flex;align-items:center;gap:7px;background:#141414;border:1px solid #333;border-radius:999px;padding:4px 12px 4px 4px;min-height:32px;color:#fff;font:600 .82rem var(--font);cursor:pointer;white-space:nowrap}
+.who:hover{border-color:var(--orange)}
+.who .av{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--orange);color:#000;font:700 .72rem var(--font)}
+.who .wsw{color:#9A9A9A;font-weight:500}
+@media (max-width:760px){.who{padding:3px}.who .nm,.who .wsw{display:none}}
+@media (max-width:380px){.lg-pad{grid-template-columns:repeat(3,64px)}.lg-pad button{width:64px;height:58px}}
+
 /* ===== Overview hero (full-bleed black band) ===== */
 .hero{position:relative;overflow:hidden;background:var(--head);color:#fff;margin:calc(-1 * var(--mainpad)) calc(50% - 50vw) 0;padding:26px calc(50vw - 50%) 78px}
 .hero::after{content:"";position:absolute;right:-40px;top:0;bottom:0;width:min(46vw,560px);pointer-events:none;opacity:.9;
@@ -644,9 +677,11 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
 </style>
 </head>
 <body>
+<div id="login" class="login" role="dialog" aria-modal="true" aria-labelledby="lgTitle"></div>
 <header class="top">
   <div class="top-row">
     <a class="brand" href="#overview" aria-label="GoFly Operations, overview"><img src="brand/gofly-logo-dark-bg.png" alt="GoFly" width="77" height="30"><span class="brand-sub">Operations</span></a>
+    <button type="button" class="who" id="who" data-act="lock" hidden></button>
     <button type="button" class="sync sync-local" id="sync" data-act="syncNow" aria-label="Sync status"><span class="sd"></span><span class="st">This device only</span></button>
     <div class="clock" id="clock"></div>
     <button class="btn-ghost" type="button" data-act="settings">Data<span class="hide-sm"> &amp; settings</span></button>
@@ -834,6 +869,95 @@ function withUndo(msg, mutate) {
   toast(msg, () => { S = normalise(JSON.parse(snap)); commit(); });
 }
 
+/* ---------- 3a. Sign-in ----------
+   Required every time the dashboard is opened (nothing is remembered between visits).
+   Choose your name, enter the team PIN. The Worker checks the PIN (POST /api/login) and every
+   sync request carries it, so the shared database only accepts signed-in changes. If the Worker
+   can't be reached (e.g. testing the file locally), the PIN is checked here against a hash.
+   The signed-in name is stamped on every change (updatedBy). */
+const USERS = ['Tom', 'Damien', 'Anne-Maree'];
+const PIN_SHA256 = '16740bf13991fe083fbe5820cc8da08a5d88e5a48f44a3cfcc283c27b2797ba7';  // 7788
+let Who = null;
+const LG = { name: null, pin: '', busy: false, fails: 0, until: 0 };
+async function sha256(t) {
+  if (!(window.crypto && crypto.subtle)) return '';
+  const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(t));
+  return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join('');
+}
+function showLogin(msg) {
+  const el = $('#login');
+  LG.pin = ''; LG.name = null;
+  el.innerHTML = `<div class="lg-box">
+    <img src="brand/gofly-logo-dark-bg.png" alt="GoFly" width="113" height="44">
+    <p class="eyebrow">Operations · Caloundra YCDR</p>
+    <h1 id="lgTitle">Who’s using the dashboard?</h1>
+    <p class="lg-step">1. Choose your name</p>
+    <div class="lg-names" role="group" aria-label="Your name">${USERS.map(u => `<button type="button" data-lgname="${esc(u)}" aria-pressed="false">${esc(u)}</button>`).join('')}</div>
+    <p class="lg-step">2. Enter the PIN</p>
+    <div class="lg-dots" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+    <p class="lg-err" id="lgErr" role="alert">${esc(msg || '')}</p>
+    <div class="lg-pad">${['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'del'].map(k => k === '' ? '<span></span>' : `<button type="button" data-lgkey="${k}" aria-label="${k === 'del' ? 'Delete' : k}"${k === 'del' ? ' class="lg-k"' : ''}>${k === 'del' ? '⌫' : k}</button>`).join('')}</div>
+    <p class="lg-note">Changes you make are recorded under your name.</p></div>`;
+  el.classList.add('show');
+  document.body.style.overflow = 'hidden';
+  el.querySelectorAll('[data-lgname]').forEach(b => { b.onclick = () => { LG.name = b.dataset.lgname; el.querySelectorAll('[data-lgname]').forEach(x => x.setAttribute('aria-pressed', String(x === b))); lgErr(''); if (LG.pin.length === 4) lgSubmit(); }; });
+  el.querySelectorAll('[data-lgkey]').forEach(b => { b.onclick = () => lgKey(b.dataset.lgkey); });
+  const first = el.querySelector('[data-lgname]'); if (first && !matchMedia('(pointer:coarse)').matches) first.focus();
+}
+function lgErr(t) { const e = $('#lgErr'); if (e) e.textContent = t; }
+function lgDots() { $$('#login .lg-dots span').forEach((d, i) => d.classList.toggle('on', i < LG.pin.length)); }
+function lgKey(k) {
+  if (LG.busy) return;
+  if (Date.now() < LG.until) { lgErr(`Too many tries. Wait ${Math.ceil((LG.until - Date.now()) / 1000)} seconds.`); return; }
+  if (k === 'del') LG.pin = LG.pin.slice(0, -1);
+  else if (/^\d$/.test(k) && LG.pin.length < 4) LG.pin += k;
+  lgDots();
+  if (LG.pin.length === 4) { if (!LG.name) lgErr('Choose your name first.'); else lgSubmit(); }
+}
+async function lgSubmit() {
+  LG.busy = true; lgErr('Checking…');
+  const pin = LG.pin, name = LG.name;
+  let ok = false;
+  try {
+    const r = await fetch('/api/login', { method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin, name }) });
+    if ((r.headers.get('content-type') || '').includes('json') && (r.ok || r.status === 401)) ok = r.ok;
+    else ok = (await sha256(pin)) === PIN_SHA256;          // Worker not available (local testing)
+  } catch (e) { ok = (await sha256(pin)) === PIN_SHA256; }
+  LG.busy = false;
+  if (!ok) {
+    LG.fails++; LG.pin = ''; lgDots();
+    if (LG.fails >= 5) { LG.until = Date.now() + 30000; LG.fails = 0; lgErr('Incorrect PIN. Too many tries, wait 30 seconds.'); }
+    else lgErr('Incorrect PIN. Try again.');
+    return;
+  }
+  LG.fails = 0;
+  signIn(name, pin);
+}
+function signIn(name, pin) {
+  Who = { name, pin };
+  S.settings.userName = name;
+  try { Store.adapter.save(S); } catch (e) {}
+  $('#login').classList.remove('show'); $('#login').innerHTML = '';
+  document.body.style.overflow = '';
+  const w = $('#who'); w.hidden = false;
+  w.innerHTML = `<span class="av">${esc(name.slice(0, 1))}</span><span class="nm">${esc(name)}</span><span class="wsw">· Switch</span>`;
+  w.title = `Signed in as ${name}. Select to switch person or lock.`; w.setAttribute('aria-label', w.title);
+  render(); window.scrollTo(0, 0);
+  startSync();
+}
+function lockApp() {
+  if (dlg.open) closeDlg();
+  Who = null; $('#who').hidden = true;
+  main.innerHTML = '';
+  setSync('local');
+  showLogin();
+}
+document.addEventListener('keydown', e => {
+  if (!$('#login').classList.contains('show') || e.ctrlKey || e.metaKey || e.altKey) return;
+  if (/^\d$/.test(e.key)) { e.preventDefault(); lgKey(e.key); }
+  else if (e.key === 'Backspace') { e.preventDefault(); lgKey('del'); }
+});
+
 /* ---------- 3b. Shared sync (Cloudflare D1 via /api/sync) ----------
    Every record is synced on its own (key "coll/id"; settings are "settings/main").
    Sync.meta keeps, in localStorage:
@@ -875,11 +999,11 @@ function trackChanges() {
   saveSyncMeta();
   if (Object.keys(M.pending).length) schedulePush();
 }
-function schedulePush(ms = 700) { clearTimeout(Sync.pushT); Sync.pushT = setTimeout(() => { if (Sync.busy) schedulePush(1500); else pushNow().then(() => pullNow()); }, ms); }
+function schedulePush(ms = 700) { clearTimeout(Sync.pushT); Sync.pushT = setTimeout(() => { if (!Who) return; if (Sync.busy) schedulePush(1500); else pushNow().then(() => pullNow()); }, ms); }
 async function syncApi(method, body, qs = '') {
   let r;
   try {
-    r = await fetch('/api/sync' + qs, { method, cache: 'no-store', credentials: 'same-origin', headers: body ? { 'Content-Type': 'application/json' } : {}, body: body ? JSON.stringify(body) : undefined });
+    r = await fetch('/api/sync' + qs, { method, cache: 'no-store', credentials: 'same-origin', headers: { ...(body ? { 'Content-Type': 'application/json' } : {}), ...(Who ? { 'X-GoFly-User': Who.name, 'X-GoFly-Pin': Who.pin } : {}) }, body: body ? JSON.stringify(body) : undefined });
   } catch (e) { throw Object.assign(new Error('offline'), { offline: true }); }
   if (r.status === 401 || r.status === 403) throw Object.assign(new Error('auth'), { auth: true });
   if (r.status === 404 || r.status === 405 || r.status === 503) throw Object.assign(new Error('missing'), { missing: true });
@@ -966,7 +1090,7 @@ async function pullNow() {
     if (Object.keys(M.pending).length) schedulePush(200);
   } catch (e) { Sync.busy = false; setSync(e.auth || e.missing ? 'local' : 'offline'); }
 }
-async function syncTick() { if (syncMeta().synced) { await pushNow(); await pullNow(); } else startSync(); }
+async function syncTick() { if (!Who) return; if (syncMeta().synced) { await pushNow(); await pullNow(); } else startSync(); }
 
 // First connection on this device.
 //  - Shared database empty: this device's records start it off.
@@ -974,12 +1098,12 @@ async function syncTick() { if (syncMeta().synced) { await pushNow(); await pull
 //    records the database doesn't have yet. A copy of the device's old data is kept in
 //    localStorage under gofly-ops:v1:pre-sync, just in case.
 async function startSync() {
+  if (!Who) return;
   const M = syncMeta();
   let r;
   try { r = await syncApi('GET', null, '?since=0'); }
   catch (e) { setSync(e.auth || e.missing ? 'local' : 'offline'); return; }
   Sync.user = r.user || '';
-  if (!S.settings.userName && Sync.user) S.settings.userName = Sync.user.split('@')[0];
   if (M.synced) {
     // Already linked: catch up and send anything waiting.
     applyRemote(r.records); M.since = r.now; saveSyncMeta();
@@ -1009,7 +1133,6 @@ async function startSync() {
   const known = new Set(r.records.map(x => x.coll + '/' + x.id));
   S = normalise(fresh);
   DEVICE_SETTINGS.forEach(k => { S.settings[k] = local.settings[k]; });
-  if (!S.settings.userName && Sync.user) S.settings.userName = Sync.user.split('@')[0];
   LISTS.forEach(c => (local[c] || []).forEach(rec => { if (rec && !rec.example && !known.has(c + '/' + rec.id)) S[c].push(rec); }));
   M.since = r.now; M.synced = true; saveSyncMeta();
   persist();                              // queues anything new (carried-over records, migrations)
@@ -1400,7 +1523,6 @@ const SCHEMAS = {
   },
   settings: { title: 'Settings',
     fields: [
-      { k: 'userName', l: 'Your name', t: 'text', hint: 'Recorded against the changes you make.' },
       { k: 'theme', l: 'Appearance', t: 'select', o: THEMES },
       { k: 'dueSoonDays', l: 'Due soon window (calendar dates)', t: 'number', suffix: 'days', req: true, hint: 'Also the warning window for S&P checks.' },
       { k: 'spDays', l: 'S&P check interval (all instructors)', t: 'number', suffix: 'days', req: true },
@@ -1767,13 +1889,14 @@ function openSettings() {
   const s = S.settings;
   const pend = Object.keys(syncMeta().pending).length;
   const status = Sync.state === 'ok' || (Sync.state === 'syncing' && syncMeta().synced)
-    ? `Shared: everyone who signs in sees the same records. Signed in as ${Sync.user || 'unknown'}. Last synced ${fmtStamp(Sync.lastOk)}. Your name and appearance are kept per device.`
+    ? `Shared: everyone who signs in sees the same records. Last synced ${fmtStamp(Sync.lastOk)}. Your name and appearance are kept per device.`
     : Sync.state === 'offline'
       ? `Offline: changes are saved on this device${pend ? ` (${plural(pend, 'change')} waiting)` : ''} and will sync when the shared database is reachable.`
       : Store.ok ? `Saved in this browser only (not connected to the shared database)${S.meta.savedAt ? `, last at ${fmtStamp(S.meta.savedAt)}` : ''}. Export a backup regularly.` : 'This browser isn’t saving changes. Export a backup before you close the page.';
   const body = `<div class="form">${SCHEMAS.settings.fields.map(f => fieldHTML(f, s)).join('')}</div><p class="form-err" id="formErr" hidden></p>
     <h3 class="dlg-sec">Your data</h3>
     <p class="hint">${esc(status)}</p>
+    <p class="hint" style="margin-top:6px">Signed in as <strong>${esc(Who ? Who.name : '')}</strong>. Changes are recorded under this name. <button type="button" class="btn-text" id="xLock" style="padding:0 4px;min-height:0">Switch person</button></p>
     <div class="btn-row">
       ${syncMeta().synced ? '<button type="button" class="btn btn-secondary" id="xSync">Sync now</button>' : ''}
       <button type="button" class="btn btn-secondary" id="xExport">Export backup</button>
@@ -1788,6 +1911,7 @@ function openSettings() {
     applyTheme(); closeDlg(); commit(); toast('Settings saved');
   } }]);
   $('#xExport').onclick = exportData;
+  $('#xLock').onclick = () => lockApp();
   if ($('#xSync')) $('#xSync').onclick = () => { closeDlg(); syncTick().then(() => toast(Sync.state === 'ok' ? 'Synced' : 'Couldn’t reach the shared database')); };
   $('#xImport').onclick = () => $('#importFile').click();
   if ($('#xClear')) $('#xClear').onclick = async () => {
@@ -2306,7 +2430,7 @@ function renderOverview() {
   const upHTML = up.length ? Object.keys(days).map(dt => `<div class="day"><div class="day-h">${daysUntil(dt) === 0 ? 'Today, ' : daysUntil(dt) === 1 ? 'Tomorrow, ' : ''}${esc(fmtDay(dt))}</div><ul class="list">${days[dt].map(e => `<li><button class="item" data-reg="${reg(e.fn)}"><span class="tx"><span class="t">${esc(e.title)}</span><span class="d">${esc(e.detail)}</span></span></button></li>`).join('')}</ul></div>`).join('') : `<p class="empty">Nothing dated in the next ${upWindow} days.</p>`;
 
   const hr = Number(new Intl.DateTimeFormat('en-AU', { timeZone: TZ, hour: 'numeric', hourCycle: 'h23' }).format(new Date()));
-  const first = String(S.settings.userName || '').trim().split(/\s+/)[0];
+  const first = Who ? Who.name : '';
   const lvl = n.overdue || n.alert ? 'crit' : n.low || n.soon ? 'warn' : 'ok';
   const now = new Date();
   return `<section class="hero"><div class="hero-in"><div class="h-greet">
@@ -2502,7 +2626,7 @@ function renderTaskList() {
   if (!list.length) { el.innerHTML = `<li class="task"><p class="empty" style="margin:0">${q || taskFilter.cat !== 'all' ? 'No tasks match these filters.' : taskFilter.status === 'open' ? 'No open tasks. Add one when something needs doing.' : 'Nothing here.'}</p></li>`; return; }
   el.innerHTML = list.map(t => {
     const done = t.status === 'done';
-    const meta = [t.category, t.owner ? `Owner: ${t.owner}` : 'No owner', t.status === 'waiting' ? `Waiting on ${t.waitingOn || 'someone else'}` : (t.status === 'progress' ? 'In progress' : '')].filter(Boolean).join('. ');
+    const meta = [t.category, t.owner ? `Owner: ${t.owner}` : 'No owner', t.updatedBy ? `Last change by ${t.updatedBy}` : '', t.status === 'waiting' ? `Waiting on ${t.waitingOn || 'someone else'}` : (t.status === 'progress' ? 'In progress' : '')].filter(Boolean).join('. ');
     return `<li class="task${done ? ' is-done' : ''}">
       <button type="button" class="chk" aria-pressed="${done}" aria-label="${done ? 'Mark not complete' : 'Mark complete'}: ${esc(t.title)}" data-reg="${reg(() => withUndo(done ? 'Task reopened' : 'Task complete', () => { t.status = done ? 'todo' : 'done'; if (!done) t.completedAt = nowStamp(); else delete t.completedAt; delete t.example; stamp(t); }))}"></button>
       <button type="button" class="task-main" data-reg="${reg(() => openEditor('task', t.id))}"><span class="t">${esc(t.title)}${exChip(t)}</span><span class="d">${esc(meta)}</span>${t.notes ? `<span class="n">${esc(trunc(t.notes, 160))}</span>` : ''}</button>
@@ -2515,6 +2639,7 @@ function renderTaskList() {
 const main = $('#main');
 function render() {
   R = [];
+  if (!Who) { main.innerHTML = ''; return; }
   const fn = { overview: renderOverview, aircraft: renderAircraft, fuel: renderFuel, instructors: renderInstructors, tasks: renderTasks }[view];
   main.innerHTML = fn();
   if (view === 'tasks') renderTaskList();
@@ -2551,6 +2676,7 @@ const ACT = {
   clearEx: async () => { if (await askConfirm(`Remove all records marked Example?${syncMeta().synced ? ' This removes them for everyone.' : ''} Your own records stay.`, 'Clear example data')) withUndo('Example data cleared', clearExamples); },
   toggleAtt: () => { showAllAtt = !showAllAtt; render(); },
   addMenu: openAddMenu,
+  lock: () => lockApp(),
   syncNow: () => { syncTick().then(() => toast(Sync.state === 'ok' ? 'Synced with everyone' : Sync.state === 'local' ? 'Not connected to the shared database. Saved on this device.' : 'Offline. Changes are saved here and will sync later.')); },
   refill: () => refill(),
   wxRetry: () => { WX.status = WX.status === 'loading' ? 'loading' : 'idle'; loadWx(); },
@@ -2609,7 +2735,7 @@ function tick() {
   tick(); setInterval(tick, 1000);
   route();
   loadWx(); setInterval(loadWx, 5 * 60 * 1000);
-  startSync();
+  showLogin();
   setInterval(() => { if (!document.hidden) syncTick(); }, 20000);
   window.addEventListener('focus', () => syncTick());
   window.addEventListener('online', () => syncTick());
