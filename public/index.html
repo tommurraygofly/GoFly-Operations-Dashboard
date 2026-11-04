@@ -334,34 +334,37 @@ main{max-width:1320px;margin:0 auto;padding:var(--mainpad) var(--mainpad) 48px}
 @media (max-width:460px){.gauge{grid-template-columns:44px 58px;gap:6px}.g-pct{width:44px;font-size:.72rem}.tankrow{gap:10px}.fstats{grid-template-columns:1fr 1fr}.fstats div:last-child{grid-column:1/-1}}
 
 /* ===== Weather: YBSU METAR + TAF ===== */
-.wx{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:14px}
-@media (max-width:980px){.wx{grid-template-columns:1fr}}
-.wx-col{border:1px solid var(--line);border-radius:12px;padding:14px;min-width:0}
-.wx-h{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin-bottom:10px}
-.wx-tag{background:var(--chip);color:#fff;font:700 .72rem/1 var(--font);letter-spacing:.08em;padding:6px 9px;border-radius:6px}
-.wx-when{font-size:.84rem;color:var(--muted)}
+.wx{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr) minmax(0,1.3fr)}
+.wx-col{min-width:0;padding:0 18px;border-left:1px solid var(--line)}
+.wx-col:first-child{padding-left:0;border-left:0}
+.wx-col:last-child{padding-right:0}
+@media (max-width:1200px){.wx{grid-template-columns:1fr 1fr}.wx-taf{grid-column:1/-1;border-left:0;padding:14px 0 0;margin-top:14px;border-top:1px solid var(--line)}.wx-metar{padding-right:0}}
+@media (max-width:700px){.wx{grid-template-columns:1fr}.wx-col,.wx-metar{border-left:0;padding:0}.wx-col+.wx-col{border-top:1px solid var(--line);margin-top:14px;padding-top:14px}}
+.wx-h{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;margin-bottom:8px}
+.wx-tag{background:var(--chip);color:#fff;font:700 .68rem/1 var(--font);letter-spacing:.08em;padding:5px 8px;border-radius:5px}
+.wx-when{font-size:.8rem;color:var(--muted)}
 .wx-when.old{color:var(--soon-ink);font-weight:600}
-.wx-facts{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:8px;margin:0 0 10px}
-.wx-facts div{background:var(--surface-2);border-radius:9px;padding:8px 10px;min-width:0}
-.wx-facts dt{font-size:.66rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
-.wx-facts dd{margin:2px 0 0;font-weight:600;font-size:.95rem;overflow-wrap:anywhere}
-.wx-hz{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
-.wx-raw{margin:0;font:500 .84rem/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:#0E0E0E;color:#EDEDED;padding:10px 12px;border-radius:9px;overflow-wrap:anywhere}
-.tl{display:grid;grid-template-columns:170px minmax(0,1fr);gap:2px 12px;padding:8px 2px;border-top:1px solid var(--line)}
+.wx-hz{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 8px}
+.wx-list{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 14px;margin:0 0 10px;font-size:.88rem}
+.wx-list dt{color:var(--muted);font-size:.8rem}
+.wx-list dd{margin:0;font-weight:600;overflow-wrap:anywhere}
+.wx-raw{margin:0;font:500 .76rem/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:#0E0E0E;color:#EDEDED;padding:7px 10px;border-radius:8px;overflow-wrap:anywhere}
+.tl{display:grid;grid-template-columns:132px minmax(0,1fr);gap:1px 10px;padding:5px 2px;border-top:1px solid var(--line)}
 .tl:first-child{border-top:0;padding-top:0}
-.tl-l{font-size:.8rem;font-weight:700}
-.tl-t{font:500 .84rem/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;overflow-wrap:anywhere}
-.tl.tempo{background:var(--soon-bg);border-radius:8px;border-top-color:transparent;padding:8px 10px;margin:4px 0}
+.tl-l{font-size:.78rem;font-weight:700}
+.tl-t{font:500 .78rem/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;overflow-wrap:anywhere}
+.tl.tempo{background:var(--soon-bg);border-radius:7px;border-top-color:transparent;padding:5px 8px;margin:3px 0}
 .tl.tempo .tl-l{color:var(--soon-ink)}
 .tl.rmk .tl-l,.tl.rmk .tl-t{color:var(--muted)}
 @media (max-width:560px){.tl{grid-template-columns:1fr}}
-.wx-foot{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 12px;margin-top:12px;font-size:.8rem;color:var(--muted)}
+.wx-foot{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:4px 12px;margin-top:12px;padding-top:8px;border-top:1px solid var(--line);font-size:.74rem;color:var(--muted)}
+.wx-foot .btn-text{font-size:.8rem;padding:2px 4px}
 .wx-empty{display:flex;flex-wrap:wrap;align-items:center;gap:12px;min-height:80px;color:var(--muted)}
 .wx-empty p{margin:0}
 
 /* ===== Wind on YCDR runways ===== */
-.wnd{display:grid;grid-template-columns:150px minmax(0,1fr);gap:12px 16px;align-items:center;margin:0 0 12px;padding:10px 12px;border:1px solid var(--line);border-radius:12px}
-.wnd svg{display:block;width:150px;height:150px}
+.wnd{display:grid;grid-template-columns:118px minmax(0,1fr);gap:12px;align-items:center}
+.wnd svg{display:block;width:118px;height:118px}
 .wnd-ring{fill:none;stroke:var(--line-strong);stroke-width:1}
 .wnd-tick{stroke:var(--muted);stroke-width:1.5}
 .wnd-n{fill:var(--muted);font:700 10px var(--font)}
@@ -374,15 +377,14 @@ main{max-width:1320px;margin:0 auto;padding:var(--mainpad) var(--mainpad) 48px}
 .wnd-arrow{stroke:var(--orange);stroke-width:3.5;stroke-linecap:round;fill:none}
 .wnd-head{fill:var(--orange)}
 .wnd-h{font-size:.66rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
-.wnd-w{font:700 1.15rem/1.2 var(--font);margin:2px 0 8px}
+.wnd-w{font:700 1.05rem/1.2 var(--font);margin:0 0 6px}
 .wnd-w small{font-size:.8rem;font-weight:500;color:var(--muted)}
-.wnd-r{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 8px;padding:6px 8px;border-radius:8px;font-size:.86rem}
-.wnd-r+.wnd-r{margin-top:4px}
-.wnd-r b{font:700 italic 1.05rem var(--font-c);min-width:58px}
+.wnd-r{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 8px;padding:4px 8px;border-radius:7px;font-size:.82rem;line-height:1.4}
+.wnd-r+.wnd-r{margin-top:2px}
+.wnd-r b{font:700 italic 1rem var(--font-c);min-width:48px}
 .wnd-r.fav{background:var(--soon-bg)}
 .wnd-r.fav b{color:var(--orange-ink)}
-.wnd-note{margin:8px 0 0;font-size:.74rem;color:var(--muted)}
-@media (max-width:420px){.wnd{grid-template-columns:1fr;justify-items:center}.wnd>div{width:100%}}
+.wnd-note{margin:8px 0 0;font-size:.72rem;color:var(--muted)}
 :root{--rwy:#3A3A3A}
 :root[data-theme="dark"]{--rwy:#7A7A7A}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--rwy:#7A7A7A}}
@@ -687,6 +689,7 @@ function normalise(d) {
   LISTS.forEach(k => { if (!Array.isArray(o[k])) o[k] = []; });
   // Tom's IOR tank: max safe fill 5,000 L (replaces the old optional/example capacity).
   if (o.settings.tankCapacity == null || o.settings.exampleCapacity) { o.settings.tankCapacity = 5000; delete o.settings.exampleCapacity; }
+  o.fuelReadings.forEach(r => { if (r.example && r.litres > o.settings.tankCapacity) r.litres = 4800; });
   const ac = Array.isArray(d.aircraft) ? d.aircraft : [];
   o.aircraft = AIRCRAFT_IDS.map(id => ({ ...blankAircraft(id), ...(ac.find(a => a.ident === id) || {}) }))
     .concat(ac.filter(a => a && !AIRCRAFT_IDS.includes(a.ident)));
@@ -1053,6 +1056,7 @@ const SCHEMAS = {
     ]
   },
   reading: { title: 'Fuel reading', coll: 'fuelReadings', archivable: false,
+    validate: r => { const cap = S.settings.tankCapacity; return cap && r.litres > cap ? `The IOR tank holds a maximum of ${fmtL(cap)}. Check the reading.` : ''; },
     defaults: () => ({ date: todayISO(), by: S.settings.userName }),
     fields: [
       { k: 'date', l: 'Date', t: 'date', req: true },
@@ -1252,6 +1256,8 @@ function openEditor(kind, id, defaults) {
   btns.push({ label: existing ? 'Save changes' : `Add ${name}`, cls: 'btn btn-primary', on: () => {
     const { vals, err } = collect(sc.fields);
     if (err) { showErr(err); return; }
+    const verr = sc.validate ? sc.validate(vals) : '';
+    if (verr) { showErr(verr); return; }
     Object.assign(r, vals);
     delete r.example;
     if (sc.beforeSave) sc.beforeSave(r, existing);
@@ -1548,8 +1554,8 @@ function drawFuelChart(el) {
   const thr = S.settings.fuelThreshold, cap = S.settings.tankCapacity;
   const ml = 42, mr = 12, mt = 22, mb = 26, pw = W - ml - mr, ph = H - mt - mb;
   // Same 0 to max-safe-fill scale as the tank gauge, so their lines line up.
-  const top = Math.max(...pts.map(p => p.litres), thr || 0, cap || 0);
-  const sc = cap && top <= cap ? niceScale(0, cap, 5) : niceScale(0, top * 1.04, 4);
+  const sc = cap ? niceScale(0, cap, 5) : niceScale(0, Math.max(...pts.map(p => p.litres), thr || 0) * 1.04, 4);
+  const lim = v => cap ? Math.min(v, cap) : v;
   const t0 = Date.parse(pts[0].date), t1 = Date.parse(pts[n - 1].date), same = t1 === t0;
   const xs = pts.map((p, i) => ml + (same ? i / (n - 1) : (Date.parse(p.date) - t0) / (t1 - t0)) * pw);
   const Y = v => mt + ph - (v - sc.lo) / (sc.hi - sc.lo) * ph;
@@ -1563,19 +1569,19 @@ function drawFuelChart(el) {
     if (!first && !last && (x - lastX < 64 || xs[n - 1] - x < 64)) return;
     lbl.push(`<text class="fc-ax" x="${x}" y="${H - 7}" text-anchor="${first ? 'start' : last ? 'end' : 'middle'}">${fmtDate(p.date).slice(0, 5)}</text>`); lastX = x;
   });
-  const line = pts.map((p, i) => `${i ? 'L' : 'M'}${xs[i].toFixed(1)},${Y(p.litres).toFixed(1)}`).join('');
+  const line = pts.map((p, i) => `${i ? 'L' : 'M'}${xs[i].toFixed(1)},${Y(lim(p.litres)).toFixed(1)}`).join('');
   const area = `${line}L${xs[n - 1].toFixed(1)},${Y(sc.lo)}L${xs[0].toFixed(1)},${Y(sc.lo)}Z`;
   const thrSvg = thr != null ? `<line class="fc-thr" x1="${ml}" x2="${W - mr}" y1="${Y(thr)}" y2="${Y(thr)}"/><text class="fc-thr-l" x="${ml + 4}" y="${Y(thr) - 5}">Reorder ${esc(fmtL(thr))}</text>` : '';
   const maxSvg = cap ? `<line class="fc-max" x1="${ml}" x2="${W - mr}" y1="${Y(cap)}" y2="${Y(cap)}"/><text class="fc-max-l" x="${ml + 4}" y="${Y(cap) - 5}">Max safe fill ${esc(fmtL(cap))}</text>` : '';
-  const dots = pts.map((p, i) => `<circle class="fc-pt${(thr != null && p.litres < thr) || (cap && p.litres > cap) ? ' low' : ''}" cx="${xs[i]}" cy="${Y(p.litres)}" r="4"/>`).join('');
+  const dots = pts.map((p, i) => `<circle class="fc-pt${(thr != null && p.litres < thr) || (cap && p.litres > cap) ? ' low' : ''}" cx="${xs[i]}" cy="${Y(lim(p.litres))}" r="4"/>`).join('');
   const lp = pts[n - 1];
   // Put the latest value under its point when it would clash with the max-fill label or the top edge.
-  const ly = Y(lp.litres), below = ly < mt + 16 || (cap && Math.abs(ly - Y(cap)) < 16);
+  const ly = Y(lim(lp.litres)), below = ly < mt + 16 || (cap && Math.abs(ly - Y(cap)) < 16);
   const endLbl = `<text class="fc-ax" style="fill:var(--ink);font-weight:600" x="${xs[n - 1] - 8}" y="${below ? ly + 18 : ly - 10}" text-anchor="end">${esc(fmtL(lp.litres))}</text>`;
   const desc = `IOR tank readings, ${n} from ${fmtDate(pts[0].date)} to ${fmtDate(lp.date)}. Use the left and right arrow keys to step through readings.`;
   el.innerHTML = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" tabindex="0" aria-label="${esc(desc)}">
     <text class="fc-ax" x="0" y="11">L</text>${grid}${maxSvg}${thrSvg}<path class="fc-area" d="${area}"/><path class="fc-line" d="${line}"/>
-    <line class="fc-cross" x1="${xs[si]}" x2="${xs[si]}" y1="${mt}" y2="${mt + ph}"/>${dots}<circle class="fc-sel" cx="${xs[si]}" cy="${Y(sel.litres)}" r="6"/>${endLbl}${lbl.join('')}</svg>`;
+    <line class="fc-cross" x1="${xs[si]}" x2="${xs[si]}" y1="${mt}" y2="${mt + ph}"/>${dots}<circle class="fc-sel" cx="${xs[si]}" cy="${Y(lim(sel.litres))}" r="6"/>${endLbl}${lbl.join('')}</svg>`;
   el.dataset.xs = JSON.stringify(xs.map(x => Math.round(x)));
   const rd = el.parentElement && el.parentElement.querySelector('.fc-read');
   if (rd && rd.classList.contains('fc-read')) {
@@ -1608,7 +1614,7 @@ let resizeT;
 window.addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(() => $$('[data-chart="fuel"]').forEach(drawFuelChart), 120); });
 
 function tankGauge(fr, thr, cap, H) {
-  const lv = fr ? fr.litres : 0, max = Math.max(cap || 0, lv, 1);
+  const lv = fr ? fr.litres : 0, max = cap || Math.max(lv, 1);
   const pct = v => Math.max(0, Math.min(100, v / max * 100));
   const st = !fr ? '' : cap && lv > cap ? 'over' : thr != null && lv < thr ? 'low' : '';
   const label = fr ? `${Math.round(lv / (cap || max) * 100)}%` : '—';
@@ -1646,7 +1652,7 @@ function fuelSummary(page) {
     <div class="tankrow">${tankGauge(fr, thr, cap, H)}<div class="tankchart">${chart}</div></div>
     <div class="fstats">
       <div><span class="k">Room to max</span><b>${fr && cap ? fmtL(Math.max(0, cap - fr.litres)) : '—'}</b></div>
-      <div class="${afterOver ? 'warn' : ''}"><span class="k">After +${Math.round(add).toLocaleString('en-AU')} L refill</span><b>${after != null ? fmtL(after) : '—'}</b></div>
+      <div class="${afterOver ? 'warn' : ''}"><span class="k">After +${Math.round(add).toLocaleString('en-AU')} L refill</span><b>${after == null ? '—' : afterOver ? 'Won’t fit' : fmtL(after)}</b></div>
       <div class="${low ? 'warn' : ''}"><span class="k">Reorder at</span><b>${fmtL(thr)}</b></div>
     </div>
     <div class="btn-row"><button class="btn btn-primary" data-act="refill">Refill +${Math.round(add).toLocaleString('en-AU')} L</button><button class="btn btn-secondary" data-act="add" data-kind="reading">Log reading</button>${o ? `<button class="btn btn-secondary" data-reg="${reg(() => openEditor('order', o.id))}">Order details</button>` : `<button class="btn btn-secondary" data-act="orderTemplate">Order ${Math.round(add).toLocaleString('en-AU')} L</button>`}</div>
@@ -1659,8 +1665,12 @@ async function refill() {
   const fr = latestReading(), add = Number(S.settings.orderTemplate.litres) || 3500, cap = S.settings.tankCapacity, o = nextOrder();
   if (!fr) { openEditor('reading', null, { notes: `Refill +${add} L` }); toast('No earlier reading. Enter the tank level after the refill.'); return; }
   const after = fr.litres + add;
+  if (cap && after > cap) {
+    if (await askConfirm(`A ${fmtL(add)} refill won’t fit. The tank has ${fmtL(fr.litres)} and holds a maximum of ${fmtL(cap)}, so there’s room for ${fmtL(Math.max(0, cap - fr.litres))}. Log the actual level instead?`, 'Log actual level'))
+      openEditor('reading', null, { notes: 'Refill' });
+    return;
+  }
   const msg = `Log a ${fmtL(add)} refill now? The IOR tank goes from ${fmtL(fr.litres)} to ${fmtL(after)}.`
-    + (cap && after > cap ? ` Warning: that is above the ${fmtL(cap)} max safe fill. Check the level before confirming.` : '')
     + (o ? ` The ${fmtL(o.litres)} order${o.supplier ? ' from ' + o.supplier : ''} will be marked delivered.` : '');
   if (!(await askConfirm(msg, `Refill +${Math.round(add).toLocaleString('en-AU')} L`))) return;
   withUndo('Refill logged', () => {
@@ -1675,6 +1685,7 @@ const WX_ID = 'YBSU';
 const WX = { status: 'idle', data: null, at: 0 };
 const hm24 = (d, tz) => new Intl.DateTimeFormat('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(d);
 const lday = d => new Intl.DateTimeFormat('en-AU', { timeZone: TZ, weekday: 'short', day: '2-digit', month: '2-digit' }).format(d);
+const lwk = d => new Intl.DateTimeFormat('en-AU', { timeZone: TZ, weekday: 'short' }).format(d);
 const agoTxt = d => { const m = Math.round((Date.now() - d) / 60000); return m < 1 ? 'just now' : m < 60 ? `${m} min ago` : `${Math.floor(m / 60)} h ${m % 60} min ago`; };
 const toDate = v => v == null || v === '' ? null : typeof v === 'number' ? new Date(v < 1e12 ? v * 1000 : v) : isNaN(Date.parse(v)) ? null : new Date(v);
 function ddhh(dd, hh, mm, ref) {
@@ -1708,11 +1719,11 @@ function decodeMetar(raw) {
 }
 function tafLines(raw, ref) {
   const [main, rmk] = raw.replace(/^TAF\s+(AMD\s+|COR\s+)?/, '').trim().split(/\s+RMK\s+/);
-  const span = p => { const g = p.match(/\b(\d{2})(\d{2})\/(\d{2})(\d{2})\b/); if (!g) return ''; const a = ddhh(g[1], g[2], 0, ref), b = ddhh(g[3], g[4], 0, ref); return `${lday(a)} ${hm24(a, TZ)} to ${hm24(b, TZ)}`; };
+  const span = p => { const g = p.match(/\b(\d{2})(\d{2})\/(\d{2})(\d{2})\b/); if (!g) return ''; const a = ddhh(g[1], g[2], 0, ref), b = ddhh(g[3], g[4], 0, ref); return `${lwk(a)} ${hm24(a, TZ)}–${hm24(b, TZ)}`; };
   const out = main.split(/\s+(?=(?:FM\d{6}|BECMG|TEMPO|INTER|PROB\d{2})\b)/).map((p, i) => {
     let m;
     if (i === 0) return { label: 'Main forecast', cls: 'base', text: p };
-    if ((m = p.match(/^FM(\d{2})(\d{2})(\d{2})/))) { const d = ddhh(m[1], m[2], m[3], ref); return { label: `From ${lday(d)} ${hm24(d, TZ)}`, cls: 'fm', text: p }; }
+    if ((m = p.match(/^FM(\d{2})(\d{2})(\d{2})/))) { const d = ddhh(m[1], m[2], m[3], ref); return { label: `From ${lwk(d)} ${hm24(d, TZ)}`, cls: 'fm', text: p }; }
     if (/^BECMG/.test(p)) return { label: `Becoming ${span(p)}`, cls: 'fm', text: p };
     if (/^TEMPO/.test(p)) return { label: `Temporarily ${span(p)}`, cls: 'tempo', text: p };
     if (/^INTER/.test(p)) return { label: `Intermittently ${span(p)}`, cls: 'tempo', text: p };
@@ -1792,20 +1803,18 @@ function windDiagram(raw) {
   }
   const kt = v => Math.round(Math.abs(v));
   const row = c => {
-    const x = kt(c.cross), side = c.cross > 0.5 ? 'from the right' : c.cross < -0.5 ? 'from the left' : '';
+    const x = kt(c.cross), side = c.cross > 0.5 ? 'from right' : c.cross < -0.5 ? 'from left' : '';
     const hw = kt(c.head) === 0 ? 'no headwind' : c.head > 0 ? `${kt(c.head)} kt head` : `${kt(c.head)} kt tail`;
     const gust = c.gh != null ? ` <span class="muted">(gusts ${kt(c.gh)} ${c.gh >= 0 ? 'head' : 'tail'}, ${kt(c.gx)} cross)</span>` : '';
-    return `<div class="wnd-r${c.n === fav ? ' fav' : ''}"><b>RWY ${c.n}</b><span>${hw}, ${x ? `${x} kt cross ${side}` : 'no crosswind'}${gust}</span></div>`;
+    return `<div class="wnd-r${c.n === fav ? ' fav' : ''}"><b>RWY ${c.n}</b><span>${hw} · ${x ? `${x} kt cross ${side}` : 'no crosswind'}${gust}</span></div>`;
   };
   const windTxt = calm ? 'Calm' : vrb ? `Variable ${wd.spd} kt` : `${String(wd.dir).padStart(3, '0')}° ${wd.spd} kt${wd.gust ? ` gusting ${wd.gust}` : ''}`;
   const aria = `Wind ${windTxt}${fav ? `, favours runway ${fav}` : ''}`;
-  return `<div class="wnd">
-    <svg viewBox="0 0 150 150" role="img" aria-label="${esc(aria)}">${ring}${g}${arrow}</svg>
-    <div><div class="wnd-h">YBSU wind on YCDR runways</div>
-      <div class="wnd-w">${esc(windTxt)} <small>${calm || vrb ? '' : 'true'}${wd.vary ? `, varying ${String(wd.vary[0]).padStart(3, '0')}–${String(wd.vary[1]).padStart(3, '0')}°` : ''}</small></div>
-      ${calm ? '<div class="wnd-r"><span>Calm: no headwind or crosswind.</span></div>' : vrb ? '<div class="wnd-r"><span>Direction variable, so components can’t be worked out.</span></div>' : best.sort((a, b) => b.head - a.head).map(row).join('')}
-      <p class="wnd-note">Wind measured at Sunshine Coast, not Caloundra. Runway headings ${String(m05).padStart(3, '0')}°/${String(m12).padStart(3, '0')}° M, variation ${vr}° E.</p></div>
-  </div>`;
+  return `<div class="wx-col wx-wind"><div class="wx-h"><span class="wx-tag">WIND</span><span class="wx-when">YBSU wind on YCDR runways</span></div>
+    <div class="wnd"><svg viewBox="0 0 150 150" role="img" aria-label="${esc(aria)}">${ring}${g}${arrow}</svg>
+    <div><div class="wnd-w">${esc(windTxt)} <small>${calm || vrb ? '' : 'true'}${wd.vary ? `, varying ${String(wd.vary[0]).padStart(3, '0')}–${String(wd.vary[1]).padStart(3, '0')}°` : ''}</small></div>
+      ${calm ? '<div class="wnd-r"><span>Calm: no headwind or crosswind.</span></div>' : vrb ? '<div class="wnd-r"><span>Direction variable, so components can’t be worked out.</span></div>' : best.sort((a, b) => b.head - a.head).map(row).join('')}</div></div>
+    <p class="wnd-note">Measured at Sunshine Coast, not Caloundra. Runways ${String(m05).padStart(3, '0')}°/${String(m12).padStart(3, '0')}° M, variation ${vr}° E.</p></div>`;
 }
 
 function wxBody() {
@@ -1814,30 +1823,30 @@ function wxBody() {
     ? `<div class="wx-empty"><p>${WX_ID} weather couldn’t be loaded right now. Check NAIPS.</p><button class="btn btn-sm btn-secondary" data-act="wxRetry">Try again</button></div>`
     : `<div class="wx-empty"><p>Loading ${WX_ID} weather…</p></div>`;
   const m = d.metar, t = d.taf;
-  let mh, th;
+  let mh, th, wind = '';
   if (m && (m.rawOb || m.rawText)) {
     const raw = String(m.rawOb || m.rawText).trim();
     const g = raw.match(/\b(\d{2})(\d{2})(\d{2})Z\b/);
     const ot = toDate(m.obsTime) || (g ? ddhh(g[1], g[2], g[3]) : null);
     const old = ot && Date.now() - ot > 90 * 60000;
     const { f, hz } = decodeMetar(' ' + raw + ' ');
-    mh = `<div class="wx-col"><div class="wx-h"><span class="wx-tag">${/^SPECI/.test(raw) ? 'SPECI' : 'METAR'}</span>${ot ? `<span class="wx-when${old ? ' old' : ''}">Observed ${hm24(ot, TZ)} local, ${hm24(ot, 'UTC')}Z (${agoTxt(ot)})${old ? '. Old report' : ''}</span>` : ''}</div>
+    wind = windDiagram(' ' + raw + ' ');
+    mh = `<div class="wx-col wx-metar"><div class="wx-h"><span class="wx-tag">${/^SPECI/.test(raw) ? 'SPECI' : 'METAR'}</span>${ot ? `<span class="wx-when${old ? ' old' : ''}">${hm24(ot, TZ)} local · ${hm24(ot, 'UTC')}Z · ${agoTxt(ot)}${old ? ' (old)' : ''}</span>` : ''}</div>
       ${hz.length ? `<div class="wx-hz">${hz.map(h => badge('hz', h)).join('')}</div>` : ''}
-      ${windDiagram(' ' + raw + ' ')}
-      <dl class="wx-facts">${f.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>
+      <dl class="wx-list">${f.filter(([k]) => !(wind && k === 'Wind')).map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl>
       <p class="wx-raw">${esc(raw)}</p></div>`;
-  } else mh = `<div class="wx-col"><div class="wx-h"><span class="wx-tag">METAR</span></div><p class="empty">No current METAR for ${WX_ID}.</p></div>`;
+  } else mh = `<div class="wx-col wx-metar"><div class="wx-h"><span class="wx-tag">METAR</span></div><p class="empty">No current METAR for ${WX_ID}.</p></div>`;
   if (t && (t.rawTAF || t.rawText)) {
     const raw = String(t.rawTAF || t.rawText).trim().replace(/\s+/g, ' ');
     const it = toDate(t.issueTime), vf = toDate(t.validTimeFrom), vt = toDate(t.validTimeTo);
     const lines = tafLines(raw, vf || it || new Date());
     const tzHz = [/\bTS|CB\b/.test(raw) && 'Thunderstorm or CB', /\bFG\b/.test(raw) && 'Fog', /\bTCU\b/.test(raw) && 'Towering cumulus'].filter(Boolean);
-    th = `<div class="wx-col"><div class="wx-h"><span class="wx-tag">TAF${/^TAF\s+AMD/.test(raw) ? ' AMD' : ''}</span><span class="wx-when">${it ? `Issued ${lday(it)} ${hm24(it, TZ)} local` : ''}${vf && vt ? `. Valid ${lday(vf)} ${hm24(vf, TZ)} to ${lday(vt)} ${hm24(vt, TZ)}` : ''}</span></div>
+    th = `<div class="wx-col wx-taf"><div class="wx-h"><span class="wx-tag">TAF${/^TAF\s+AMD/.test(raw) ? ' AMD' : ''}</span><span class="wx-when">${vf && vt ? `Valid ${lday(vf)} ${hm24(vf, TZ)} to ${lday(vt)} ${hm24(vt, TZ)}` : ''}${it ? ` · issued ${hm24(it, TZ)}` : ''}</span></div>
       ${tzHz.length ? `<div class="wx-hz">${tzHz.map(h => badge('hz', 'Forecast: ' + h)).join('')}</div>` : ''}
       <div>${lines.map(l => `<div class="tl ${l.cls}"><span class="tl-l">${esc(l.label)}</span><span class="tl-t">${esc(l.text)}</span></div>`).join('')}</div></div>`;
-  } else th = `<div class="wx-col"><div class="wx-h"><span class="wx-tag">TAF</span></div><p class="empty">No current TAF for ${WX_ID}.</p></div>`;
-  return `<div class="wx">${mh}${th}</div>
-    <div class="wx-foot"><span>${WX.status === 'error' ? 'Latest update failed, showing the last report. ' : ''}From aviationweather.gov, checked ${hm24(new Date(WX.at), TZ)}. Not an official briefing: always check NAIPS before flight.</span><button class="btn-text" data-act="wxRetry">Refresh</button></div>`;
+  } else th = `<div class="wx-col wx-taf"><div class="wx-h"><span class="wx-tag">TAF</span></div><p class="empty">No current TAF for ${WX_ID}.</p></div>`;
+  return `<div class="wx">${wind}${mh}${th}</div>
+    <div class="wx-foot"><span>${WX.status === 'error' ? 'Latest update failed, showing the last report. ' : ''}From aviationweather.gov, checked ${hm24(new Date(WX.at), TZ)}. Not an official briefing: check NAIPS before flight.</span><button class="btn-text" data-act="wxRetry">Refresh</button></div>`;
 }
 function paintWx() { const el = document.getElementById('wx-body'); if (el) el.innerHTML = wxBody(); }
 async function loadWx() {

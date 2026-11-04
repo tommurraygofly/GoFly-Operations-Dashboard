@@ -37,7 +37,9 @@ Instructor. It is separate from the public GoFly website.
 - IOR fuel tank (Tom's figures): max safe fill 5,000 L (`settings.tankCapacity`), reorder level
   1,500 L (`settings.fuelThreshold`), standard order 3,500 L (`settings.orderTemplate.litres`).
   "Refill" means the delivery is in the tank: it logs a new reading of latest + 3,500 L and marks
-  the open order delivered (with undo), warning if it would pass max safe fill.
+  the open order delivered (with undo). 5,000 L is a hard maximum: readings above it can't be
+  saved, a refill that won't fit is blocked (it offers to log the actual level instead), and the
+  gauge and graph scale stop at 5,000 L.
 - Overview shows a large clock: Brisbane local time with seconds, UTC underneath (24-hour).
 - YBSU METAR and TAF widget near the top. Always labelled as not an official briefing (check
   NAIPS). Decode only what the report says; never invent or forecast weather. YCDR has no
