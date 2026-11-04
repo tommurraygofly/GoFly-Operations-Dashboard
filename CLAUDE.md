@@ -9,9 +9,11 @@ Instructor. It is separate from the public GoFly website.
 - `public/index.html`: the entire app (HTML, CSS and JavaScript in one file, no build step).
 - `wrangler.jsonc`: Cloudflare Workers config, Worker name `gofly-ops`, serves `./public` as static
   assets (binding `ASSETS`) with `src/worker.js` as the Worker.
-- `src/worker.js`: one API route, `GET /api/wx?ids=YBSU`, which fetches the latest METAR and TAF
-  from aviationweather.gov (public, no key) and caches them for 2 minutes. Everything else is
-  served from `./public`. Check config changes with `wrangler deploy --dry-run`.
+- `src/worker.js`: two API routes. `GET /api/wx?ids=YBSU` fetches the latest METAR and TAF from
+  aviationweather.gov (public, no key), cached 2 minutes. `GET/POST /api/sync` reads and writes
+  shared records in the D1 database `gofly-ops` (binding `DB`, Oceania, id in `wrangler.jsonc`).
+  The `records` table is created on first use. Everything else is served from `./public`. Check
+  config changes with `wrangler deploy --dry-run`; test locally with `wrangler dev --local`.
 - Deployment: Cloudflare Workers Builds is connected to this GitHub repo. Every push to `main`
   deploys to production. Tom's standing instruction: commit and push every finished change
   straight to `main` (no preview branches), after the checks in "Before pushing" pass.
@@ -77,7 +79,18 @@ The script is split into numbered sections:
 
 1. **Utilities**: Brisbane date helpers (`todayISO`, `daysUntil`, `fmtDate`, `fmtStamp`), formatting.
 2. **Storage adapter**: `LocalAdapter` with `load()` and `save(data)` using localStorage key
-   `gofly-ops:v1`. `Store.adapter` is the single swap point for a Cloudflare D1 backend.
+   `gofly-ops:v1`, the local copy on each device.
+3b. **Shared sync** (after the data model): every record syncs on its own through `/api/sync`
+   (key `coll/id`, settings as `settings/main`; `userName` and `theme` stay per device).
+   `persist()` calls `trackChanges()`, which queues differences from the last known server copy
+   (`gofly-ops:sync` in localStorage: base, pending, since). `pushNow()` sends, `pullNow()`
+   fetches every 20 s and on focus/online. Unsent local edits aren't overwritten; last write wins
+   per record. Remote changes update objects in place and re-render via `scheduleRender()`, which
+   waits while a form is open or someone is typing. First connection on a device (`startSync`):
+   empty database is seeded from the device; otherwise the device takes the shared data and adds
+   its own non-example records the database lacks (old copy kept in `gofly-ops:v1:pre-sync`).
+   Import, Erase everything and Clear example data affect everyone once synced. The header pill
+   shows Synced / Syncing / Offline / This device only.
 3. **Data model**: `emptyState()`, `normalise()` (migration, always keeps the five aircraft),
    `applyExamples()`, `clearExamples()`. State lives in `S`. Collections: `aircraft`,
    `maintenance`, `defects`, `fuelReadings`, `fuelOrders`, `fuelIssues`, `instructors`, `tasks`,
@@ -106,12 +119,13 @@ where archivable. Changes go through `commit()` (save and re-render). Use `withU
 complete, archive and delete. Escape all user text with `esc()`. Fuel order template defaults to
 3,500 L Premium Unleaded 98 from IOR. Export/import of JSON backups is in Data & settings.
 
-## Current limitation and likely next step
+## Sharing and identity
 
-Records are saved per browser, so phone and computer don't share data. The planned next step is
-a Cloudflare D1 database with a small Worker API, keeping the same `load()`/`save()` shape (or a
-per-record API), plus a one-off import of Tom's exported backup. Check identity via the
-Cloudflare Access JWT before allowing writes.
+Records are shared through D1 for everyone Cloudflare Access lets in. `/api/sync` requires the
+Access token (`Cf-Access-Jwt-Assertion`) and records the signed-in email as `updated_by`. For full
+token signature checks, set Worker variables `ACCESS_TEAM_DOMAIN` (e.g. `<team>.cloudflareaccess.com`)
+and `ACCESS_AUD` (the Access application's Audience tag); until then the Worker relies on Access
+being in front of every URL. Keep Access on for the workers.dev and preview URLs.
 
 ## Look and feel
 

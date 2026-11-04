@@ -6,5 +6,14 @@
   "assets": {
     "directory": "./public",
     "binding": "ASSETS"
-  }
+  },
+  // Shared records for everyone using the dashboard (created by Tom in Oceania).
+  // The table is created automatically on first use by src/worker.js.
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "gofly-ops",
+      "database_id": "814d447e-f0ab-4428-b0d8-b9fadc765f86"
+    }
+  ]
 }

@@ -75,6 +75,11 @@ h1,h2,h3{font-family:var(--font-c);font-weight:700;letter-spacing:.01em}
 .brand img{height:30px;width:auto;display:block}
 .brand-sub{font:600 italic 1.05rem/1 var(--font-c);text-transform:uppercase;letter-spacing:.08em;color:var(--head-muted);padding-left:12px;border-left:1px solid #333}
 .clock{font:500 .85rem var(--font);color:var(--head-muted);white-space:nowrap}
+.sync{display:inline-flex;align-items:center;gap:7px;background:transparent;border:1px solid #333;border-radius:999px;padding:5px 11px 5px 9px;min-height:32px;color:#D0D0D0;font:600 .78rem var(--font);cursor:pointer;white-space:nowrap}
+.sync:hover{border-color:var(--orange)}
+.sync .sd{width:8px;height:8px;border-radius:50%;background:#777}
+.sync-ok .sd{background:#36A867}.sync-syncing .sd{background:#F15A26}.sync-offline .sd{background:#F0524F}
+.sync-offline{border-color:rgba(240,82,79,.5)}
 .btn-ghost{background:transparent;border:1px solid #3A3A3A;color:#fff;border-radius:8px;padding:6px 12px;min-height:36px;cursor:pointer;font-weight:500;font-size:.85rem}
 .btn-ghost:hover{border-color:var(--orange)}
 .tabs{max-width:1320px;margin:0 auto;display:flex;gap:4px;padding:0 12px;overflow-x:auto;scrollbar-width:none}
@@ -600,6 +605,8 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
   .brand-sub{display:none}
   .clock{font-size:.85rem}
   .clock .cd,.hide-sm{display:none}
+  .sync{padding:5px 8px}.sync .st{display:none}
+  .sync-offline .st{display:inline}
   .tabs{position:fixed;left:0;right:0;bottom:0;max-width:none;background:var(--head);justify-content:space-around;padding:0 2px env(safe-area-inset-bottom,0px);border-top:1px solid #222;gap:0;z-index:25}
   .tabs a{flex:1;flex-direction:column;justify-content:center;gap:4px;padding:8px 2px 7px;min-height:58px;font-size:.7rem;border-bottom:0;border-top:3px solid transparent;position:relative}
   .tabs a[aria-current="page"]{border-top-color:var(--orange)}
@@ -640,6 +647,7 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
 <header class="top">
   <div class="top-row">
     <a class="brand" href="#overview" aria-label="GoFly Operations, overview"><img src="brand/gofly-logo-dark-bg.png" alt="GoFly" width="77" height="30"><span class="brand-sub">Operations</span></a>
+    <button type="button" class="sync sync-local" id="sync" data-act="syncNow" aria-label="Sync status"><span class="sd"></span><span class="st">This device only</span></button>
     <div class="clock" id="clock"></div>
     <button class="btn-ghost" type="button" data-act="settings">Data<span class="hide-sm"> &amp; settings</span></button>
   </div>
@@ -817,13 +825,204 @@ function clearExamples() {
   S.aircraft = S.aircraft.map(a => a.example ? blankAircraft(a.ident) : a);
 }
 
-function persist() { S.meta.savedAt = nowStamp(); Store.ok = Store.adapter.save(S); }
+function persist() { S.meta.savedAt = nowStamp(); Store.ok = Store.adapter.save(S); trackChanges(); }
 function commit() { persist(); render(); }
 function stamp(r) { r.updatedAt = nowStamp(); r.updatedBy = S.settings.userName || ''; }
 function withUndo(msg, mutate) {
   const snap = JSON.stringify(S);
   mutate(); commit();
   toast(msg, () => { S = normalise(JSON.parse(snap)); commit(); });
+}
+
+/* ---------- 3b. Shared sync (Cloudflare D1 via /api/sync) ----------
+   Every record is synced on its own (key "coll/id"; settings are "settings/main").
+   Sync.meta keeps, in localStorage:
+     base     what the shared database last had for each record (JSON text)
+     pending  local changes not yet sent (JSON text, or null for a delete)
+     since    server time of the last pull
+   After each save, trackChanges() compares the state with base and queues differences.
+   pushNow() sends them; pullNow() fetches everyone else's changes every 20 seconds and on focus.
+   A record with a local change waiting to send isn't overwritten by a pull. Last write wins.
+   Each device keeps a full copy, so it still works offline and catches up later.
+   Name and appearance stay per device. */
+const SYNC_KEY = 'gofly-ops:sync';
+const SYNC_COLLS = ['aircraft', ...LISTS];
+const DEVICE_SETTINGS = ['userName', 'theme'];
+const Sync = { state: 'local', user: '', lastOk: 0, busy: false, meta: null, pushT: null };
+function syncMeta() {
+  if (!Sync.meta) {
+    try { Sync.meta = JSON.parse(localStorage.getItem(SYNC_KEY) || 'null'); } catch (e) { Sync.meta = null; }
+    if (!Sync.meta || typeof Sync.meta !== 'object') Sync.meta = { base: {}, pending: {}, since: 0, synced: false };
+  }
+  return Sync.meta;
+}
+function saveSyncMeta() { try { localStorage.setItem(SYNC_KEY, JSON.stringify(Sync.meta)); } catch (e) {} }
+function sharedSettings(st) { const o = { ...st }; DEVICE_SETTINGS.forEach(k => delete o[k]); return o; }
+function snapshot() {
+  const m = {};
+  SYNC_COLLS.forEach(c => S[c].forEach(r => { if (r && r.id) m[c + '/' + r.id] = JSON.stringify(r); }));
+  m['settings/main'] = JSON.stringify(sharedSettings(S.settings));
+  return m;
+}
+function trackChanges() {
+  const M = syncMeta();
+  if (!M.synced || !S) return;
+  const snap = snapshot();
+  new Set([...Object.keys(snap), ...Object.keys(M.base), ...Object.keys(M.pending)]).forEach(k => {
+    const cur = k in snap ? snap[k] : null, base = k in M.base ? M.base[k] : null;
+    if (cur === base) delete M.pending[k]; else M.pending[k] = cur;
+  });
+  saveSyncMeta();
+  if (Object.keys(M.pending).length) schedulePush();
+}
+function schedulePush(ms = 700) { clearTimeout(Sync.pushT); Sync.pushT = setTimeout(() => { if (Sync.busy) schedulePush(1500); else pushNow().then(() => pullNow()); }, ms); }
+async function syncApi(method, body, qs = '') {
+  let r;
+  try {
+    r = await fetch('/api/sync' + qs, { method, cache: 'no-store', credentials: 'same-origin', headers: body ? { 'Content-Type': 'application/json' } : {}, body: body ? JSON.stringify(body) : undefined });
+  } catch (e) { throw Object.assign(new Error('offline'), { offline: true }); }
+  if (r.status === 401 || r.status === 403) throw Object.assign(new Error('auth'), { auth: true });
+  if (r.status === 404 || r.status === 405 || r.status === 503) throw Object.assign(new Error('missing'), { missing: true });
+  if (!(r.headers.get('content-type') || '').includes('json')) throw Object.assign(new Error('not json'), { offline: true });
+  const j = await r.json();
+  if (!r.ok) throw new Error(j.error || 'HTTP ' + r.status);
+  return j;
+}
+function setSync(state) {
+  Sync.state = state;
+  const el = document.getElementById('sync'); if (!el) return;
+  const pend = Object.keys(syncMeta().pending).length;
+  const t = { ok: 'Synced', syncing: 'Syncing…', offline: 'Offline', local: 'This device only' }[state];
+  const tip = state === 'ok' ? `Shared with everyone. Last synced ${fmtStamp(Sync.lastOk)}${Sync.user ? `. Signed in as ${Sync.user}` : ''}.`
+    : state === 'offline' ? `Can’t reach the shared database. ${pend ? plural(pend, 'change') + ' saved on this device will' : 'Changes will'} sync when it’s back.`
+    : state === 'local' ? 'Not connected to the shared database. Records are saved in this browser only.' : 'Sending and fetching changes.';
+  el.className = 'sync sync-' + state;
+  el.innerHTML = `<span class="sd"></span><span class="st">${t}${state === 'offline' && pend ? ` (${pend})` : ''}</span>`;
+  el.title = tip; el.setAttribute('aria-label', `${t}. ${tip}`);
+}
+function upsertLocal(coll, id, data) {
+  if (coll === 'settings') {
+    const keep = {}; DEVICE_SETTINGS.forEach(k => { keep[k] = S.settings[k]; });
+    const def = emptyState().settings;
+    Object.keys(S.settings).forEach(k => delete S.settings[k]);
+    Object.assign(S.settings, def, data, { orderTemplate: { ...def.orderTemplate, ...(data.orderTemplate || {}) } }, keep);
+    return;
+  }
+  const arr = S[coll]; if (!Array.isArray(arr)) return;
+  const cur = arr.find(r => r.id === id);
+  if (cur) { Object.keys(cur).forEach(k => delete cur[k]); Object.assign(cur, data); }  // keep the same object so open forms stay linked
+  else arr.push(data);
+}
+function removeLocal(coll, id) {
+  if (!Array.isArray(S[coll])) return false;
+  const i = S[coll].findIndex(r => r.id === id);
+  if (i < 0) return false;
+  if (coll === 'aircraft') return false;  // the five aircraft always stay
+  S[coll].splice(i, 1); return true;
+}
+function applyRemote(recs) {
+  const M = syncMeta(); let changed = false;
+  (recs || []).forEach(x => {
+    const k = x.coll + '/' + x.id;
+    if (k in M.pending) return;                     // our own unsent edit wins; it goes up next
+    const val = x.deleted ? null : x.data;
+    if ((k in M.base ? M.base[k] : null) === val) return;
+    if (val == null) { delete M.base[k]; if (removeLocal(x.coll, x.id)) changed = true; }
+    else { let d; try { d = JSON.parse(val); } catch (e) { return; } M.base[k] = val; upsertLocal(x.coll, x.id, d); changed = true; }
+  });
+  return changed;
+}
+async function pushNow() {
+  const M = syncMeta();
+  const keys = Object.keys(M.pending);
+  if (!M.synced || !keys.length || Sync.busy) return;
+  Sync.busy = true; setSync('syncing');
+  try {
+    for (let i = 0; i < keys.length; i += 200) {
+      const chunk = keys.slice(i, i + 200), sent = {};
+      const changes = chunk.map(k => { sent[k] = M.pending[k]; const j = k.indexOf('/'); return { coll: k.slice(0, j), id: k.slice(j + 1), data: sent[k] == null ? null : JSON.parse(sent[k]) }; });
+      await syncApi('POST', { changes });
+      chunk.forEach(k => {
+        if (sent[k] == null) delete M.base[k]; else M.base[k] = sent[k];
+        if (M.pending[k] === sent[k]) delete M.pending[k];
+      });
+      saveSyncMeta();
+    }
+    Sync.lastOk = Date.now(); Sync.busy = false; setSync('ok');
+  } catch (e) { Sync.busy = false; setSync(e.auth || e.missing ? 'local' : 'offline'); }
+}
+async function pullNow() {
+  const M = syncMeta();
+  if (!M.synced || Sync.busy) return;
+  Sync.busy = true;
+  try {
+    const r = await syncApi('GET', null, `?since=${Math.max(0, (M.since || 0) - 10000)}`);
+    if (r.user) Sync.user = r.user;
+    const changed = applyRemote(r.records);
+    M.since = r.now; saveSyncMeta();
+    Sync.lastOk = Date.now(); Sync.busy = false;
+    setSync(Object.keys(M.pending).length ? 'syncing' : 'ok');
+    if (changed) { S.meta.savedAt = nowStamp(); Store.ok = Store.adapter.save(S); scheduleRender(); }
+    if (Object.keys(M.pending).length) schedulePush(200);
+  } catch (e) { Sync.busy = false; setSync(e.auth || e.missing ? 'local' : 'offline'); }
+}
+async function syncTick() { if (syncMeta().synced) { await pushNow(); await pullNow(); } else startSync(); }
+
+// First connection on this device.
+//  - Shared database empty: this device's records start it off.
+//  - Shared database has data: this device takes it, keeping any of its own non-example
+//    records the database doesn't have yet. A copy of the device's old data is kept in
+//    localStorage under gofly-ops:v1:pre-sync, just in case.
+async function startSync() {
+  const M = syncMeta();
+  let r;
+  try { r = await syncApi('GET', null, '?since=0'); }
+  catch (e) { setSync(e.auth || e.missing ? 'local' : 'offline'); return; }
+  Sync.user = r.user || '';
+  if (!S.settings.userName && Sync.user) S.settings.userName = Sync.user.split('@')[0];
+  if (M.synced) {
+    // Already linked: catch up and send anything waiting.
+    applyRemote(r.records); M.since = r.now; saveSyncMeta();
+    S.meta.savedAt = nowStamp(); Store.ok = Store.adapter.save(S); trackChanges();
+    Sync.lastOk = Date.now(); setSync('ok'); scheduleRender();
+    return;
+  }
+  try { localStorage.setItem(KEY + ':pre-sync', JSON.stringify(S)); } catch (e) {}
+  if (!r.records.length) {
+    M.base = {}; M.pending = {}; M.since = r.now; M.synced = true;
+    trackChanges();                       // everything on this device becomes pending and is sent
+    Sync.lastOk = Date.now(); setSync('syncing');
+    toast('Connected. This device’s records are now shared.');
+    return;
+  }
+  const local = JSON.parse(JSON.stringify(S));
+  const fresh = emptyState();
+  fresh.aircraft = [];
+  M.base = {}; M.pending = {};
+  r.records.forEach(x => {
+    if (x.deleted || x.data == null) return;
+    let d; try { d = JSON.parse(x.data); } catch (e) { return; }
+    M.base[x.coll + '/' + x.id] = x.data;
+    if (x.coll === 'settings') fresh.settings = { ...fresh.settings, ...d };
+    else if (Array.isArray(fresh[x.coll])) fresh[x.coll].push(d);
+  });
+  const known = new Set(r.records.map(x => x.coll + '/' + x.id));
+  S = normalise(fresh);
+  DEVICE_SETTINGS.forEach(k => { S.settings[k] = local.settings[k]; });
+  if (!S.settings.userName && Sync.user) S.settings.userName = Sync.user.split('@')[0];
+  LISTS.forEach(c => (local[c] || []).forEach(rec => { if (rec && !rec.example && !known.has(c + '/' + rec.id)) S[c].push(rec); }));
+  M.since = r.now; M.synced = true; saveSyncMeta();
+  persist();                              // queues anything new (carried-over records, migrations)
+  applyTheme(); Sync.lastOk = Date.now(); setSync(Object.keys(M.pending).length ? 'syncing' : 'ok');
+  render();
+  toast('Connected to the shared GoFly database.');
+}
+let renderWaiting = false;
+function scheduleRender() {
+  const a = document.activeElement;
+  const typing = a && main.contains(a) && /^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName);
+  if (dlg.open || $('#cfm').open || typing) { renderWaiting = true; return; }
+  renderWaiting = false; render();
 }
 
 /* ---------- 4. Rules ---------- */
@@ -1220,6 +1419,7 @@ const SCHEMAS = {
 
 /* ---------- Forms and dialogs ---------- */
 const dlg = $('#dlg');
+dlg.addEventListener('close', () => { if (renderWaiting) setTimeout(scheduleRender, 0); });
 function openDlg(title, html, buttons) {
   $('#dlgTitle').textContent = title;
   $('#dlgBody').innerHTML = html;
@@ -1559,19 +1759,23 @@ $('#importFile').addEventListener('change', async e => {
   const data = j && j.app === 'gofly-ops' && j.data ? j.data : j;
   if (!data || !Array.isArray(data.aircraft)) { toast('That file isn’t a GoFly Ops backup.'); return; }
   const when = j.exportedAt ? ` from ${fmtStamp(j.exportedAt)}` : '';
-  if (!(await askConfirm(`Replace everything on this dashboard with the backup${when}? Export a backup first if you want to keep what’s here now.`, 'Replace with backup'))) return;
+  if (!(await askConfirm(`Replace everything on the dashboard with the backup${when}? ${syncMeta().synced ? 'This changes it for everyone. ' : ''}Export a backup first if you want to keep what’s here now.`, 'Replace with backup'))) return;
   S = normalise(data); applyTheme(); closeDlg(); commit(); toast('Backup imported');
 });
 
 function openSettings() {
   const s = S.settings;
-  const status = Store.ok
-    ? `Saved in ${Store.adapter.name}${S.meta.savedAt ? `, last at ${fmtStamp(S.meta.savedAt)}` : ''}. Export a backup regularly, and before clearing browser data or switching devices.`
-    : 'This browser isn’t saving changes. Export a backup before you close the page.';
+  const pend = Object.keys(syncMeta().pending).length;
+  const status = Sync.state === 'ok' || (Sync.state === 'syncing' && syncMeta().synced)
+    ? `Shared: everyone who signs in sees the same records. Signed in as ${Sync.user || 'unknown'}. Last synced ${fmtStamp(Sync.lastOk)}. Your name and appearance are kept per device.`
+    : Sync.state === 'offline'
+      ? `Offline: changes are saved on this device${pend ? ` (${plural(pend, 'change')} waiting)` : ''} and will sync when the shared database is reachable.`
+      : Store.ok ? `Saved in this browser only (not connected to the shared database)${S.meta.savedAt ? `, last at ${fmtStamp(S.meta.savedAt)}` : ''}. Export a backup regularly.` : 'This browser isn’t saving changes. Export a backup before you close the page.';
   const body = `<div class="form">${SCHEMAS.settings.fields.map(f => fieldHTML(f, s)).join('')}</div><p class="form-err" id="formErr" hidden></p>
     <h3 class="dlg-sec">Your data</h3>
     <p class="hint">${esc(status)}</p>
     <div class="btn-row">
+      ${syncMeta().synced ? '<button type="button" class="btn btn-secondary" id="xSync">Sync now</button>' : ''}
       <button type="button" class="btn btn-secondary" id="xExport">Export backup</button>
       <button type="button" class="btn btn-secondary" id="xImport">Import backup</button>
       ${hasExamples() ? '<button type="button" class="btn btn-secondary" id="xClear">Clear example data</button>' : '<button type="button" class="btn btn-secondary" id="xLoad">Load example data</button>'}
@@ -1584,14 +1788,15 @@ function openSettings() {
     applyTheme(); closeDlg(); commit(); toast('Settings saved');
   } }]);
   $('#xExport').onclick = exportData;
+  if ($('#xSync')) $('#xSync').onclick = () => { closeDlg(); syncTick().then(() => toast(Sync.state === 'ok' ? 'Synced' : 'Couldn’t reach the shared database')); };
   $('#xImport').onclick = () => $('#importFile').click();
   if ($('#xClear')) $('#xClear').onclick = async () => {
-    if (!(await askConfirm('Remove all records marked Example? Your own records stay.', 'Clear example data'))) return;
+    if (!(await askConfirm(`Remove all records marked Example?${syncMeta().synced ? ' This removes them for everyone.' : ''} Your own records stay.`, 'Clear example data'))) return;
     closeDlg(); withUndo('Example data cleared', clearExamples);
   };
   if ($('#xLoad')) $('#xLoad').onclick = () => { closeDlg(); withUndo('Example data loaded', applyExamples); };
   $('#xReset').onclick = async () => {
-    if (!(await askConfirm('Erase every record and setting on this dashboard? Export a backup first if you might need it.', 'Erase everything'))) return;
+    if (!(await askConfirm(`Erase every record and setting on the dashboard?${syncMeta().synced ? ' This erases it for everyone.' : ''} Export a backup first if you might need it.`, 'Erase everything'))) return;
     closeDlg(); withUndo('Everything erased', () => { S = emptyState(); });
   };
 }
@@ -2343,9 +2548,10 @@ const ACT = {
   threshold: openThreshold,
   settings: openSettings,
   export: exportData,
-  clearEx: async () => { if (await askConfirm('Remove all records marked Example? Your own records stay.', 'Clear example data')) withUndo('Example data cleared', clearExamples); },
+  clearEx: async () => { if (await askConfirm(`Remove all records marked Example?${syncMeta().synced ? ' This removes them for everyone.' : ''} Your own records stay.`, 'Clear example data')) withUndo('Example data cleared', clearExamples); },
   toggleAtt: () => { showAllAtt = !showAllAtt; render(); },
   addMenu: openAddMenu,
+  syncNow: () => { syncTick().then(() => toast(Sync.state === 'ok' ? 'Synced with everyone' : Sync.state === 'local' ? 'Not connected to the shared database. Saved on this device.' : 'Offline. Changes are saved here and will sync later.')); },
   refill: () => refill(),
   wxRetry: () => { WX.status = WX.status === 'loading' ? 'loading' : 'idle'; loadWx(); },
   warnings: openWarnings,
@@ -2370,9 +2576,11 @@ document.addEventListener('click', e => {
   if (a && !dlg.contains(a)) { if (a.tagName === 'A') e.preventDefault(); const f = ACT[a.dataset.act]; if (f) f(a.dataset, a); }
 });
 main.addEventListener('change', e => { if (e.target.id === 'taskCat') { taskFilter.cat = e.target.value; renderTaskList(); } });
+main.addEventListener('focusout', () => { if (renderWaiting) setTimeout(() => { if (renderWaiting) scheduleRender(); }, 300); });
 main.addEventListener('input', e => { if (e.target.id === 'taskQ') { taskFilter.q = e.target.value; renderTaskList(); } });
 
 window.addEventListener('storage', e => {
+  if (e.key === SYNC_KEY) Sync.meta = null;
   if (e.key === KEY && e.newValue && !dlg.open) { try { S = normalise(JSON.parse(e.newValue)); applyTheme(); render(); } catch (_) {} }
 });
 
@@ -2401,6 +2609,11 @@ function tick() {
   tick(); setInterval(tick, 1000);
   route();
   loadWx(); setInterval(loadWx, 5 * 60 * 1000);
+  startSync();
+  setInterval(() => { if (!document.hidden) syncTick(); }, 20000);
+  window.addEventListener('focus', () => syncTick());
+  window.addEventListener('online', () => syncTick());
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) syncTick(); });
   document.addEventListener('visibilitychange', () => { if (!document.hidden && Date.now() - WX.at > 2 * 60 * 1000) loadWx(); });
 })();
 </script>
