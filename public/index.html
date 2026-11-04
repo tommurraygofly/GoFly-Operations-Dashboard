@@ -201,7 +201,7 @@ main{max-width:1320px;margin:0 auto;padding:var(--mainpad) var(--mainpad) 48px}
 .pill-missing{border:1px dashed var(--line-strong);color:var(--muted)}
 .dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--line-strong);flex:none}
 .dot-overdue,.dot-due{background:var(--red)}.dot-soon,.dot-low{background:var(--orange)}.dot-missing{background:transparent;border:1.5px dashed var(--line-strong)}
-.dot-serviceable{background:var(--green)}.dot-restricted{background:var(--orange)}.dot-maintenance{background:var(--grey-band)}.dot-unserviceable{background:var(--red)}
+.dot-serviceable{background:var(--green)}.dot-caution{background:var(--orange)}.dot-sparing{background:var(--red)}.dot-restricted{background:var(--orange)}.dot-maintenance{background:var(--grey-band)}.dot-unserviceable{background:var(--red)}
 @media (max-width:1180px){.kpis{grid-template-columns:repeat(6,minmax(0,1fr))}.kpi{grid-column:span 2}.kpi:nth-child(n+4){grid-column:span 3}}
 
 /* ===== Icon chips ===== */
@@ -275,7 +275,7 @@ main{max-width:1320px;margin:0 auto;padding:var(--mainpad) var(--mainpad) 48px}
 .strip:hover{border-color:var(--line-strong);box-shadow:var(--shadow)}
 .strip .band{display:flex;align-items:center;gap:7px;padding:6px 12px;background:var(--band,var(--grey-band));color:var(--band-ink,#fff);font:700 .7rem/1.4 var(--font);letter-spacing:.08em;text-transform:uppercase}
 .strip .band::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
-.st-serviceable{--band:var(--green)}.st-restricted{--band:var(--orange);--band-ink:#000}.st-maintenance{--band:var(--grey-band)}.st-unserviceable{--band:var(--red)}
+.st-serviceable{--band:var(--green)}.st-caution{--band:var(--orange);--band-ink:#000}.st-sparing{--band:var(--red)}.st-restricted{--band:var(--orange);--band-ink:#000}.st-maintenance{--band:var(--grey-band)}.st-unserviceable{--band:var(--red)}
 .strip .in{padding:12px 14px 14px;display:grid;gap:8px;align-content:start;min-width:0}
 .strip .hd{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
 .strip .id{font:700 italic 2.1rem/1 var(--font-c);letter-spacing:.01em}
@@ -800,7 +800,7 @@ function emptyState() {
   return {
     schema: SCHEMA,
     settings: {
-      userName: '', theme: 'auto', dueSoonDays: 14, hoursAmber: 50, hoursRed: 20, fuelThreshold: 1500, tankCapacity: 5000, rwy05Mag: 50, rwy12Mag: 120, magVar: 11, spDays: 90, renewJuniorMonths: 24, renewSeniorMonths: 12, renewChiefMonths: 24, expiryWarnDays: 30, docWarnDays: 30, renewWarnDays: 30,
+      userName: '', theme: 'auto', dueSoonDays: 14, hoursAmber: 50, hoursRed: 20, cautionHrs: 30, sparingHrs: 15, fuelThreshold: 1500, tankCapacity: 5000, rwy05Mag: 50, rwy12Mag: 120, magVar: 11, spDays: 90, renewJuniorMonths: 24, renewSeniorMonths: 12, renewChiefMonths: 24, expiryWarnDays: 30, docWarnDays: 30, renewWarnDays: 30,
       orderTemplate: { product: 'Premium Unleaded 98', litres: 3500, supplier: 'IOR', notes: '' }
     },
     aircraft: AIRCRAFT_IDS.map(blankAircraft),
@@ -1226,6 +1226,20 @@ const BADGE = { overdue: 'Overdue', due: 'Verify booking', good: 'Good', soon: '
 const PRI = { overdue: 0, due: 0.5, alert: 1, low: 1, soon: 2, missing: 3, info: 4, ok: 5, good: 5, complete: 6 };
 const AREA = { task: 'tasks', aircraft: 'aircraft', maint: 'aircraft', defect: 'aircraft', fuel: 'fuel', order: 'fuel', issue: 'fuel', check: 'instructors', renewal: 'instructors', acexp: 'aircraft', doc: 'docs', qual: 'instructors', paperwork: 'instructors' };
 const AC_SHORT = { serviceable: 'Available', restricted: 'Restricted', maintenance: 'In maintenance', unserviceable: 'Unserviceable' };
+/* Availability shown for flying aircraft (Tom's rule), from the hour-based maintenance item due
+   soonest: under 30 hrs left "Use caution", under 15 "Use sparingly", past due "Maintenance overdue".
+   Restricted aircraft keep "Restricted" with the same wording added. Off-line aircraft unchanged. */
+function acUse(ac) {
+  const flying = ac.status === 'serviceable' || ac.status === 'restricted';
+  const rem = flying ? hourItemFor(ac).rem : null;
+  const C = Number(S.settings.cautionHrs ?? 30), Sp = Number(S.settings.sparingHrs ?? 15);
+  const lvl = rem == null ? '' : rem < 0 ? 'overdue' : rem < Sp ? 'sparing' : rem < C ? 'caution' : '';
+  const word = { overdue: 'Maintenance overdue', sparing: 'Use sparingly', caution: 'Use caution' }[lvl] || '';
+  const short = ac.status === 'restricted' ? (word ? `Restricted · ${word.toLowerCase()}` : 'Restricted') : (word || AC_SHORT[ac.status] || ac.status);
+  const long = ac.status === 'serviceable' ? (word || 'Available') : ac.status === 'restricted' ? (word ? `Available with restrictions · ${word.toLowerCase()}` : 'Available with restrictions') : (AC_AVAIL[ac.status] || ac.status);
+  const cls = ac.status === 'serviceable' && lvl ? (lvl === 'caution' ? 'caution' : 'sparing') : ac.status;
+  return { lvl, rem, short, long, cls };
+}
 
 const badge = (s, txt) => `<span class="b b-${s}">${esc(txt || BADGE[s])}</span>`;
 const exChip = r => r && r.example ? '<span class="b b-example">Example</span>' : '';
@@ -1665,6 +1679,8 @@ const SCHEMAS = {
       { k: 'renewChiefMonths', l: 'SI flight review interval (DCFI, CFI)', t: 'number', suffix: 'months', req: true },
       { k: 'hoursAmber', l: 'Maintenance amber, book soon (hours left)', t: 'hours', req: true, hint: 'Same for every aircraft.' },
       { k: 'hoursRed', l: 'Maintenance red, verify booking (hours left)', t: 'hours', req: true, hint: 'Same for every aircraft. Must be lower than amber.' },
+      { k: 'cautionHrs', l: 'Aircraft “Use caution” below (hours left)', t: 'hours', req: true, hint: 'Shown instead of Available.' },
+      { k: 'sparingHrs', l: 'Aircraft “Use sparingly” below (hours left)', t: 'hours', req: true, hint: 'Must be lower than Use caution.' },
       { k: 'fuelThreshold', l: 'Fuel reorder level (low stock)', t: 'litres', req: true },
       { k: 'rwy05Mag', l: 'YCDR runway 05 heading (magnetic)', t: 'number', suffix: '°', hint: 'Runway 23 is the reciprocal.' },
       { k: 'rwy12Mag', l: 'YCDR runway 12 heading (magnetic)', t: 'number', suffix: '°', hint: 'Runway 30 is the reciprocal.' },
@@ -1866,13 +1882,14 @@ function openThreshold() {
 }
 
 function openWarnings() {
-  const s = S.settings, F = SCHEMAS.settings.fields.filter(f => ['hoursAmber', 'hoursRed', 'dueSoonDays'].includes(f.k));
+  const s = S.settings, F = SCHEMAS.settings.fields.filter(f => ['hoursAmber', 'hoursRed', 'cautionHrs', 'sparingHrs', 'dueSoonDays'].includes(f.k));
   openDlg('Warning levels', `<p class="hint" style="margin-bottom:12px">Hour-based maintenance, the same for every aircraft: green while there’s plenty left, amber “book soon”, red “verify booking”, and red “overdue” once passed. Calendar deadlines use the due soon window.</p>
     <div class="form">${F.map(f => fieldHTML(f, s)).join('')}</div><p class="form-err" id="formErr" hidden></p>`,
     [cancelBtn, { label: 'Save warning levels', cls: 'btn btn-primary', on: () => {
       const { vals, err } = collect(F);
       if (err) { showErr(err); return; }
       if (vals.hoursRed >= vals.hoursAmber) { showErr('The red level must be fewer hours than the amber level.'); return; }
+      if (vals.sparingHrs >= vals.cautionHrs) { showErr('“Use sparingly” must be fewer hours than “Use caution”.'); return; }
       Object.assign(s, vals);
       closeDlg(); commit(); toast('Warning levels saved');
     } }]);
@@ -2024,7 +2041,7 @@ function openSettings() {
       ? `Offline: changes are saved on this device${pend ? ` (${plural(pend, 'change')} waiting)` : ''} and will sync when the shared database is reachable.`
       : Store.ok ? `Saved in this browser only (not connected to the shared database)${S.meta.savedAt ? `, last at ${fmtStamp(S.meta.savedAt)}` : ''}. Export a backup regularly.` : 'This browser isn’t saving changes. Export a backup before you close the page.';
   const groups = [
-    ['Maintenance', ['hoursAmber', 'hoursRed', 'dueSoonDays']],
+    ['Maintenance', ['hoursAmber', 'hoursRed', 'cautionHrs', 'sparingHrs', 'dueSoonDays']],
     ['Instructor checks', ['spDays', 'renewJuniorMonths', 'renewSeniorMonths', 'renewChiefMonths', 'renewWarnDays', 'expiryWarnDays']],
     ['IOR fuel tank', ['fuelThreshold', 'tankCapacity']],
     ['Documents and expiries', ['docWarnDays']],
@@ -2047,6 +2064,7 @@ function openSettings() {
     const { vals, err } = collect(SCHEMAS.settings.fields);
     if (err) { showErr(err); return; }
     if (vals.hoursRed >= vals.hoursAmber) { showErr('The maintenance red level must be fewer hours than the amber level.'); return; }
+    if (vals.sparingHrs >= vals.cautionHrs) { showErr('“Use sparingly” must be fewer hours than “Use caution”.'); return; }
     Object.assign(s, vals);
     applyTheme(); closeDlg(); commit(); toast('Settings saved');
   } }]);
@@ -2147,9 +2165,9 @@ function maintChart() {
       ? `<span class="cchip">${esc(lab(COUNTERS, h.m.counter))}</span><span class="t2">${esc(h.m.title)}</span><span>${h.rem == null ? esc(h.why) : `due at ${fmtH(h.m.dueHours)}, now ${fmtH(h.cur)}`}${h.m.dueDate ? `, or by ${fmtDate(h.m.dueDate)}` : ''}${h.others ? `. ${h.others} more item${h.others === 1 ? '' : 's'}` : ''}</span>`
       : `<span>${esc(h.why)}</span>`;
     const fn = h.m ? (h.rem == null ? () => openHours() : () => openEditor('maint', h.m.id)) : () => openEditor('maint', null, { aircraftId: ac.id, counter: 'engine' });
-    const aria = `${ac.ident}, ${AC_SHORT[ac.status] || ac.status}. ${val}${h.m ? `, ${lab(COUNTERS, h.m.counter)}, ${h.m.title}` : ''}${HRS_LABEL[st] ? ', ' + HRS_LABEL[st].toLowerCase() : ''}`;
+    const aria = `${ac.ident}, ${acUse(ac).short}. ${val}${h.m ? `, ${lab(COUNTERS, h.m.counter)}, ${h.m.title}` : ''}${HRS_LABEL[st] ? ', ' + HRS_LABEL[st].toLowerCase() : ''}`;
     return `<button type="button" class="mc-row" data-reg="${reg(fn)}" aria-label="${esc(aria)}">
-      <span class="mc-top"><span class="mc-who"><span class="mc-id">${esc(ac.ident)}</span><span class="mc-st"><span class="dot dot-${esc(ac.status)}"></span>${esc(AC_SHORT[ac.status] || ac.status)}</span></span>
+      <span class="mc-top"><span class="mc-who"><span class="mc-id">${esc(ac.ident)}</span><span class="mc-st"><span class="dot dot-${esc(acUse(ac).cls)}"></span>${esc(acUse(ac).short)}</span></span>
         <span class="mc-val${h.rem == null ? ' na' : ''}">${HRS_LABEL[st] ? badge(st, HRS_LABEL[st]) + ' ' : ''}${val}</span></span>
       <span class="mc-track" aria-hidden="true">${zero}${bar}${tick}</span>
       <span class="mc-sub">${sub}</span></button>`;
@@ -2504,7 +2522,8 @@ function renderOverview() {
   const full = cnt('serviceable'), restr = cnt('restricted'), off = S.aircraft.length - full - restr;
   const us = cnt('unserviceable');
   const k1 = kpi(full + restr === 0 ? 'overdue' : '', 'plane', us ? ['overdue', `${us} unserviceable`] : full + restr === 0 ? ['overdue', 'None available'] : ['ok', 'Flying'], 'Aircraft available', `${full + restr}<small>/ ${S.aircraft.length}</small>`, [
-    sub(`<span class="kpi-tag"><span class="dot dot-serviceable"></span>${full} fully available</span>`),
+    (() => { const u = S.aircraft.filter(a => a.status === 'serviceable').map(a => acUse(a).cls); const g = u.filter(c => c === 'serviceable').length, c = u.filter(x => x === 'caution').length, sp = u.filter(x => x === 'sparing').length;
+      return sub(`<span class="kpi-tag"><span class="dot dot-serviceable"></span>${g} available</span>`) + (c ? sub(`<span class="kpi-tag"><span class="dot dot-caution"></span>${c} use caution</span>`) : '') + (sp ? sub(`<span class="kpi-tag"><span class="dot dot-sparing"></span>${sp} use sparingly</span>`) : ''); })(),
     sub(`<span class="kpi-tag"><span class="dot dot-restricted"></span>${restr} with restrictions</span>`),
     off ? sub(`${off} off line`, true) : ''], 'data-act="go" data-view="aircraft"');
   // 2. Maintenance
@@ -2550,7 +2569,8 @@ function renderOverview() {
 
   const fleet = S.aircraft.map(ac => {
     const nx = acSummary(ac).next, defects = acSummary(ac).defects;
-    return `<button class="strip st-${esc(ac.status)}" data-reg="${reg(() => goAircraft(ac.ident))}"><span class="band">${esc(AC_SHORT[ac.status] || ac.status)}</span><span class="in">
+    const use = acUse(ac);
+    return `<button class="strip st-${esc(use.cls)}" data-reg="${reg(() => goAircraft(ac.ident))}"><span class="band">${esc(use.short)}${use.rem != null && use.lvl ? ` · ${fmtH(Math.max(0, use.rem))} hrs` : ''}</span><span class="in">
       <span class="hd"><span class="id">${esc(ac.ident)}</span>${ac.type ? `<span class="ty">${esc(ac.type)}</span>` : ''}</span>
       <span class="hrs"><span>Engine <b>${ac.engineHours != null ? fmtH(ac.engineHours) : 'Not entered'}</b></span>${ac.airTime != null ? `<span>Air <b>${fmtH(ac.airTime)}</b></span>` : ''}</span>
       <span class="acx">${acExpiries(ac).map(x => `<span class="ex-r"><span class="dot dot-${x.st.na ? 'na' : x.st.s === 'ok' ? 'ok-g' : x.st.s}"></span><span class="ex-n">${x.k === 'regoExpiry' ? 'Rego' : 'Insurance'}</span><span class="ex-d ist-${x.st.s}${x.st.na ? ' muted' : ''}">${x.st.na ? 'N/A' : x.st.due ? fmtDate(x.st.due) : 'Not entered'}</span></span>`).join('')}</span>
@@ -2624,10 +2644,11 @@ function renderAircraft() {
     const allD = S.defects.filter(d => d.aircraftId === ac.id);
     const defs = allD.filter(d => showAcDone || (!d.archived && d.status !== 'closed')).sort((a, b) => String(b.raised || '').localeCompare(String(a.raised || '')));
     const nx = acSummary(ac).next;
-    return `<section class="ac st-${esc(ac.status)}" id="acsec-${esc(ac.ident)}">
+    const use = acUse(ac);
+    return `<section class="ac st-${esc(use.cls)}" id="acsec-${esc(ac.ident)}">
       <div class="ac-head">
         <div class="ac-id"><span class="id">${esc(ac.ident)}</span>${ac.type ? `<span class="ty">${esc(ac.type)}</span>` : ''}${exChip(ac)}</div>
-        <div class="ac-state"><span class="stt">${esc(AC_AVAIL[ac.status] || ac.status)}</span>${ac.restrictions ? `<span class="restr">${esc(ac.restrictions)}</span>` : '<span class="muted">No restrictions recorded</span>'}
+        <div class="ac-state"><span class="stt">${esc(use.long)}</span>${use.lvl && use.lvl !== 'overdue' ? `<span class="muted" style="display:block">${fmtH(use.rem)} hrs to the next hour-based maintenance item</span>` : ''}${ac.restrictions ? `<span class="restr">${esc(ac.restrictions)}</span>` : '<span class="muted">No restrictions recorded</span>'}
           <span class="ac-next"><span class="k">Next maintenance:</span>${nx ? `<strong>${esc(nx.m.title)}</strong> ${nx.st.parts.map(p => badge(p.s, p.txt)).join(' ')}` : '<span class="muted">None entered</span>'}</span></div>
         <dl class="ctr"><div><dt>Engine hours</dt><dd>${ac.engineHours != null ? fmtH(ac.engineHours) : badge('missing', 'Not entered')}</dd></div><div><dt>Air time</dt><dd>${ac.airTime != null ? fmtH(ac.airTime) : '<span class="na muted">Not tracked</span>'}</dd></div></dl>
         <div class="ac-act"><button class="btn btn-sm btn-secondary" data-reg="${reg(() => openEditor('aircraft', ac.id))}">Update record</button></div>

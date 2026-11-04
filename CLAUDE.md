@@ -60,6 +60,10 @@ Instructor. It is separate from the public GoFly website.
   green "Good" above 50 hrs left, amber "Book soon" at 50 or fewer (`settings.hoursAmber`),
   red "Verify booking" at 20 or fewer (`settings.hoursRed`), red "Overdue" once passed.
   Status `due` = the red verify-booking level (ranks just below overdue). Red must stay below amber.
+- Aircraft availability label (`acUse`, Tom's rule): for flying aircraft (Available or
+  Restricted), from the hour-based item due soonest: under 30 hrs left "Use caution" (orange,
+  `cautionHrs`), under 15 "Use sparingly" (red, `sparingHrs`), past due "Maintenance overdue".
+  Restricted aircraft show "Restricted · use caution" etc. Off-line aircraft unchanged.
 - IOR fuel tank (Tom's figures): max safe fill 5,000 L (`settings.tankCapacity`), reorder level
   1,500 L (`settings.fuelThreshold`), standard order 3,500 L (`settings.orderTemplate.litres`).
   "Refill" means the delivery is in the tank: it logs a new reading of latest + 3,500 L and marks
