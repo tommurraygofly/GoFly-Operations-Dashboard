@@ -93,7 +93,19 @@ main{max-width:1320px;margin:0 auto;padding:var(--mainpad) var(--mainpad) 48px}
 .hero::after{content:"";position:absolute;right:-40px;top:0;bottom:0;width:min(46vw,560px);pointer-events:none;opacity:.9;
   background:linear-gradient(100deg,transparent 0 30%,var(--orange) 30% 44%,transparent 44% 52%,rgba(255,255,255,.08) 52% 58%,transparent 58% 64%,rgba(241,90,38,.35) 64% 68%,transparent 68%);
   -webkit-mask-image:linear-gradient(90deg,transparent,#000 40%),linear-gradient(180deg,#000 35%,transparent 85%);-webkit-mask-composite:source-in;mask-image:linear-gradient(90deg,transparent,#000 40%),linear-gradient(180deg,#000 35%,transparent 85%);mask-composite:intersect}
-.hero-in{position:relative;z-index:1;display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:18px 24px}
+.hero-in{position:relative;z-index:1;display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"greet clock" "act clock";gap:16px 28px;align-items:end}
+.h-greet{grid-area:greet}.h-clock{grid-area:clock;align-self:center}
+.h-act{grid-area:act;display:flex;flex-wrap:wrap;align-items:center;gap:12px 16px}
+.h-act .ops{margin-top:0}
+/* Big clock: local with seconds, UTC underneath */
+.clockcard{background:#0D0D0D;border:1px solid #2A2A2A;border-radius:16px;padding:14px 20px 14px;min-width:300px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+.ck-lbl{display:flex;align-items:center;justify-content:space-between;gap:10px;font:700 .7rem/1.2 var(--font);letter-spacing:.12em;text-transform:uppercase;color:var(--orange)}
+.ck-lbl span:last-child{color:#8F8F8F;letter-spacing:.06em}
+.ck-big{font:700 3.6rem/1 var(--font);font-variant-numeric:tabular-nums;letter-spacing:-.02em;color:#fff;margin:6px 0 10px}
+.ck-utc{display:flex;align-items:baseline;gap:10px;padding-top:10px;border-top:1px solid #2A2A2A;color:#D6D6D6}
+.ck-utc .z{font:700 .7rem/1 var(--font);letter-spacing:.1em;background:#fff;color:#000;border-radius:4px;padding:4px 6px;align-self:center}
+.ck-utc .v{font:600 1.65rem/1 var(--font);font-variant-numeric:tabular-nums}
+.ck-utc .dd{margin-left:auto;font-size:.8rem;color:#8F8F8F}
 .eyebrow{margin:0 0 6px;font:600 .74rem/1.2 var(--font);letter-spacing:.14em;text-transform:uppercase;color:var(--orange)}
 .hero h1{margin:0;font:700 italic clamp(2rem,3.6vw,2.8rem)/1 var(--font-c);text-transform:uppercase;letter-spacing:.01em}
 .hero-date{margin:8px 0 0;color:#BDBDBD;font-size:.92rem}
@@ -184,6 +196,8 @@ main{max-width:1320px;margin:0 auto;padding:var(--mainpad) var(--mainpad) 48px}
 .b-low{background:var(--orange);color:#000;border-color:var(--orange)}
 .b-low::before{content:"";--i:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill-rule='evenodd' d='M12 2 1 21h22zm-1.2 7h2.4v6h-2.4zm0 7.5h2.4V19h-2.4z'/%3E%3C/svg%3E")}
 .b-alert{background:var(--surface);color:var(--red);border-color:var(--red)}
+.b-hz{background:var(--soon-bg);color:var(--soon-ink);border-color:var(--soon-line)}
+.b-hz::before{content:"";--i:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill-rule='evenodd' d='M12 2 1 21h22zm-1.2 7h2.4v6h-2.4zm0 7.5h2.4V19h-2.4z'/%3E%3C/svg%3E")}
 .b-complete{background:var(--ok-bg);color:var(--ok-ink)}
 .b-complete::before{content:"";--i:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill-rule='evenodd' d='M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-1.3 14.4-4.4-4.4 1.7-1.7 2.7 2.7 5.6-5.6 1.7 1.7z'/%3E%3C/svg%3E")}
 .b-missing{border:1px dashed var(--line-strong);color:var(--muted)}
@@ -292,12 +306,65 @@ main{max-width:1320px;margin:0 auto;padding:var(--mainpad) var(--mainpad) 48px}
 .mc-axis span:last-child{transform:translateX(-100%)}
 .mc-cal{margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
 
+/* ===== Fuel: IOR tank gauge + graph ===== */
+.tankrow{display:grid;grid-template-columns:auto minmax(0,1fr);gap:14px;align-items:start;margin-top:12px}
+.gauge{display:grid;grid-template-columns:56px 66px;gap:8px;padding:22px 0 26px;position:relative}
+.g-tank{position:relative;height:100%;border:2px solid var(--line-strong);border-radius:10px;background:var(--track);overflow:hidden}
+.g-fill{position:absolute;left:0;right:0;bottom:0;background:var(--green)}
+.g-fill.low{background:var(--orange)}.g-fill.over{background:var(--red)}
+.g-fill::before{content:"";position:absolute;inset:0 0 auto;height:3px;background:rgba(255,255,255,.45)}
+.g-ln{position:absolute;left:0;right:0;height:0;border-top:2px dashed var(--red);z-index:1}
+.g-ln.max{border-top:2px solid var(--ink)}
+.g-pct{position:absolute;left:0;width:56px;bottom:2px;text-align:center;white-space:nowrap;font:700 .78rem var(--font);color:var(--ink)}
+.g-scale{position:relative;height:100%;font-size:.7rem;line-height:1.15;color:var(--muted)}
+.g-scale span{position:absolute;left:0;transform:translateY(50%);white-space:nowrap}
+.g-scale b{display:block;color:var(--ink);font-size:.78rem}
+.g-scale .thr b{color:var(--red)}
+.tankchart{min-width:0}
+.tankchart .fc-read{margin-top:6px}
+.tankchart .fchart{margin:0}
+.fstats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}
+.fstats div{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:8px 10px;min-width:0}
+.fstats .k{display:block;font-size:.68rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);line-height:1.3}
+.fstats b{display:block;font-size:1.05rem;margin-top:2px}
+.fstats .warn{background:var(--crit-bg);border-color:var(--crit-line)}
+.fstats .warn b{color:var(--red)}
+.fc-max{stroke:var(--ink);stroke-width:1.5;opacity:.7}
+.fc-max-l{fill:var(--ink);font:600 11.5px var(--font)}
+@media (max-width:460px){.gauge{grid-template-columns:44px 58px;gap:6px}.g-pct{width:44px;font-size:.72rem}.tankrow{gap:10px}.fstats{grid-template-columns:1fr 1fr}.fstats div:last-child{grid-column:1/-1}}
+
+/* ===== Weather: YBSU METAR + TAF ===== */
+.wx{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:14px}
+@media (max-width:980px){.wx{grid-template-columns:1fr}}
+.wx-col{border:1px solid var(--line);border-radius:12px;padding:14px;min-width:0}
+.wx-h{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin-bottom:10px}
+.wx-tag{background:var(--chip);color:#fff;font:700 .72rem/1 var(--font);letter-spacing:.08em;padding:6px 9px;border-radius:6px}
+.wx-when{font-size:.84rem;color:var(--muted)}
+.wx-when.old{color:var(--soon-ink);font-weight:600}
+.wx-facts{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:8px;margin:0 0 10px}
+.wx-facts div{background:var(--surface-2);border-radius:9px;padding:8px 10px;min-width:0}
+.wx-facts dt{font-size:.66rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.wx-facts dd{margin:2px 0 0;font-weight:600;font-size:.95rem;overflow-wrap:anywhere}
+.wx-hz{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
+.wx-raw{margin:0;font:500 .84rem/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:#0E0E0E;color:#EDEDED;padding:10px 12px;border-radius:9px;overflow-wrap:anywhere}
+.tl{display:grid;grid-template-columns:170px minmax(0,1fr);gap:2px 12px;padding:8px 2px;border-top:1px solid var(--line)}
+.tl:first-child{border-top:0;padding-top:0}
+.tl-l{font-size:.8rem;font-weight:700}
+.tl-t{font:500 .84rem/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;overflow-wrap:anywhere}
+.tl.tempo{background:var(--soon-bg);border-radius:8px;border-top-color:transparent;padding:8px 10px;margin:4px 0}
+.tl.tempo .tl-l{color:var(--soon-ink)}
+.tl.rmk .tl-l,.tl.rmk .tl-t{color:var(--muted)}
+@media (max-width:560px){.tl{grid-template-columns:1fr}}
+.wx-foot{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 12px;margin-top:12px;font-size:.8rem;color:var(--muted)}
+.wx-empty{display:flex;flex-wrap:wrap;align-items:center;gap:12px;min-height:80px;color:var(--muted)}
+.wx-empty p{margin:0}
+
 /* ===== Fuel ===== */
 .fuel-head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:6px 14px}
 .fuel-fig{font:700 2.9rem/1 var(--font);letter-spacing:-.03em;font-variant-numeric:normal}
 .fuel-fig small{font-size:1.2rem;font-weight:600;margin-left:4px;color:var(--muted);letter-spacing:0}
 .fuel-meta{font-size:.84rem;color:var(--muted);margin:6px 0 0}
-.fchart{position:relative;margin:8px 0 4px;min-height:190px}
+.fchart{position:relative;margin:8px 0 4px;min-height:160px}
 .fchart svg{display:block;width:100%;touch-action:pan-y;cursor:crosshair}
 .fchart svg:focus-visible{outline:2px solid var(--orange);outline-offset:2px}
 .fc-read{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 8px;margin-top:12px;padding:7px 10px;background:var(--surface-2);border-radius:8px;font-size:.84rem;min-height:1.5em;color:var(--muted)}
@@ -459,8 +526,12 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
   #toast{bottom:calc(86px + env(safe-area-inset-bottom,0px))}
   .hero{padding-top:20px;padding-bottom:70px}
   .hero::after{width:60vw;opacity:.55}
-  .hero-in{display:block}
-  .quick{display:grid;grid-template-columns:1fr 1fr;margin-top:16px}
+  .hero-in{grid-template-columns:1fr;grid-template-areas:"greet" "clock" "act";gap:14px}
+  .clockcard{min-width:0;padding:12px 16px}
+  .ck-big{font-size:3rem;margin:4px 0 8px}
+  .ck-utc .v{font-size:1.35rem}
+  .h-act{display:block}
+  .quick{display:grid;grid-template-columns:1fr 1fr;margin-top:12px}
   .quick .btn{width:100%}
   .ops{border-radius:14px;align-items:flex-start;flex-wrap:wrap}
   .kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
@@ -568,7 +639,7 @@ function emptyState() {
   return {
     schema: SCHEMA,
     settings: {
-      userName: '', theme: 'auto', dueSoonDays: 14, hoursWarn: 10, fuelThreshold: 1500, tankCapacity: null,
+      userName: '', theme: 'auto', dueSoonDays: 14, hoursWarn: 10, fuelThreshold: 1500, tankCapacity: 5000,
       orderTemplate: { product: 'Premium Unleaded 98', litres: 3500, supplier: 'IOR', notes: '' }
     },
     aircraft: AIRCRAFT_IDS.map(blankAircraft),
@@ -584,6 +655,8 @@ function normalise(d) {
     settings: { ...b.settings, ...ds, orderTemplate: { ...b.settings.orderTemplate, ...(ds.orderTemplate || {}) } },
     meta: { ...b.meta, ...(d.meta || {}) } };
   LISTS.forEach(k => { if (!Array.isArray(o[k])) o[k] = []; });
+  // Tom's IOR tank: max safe fill 5,000 L (replaces the old optional/example capacity).
+  if (o.settings.tankCapacity == null || o.settings.exampleCapacity) { o.settings.tankCapacity = 5000; delete o.settings.exampleCapacity; }
   const ac = Array.isArray(d.aircraft) ? d.aircraft : [];
   o.aircraft = AIRCRAFT_IDS.map(id => ({ ...blankAircraft(id), ...(ac.find(a => a.ident === id) || {}) }))
     .concat(ac.filter(a => a && !AIRCRAFT_IDS.includes(a.ident)));
@@ -619,7 +692,7 @@ function applyExamples() {
     E({ aircraftId: ac('8582'), description: 'Right brake feels soft', raised: D(-2), status: 'open', waitingOn: '', followUp: 'Maintenance provider to inspect during the 100-hourly.' })
   );
   S.fuelReadings.push(
-    E({ date: D(-7), litres: 5200, by: 'Ops Manager', notes: '' }),
+    E({ date: D(-7), litres: 4800, by: 'Ops Manager', notes: '' }),
     E({ date: D(-4), litres: 3650, by: 'Ops Manager', notes: '' }),
     E({ date: D(-1), litres: 1380, by: 'Ops Manager', notes: 'Busy weekend.' })
   );
@@ -643,7 +716,6 @@ function applyExamples() {
     E({ title: 'Replace inspection tag on bowser fire extinguisher', category: 'Safety', owner: 'Ops Manager', due: D(10), priority: 'high', status: 'progress', waitingOn: '', notes: '' }),
     E({ title: 'Block out 8582 in the booking system', category: 'General operations', owner: 'Ops Manager', due: D(-2), priority: 'normal', status: 'done', waitingOn: '', notes: '', completedAt: now })
   );
-  if (S.settings.tankCapacity == null) { S.settings.tankCapacity = 10000; S.settings.exampleCapacity = true; }
 }
 function hasExamples() {
   return S.aircraft.some(a => a.example) || LISTS.some(k => S[k].some(r => r.example));
@@ -651,7 +723,6 @@ function hasExamples() {
 function clearExamples() {
   LISTS.forEach(k => { S[k] = S[k].filter(r => !r.example); });
   S.aircraft = S.aircraft.map(a => a.example ? blankAircraft(a.ident) : a);
-  if (S.settings.exampleCapacity) { S.settings.tankCapacity = null; delete S.settings.exampleCapacity; }
 }
 
 function persist() { S.meta.savedAt = nowStamp(); Store.ok = Store.adapter.save(S); }
@@ -805,14 +876,16 @@ function attentionItems() {
     push({ sev: 'info', src: 'defect', title: `${ac ? ac.ident + ': ' : ''}${d.description}`, detail: d.status === 'waiting' ? `Defect, waiting on ${d.waitingOn || 'someone else'}` : 'Open defect', badge: 'Defect', fn: () => openEditor('defect', d.id) });
   });
   const fr = latestReading(), thr = S.settings.fuelThreshold;
-  if (!fr) push({ sev: 'missing', src: 'fuel', title: 'Bulk fuel reading', detail: 'No fuel reading entered yet', badge: 'Not entered', fn: () => openEditor('reading') });
+  if (!fr) push({ sev: 'missing', src: 'fuel', title: 'IOR tank reading', detail: 'No fuel reading entered yet', badge: 'Not entered', fn: () => openEditor('reading') });
   else {
     if (isLowStock(fr)) {
       const o = nextOrder();
-      push({ sev: 'low', src: 'fuel', title: `Bulk fuel ${fmtL(fr.litres)}`, detail: `Below the ${fmtL(thr)} reorder level. ${o ? (o.confirmedDate ? `Delivery confirmed for ${fmtDate(o.confirmedDate)}.` : 'On order, delivery not confirmed.') : 'Nothing on order.'}`, badge: 'Low stock', fn: () => go('fuel') });
+      push({ sev: 'low', src: 'fuel', title: `IOR tank ${fmtL(fr.litres)}`, detail: `Below the ${fmtL(thr)} reorder level. ${o ? (o.confirmedDate ? `Delivery confirmed for ${fmtDate(o.confirmedDate)}.` : 'On order, delivery not confirmed.') : 'Nothing on order.'}`, badge: 'Low stock', fn: () => go('fuel') });
     }
+    const cap = S.settings.tankCapacity;
+    if (cap && fr.litres > cap) push({ sev: 'alert', src: 'fuel', title: `IOR tank above max safe fill`, detail: `Latest reading ${fmtL(fr.litres)} is over the ${fmtL(cap)} max safe fill. Check the reading.`, badge: 'Check reading', fn: () => openEditor('reading', fr.id) });
     const age = -daysUntil(fr.date);
-    if (age > 7) push({ sev: 'missing', src: 'fuel', title: 'Bulk fuel reading is old', detail: `Last reading ${plural(age, 'day')} ago`, badge: 'Update', fn: () => openEditor('reading') });
+    if (age > 7) push({ sev: 'missing', src: 'fuel', title: 'IOR tank reading is old', detail: `Last reading ${plural(age, 'day')} ago`, badge: 'Update', fn: () => openEditor('reading') });
   }
   S.fuelOrders.forEach(o => {
     if (o.archived) return;
@@ -953,7 +1026,7 @@ const SCHEMAS = {
     defaults: () => ({ date: todayISO(), by: S.settings.userName }),
     fields: [
       { k: 'date', l: 'Date', t: 'date', req: true },
-      { k: 'litres', l: 'Bulk tank reading', t: 'litres', req: true },
+      { k: 'litres', l: 'IOR tank reading', t: 'litres', req: true },
       { k: 'by', l: 'Read by', t: 'text' },
       { k: 'notes', l: 'Notes', t: 'textarea', wide: true }
     ]
@@ -1011,7 +1084,7 @@ const SCHEMAS = {
       { k: 'dueSoonDays', l: 'Due soon window (calendar dates)', t: 'number', suffix: 'days', req: true },
       { k: 'hoursWarn', l: 'Default maintenance hours warning', t: 'hours', req: true, hint: 'Flag items with this many hours or fewer remaining. Each aircraft can set its own.' },
       { k: 'fuelThreshold', l: 'Fuel reorder level (low stock)', t: 'litres', req: true },
-      { k: 'tankCapacity', l: 'Bulk tank capacity (optional)', t: 'litres', hint: 'Only used to show stock as a share of the tank.' }
+      { k: 'tankCapacity', l: 'IOR tank max safe fill', t: 'litres', req: true, hint: 'Top of the tank gauge. Refills that would go above this are flagged.' }
     ]
   }
 };
@@ -1312,7 +1385,6 @@ function openSettings() {
   openDlg('Data and settings', body, [cancelBtn, { label: 'Save settings', cls: 'btn btn-primary', on: () => {
     const { vals, err } = collect(SCHEMAS.settings.fields);
     if (err) { showErr(err); return; }
-    if (vals.tankCapacity !== s.tankCapacity) delete s.exampleCapacity;
     Object.assign(s, vals);
     applyTheme(); closeDlg(); commit(); toast('Settings saved');
   } }]);
@@ -1349,6 +1421,7 @@ function toast(msg, undo) {
 // Line icons for tiles and widget headings (24px grid, drawn with currentColor).
 const ICONS = {
   plane: '<path d="M2.5 13.5 10 11l4-8h2l-1.6 8 6.6 1v2l-6.6 1 1.6 6h-2l-4-6.5-7.5-1z"/>',
+  cloud: '<path d="M7 18h10a4 4 0 0 0 .6-7.95A6 6 0 0 0 6.1 9.2 4.5 4.5 0 0 0 7 18z"/>',
   wrench: '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.8-3.8a6 6 0 0 1-7.9 7.9l-6.9 6.9a2.1 2.1 0 0 1-3-3l6.9-6.9a6 6 0 0 1 7.9-7.9z"/>',
   drop: '<path d="M12 3s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11z"/>',
   user: '<circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/>',
@@ -1438,10 +1511,12 @@ let fuelSelId = null;
 function drawFuelChart(el) {
   const pts = fuelSeries(), n = pts.length;
   if (n < 2 || !el.isConnected) return;
-  const W = Math.max(240, el.clientWidth), H = Number(el.dataset.h) || 190;
-  const thr = S.settings.fuelThreshold;
+  const W = Math.max(160, el.clientWidth), H = Number(el.dataset.h) || 190;
+  const thr = S.settings.fuelThreshold, cap = S.settings.tankCapacity;
   const ml = 42, mr = 12, mt = 22, mb = 26, pw = W - ml - mr, ph = H - mt - mb;
-  const sc = niceScale(0, Math.max(...pts.map(p => p.litres), thr || 0) * 1.04, 4);
+  // Same 0 to max-safe-fill scale as the tank gauge, so their lines line up.
+  const top = Math.max(...pts.map(p => p.litres), thr || 0, cap || 0);
+  const sc = cap && top <= cap ? niceScale(0, cap, 5) : niceScale(0, top * 1.04, 4);
   const t0 = Date.parse(pts[0].date), t1 = Date.parse(pts[n - 1].date), same = t1 === t0;
   const xs = pts.map((p, i) => ml + (same ? i / (n - 1) : (Date.parse(p.date) - t0) / (t1 - t0)) * pw);
   const Y = v => mt + ph - (v - sc.lo) / (sc.hi - sc.lo) * ph;
@@ -1457,16 +1532,19 @@ function drawFuelChart(el) {
   });
   const line = pts.map((p, i) => `${i ? 'L' : 'M'}${xs[i].toFixed(1)},${Y(p.litres).toFixed(1)}`).join('');
   const area = `${line}L${xs[n - 1].toFixed(1)},${Y(sc.lo)}L${xs[0].toFixed(1)},${Y(sc.lo)}Z`;
-  const thrSvg = thr != null ? `<line class="fc-thr" x1="${ml}" x2="${W - mr}" y1="${Y(thr)}" y2="${Y(thr)}"/><text class="fc-thr-l" x="${ml + 4}" y="${Y(thr) - 5}">Reorder level ${esc(fmtL(thr))}</text>` : '';
-  const dots = pts.map((p, i) => `<circle class="fc-pt${thr != null && p.litres < thr ? ' low' : ''}" cx="${xs[i]}" cy="${Y(p.litres)}" r="4"/>`).join('');
+  const thrSvg = thr != null ? `<line class="fc-thr" x1="${ml}" x2="${W - mr}" y1="${Y(thr)}" y2="${Y(thr)}"/><text class="fc-thr-l" x="${ml + 4}" y="${Y(thr) - 5}">Reorder ${esc(fmtL(thr))}</text>` : '';
+  const maxSvg = cap ? `<line class="fc-max" x1="${ml}" x2="${W - mr}" y1="${Y(cap)}" y2="${Y(cap)}"/><text class="fc-max-l" x="${ml + 4}" y="${Y(cap) - 5}">Max safe fill ${esc(fmtL(cap))}</text>` : '';
+  const dots = pts.map((p, i) => `<circle class="fc-pt${(thr != null && p.litres < thr) || (cap && p.litres > cap) ? ' low' : ''}" cx="${xs[i]}" cy="${Y(p.litres)}" r="4"/>`).join('');
   const lp = pts[n - 1];
-  const endLbl = `<text class="fc-ax" style="fill:var(--ink);font-weight:600" x="${xs[n - 1] - 8}" y="${Math.max(12, Y(lp.litres) - 10)}" text-anchor="end">${esc(fmtL(lp.litres))}</text>`;
-  const desc = `Bulk fuel readings, ${n} from ${fmtDate(pts[0].date)} to ${fmtDate(lp.date)}. Use the left and right arrow keys to step through readings.`;
+  // Put the latest value under its point when it would clash with the max-fill label or the top edge.
+  const ly = Y(lp.litres), below = ly < mt + 16 || (cap && Math.abs(ly - Y(cap)) < 16);
+  const endLbl = `<text class="fc-ax" style="fill:var(--ink);font-weight:600" x="${xs[n - 1] - 8}" y="${below ? ly + 18 : ly - 10}" text-anchor="end">${esc(fmtL(lp.litres))}</text>`;
+  const desc = `IOR tank readings, ${n} from ${fmtDate(pts[0].date)} to ${fmtDate(lp.date)}. Use the left and right arrow keys to step through readings.`;
   el.innerHTML = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" tabindex="0" aria-label="${esc(desc)}">
-    <text class="fc-ax" x="0" y="11">Litres</text>${grid}${thrSvg}<path class="fc-area" d="${area}"/><path class="fc-line" d="${line}"/>
+    <text class="fc-ax" x="0" y="11">L</text>${grid}${maxSvg}${thrSvg}<path class="fc-area" d="${area}"/><path class="fc-line" d="${line}"/>
     <line class="fc-cross" x1="${xs[si]}" x2="${xs[si]}" y1="${mt}" y2="${mt + ph}"/>${dots}<circle class="fc-sel" cx="${xs[si]}" cy="${Y(sel.litres)}" r="6"/>${endLbl}${lbl.join('')}</svg>`;
   el.dataset.xs = JSON.stringify(xs.map(x => Math.round(x)));
-  const rd = el.previousElementSibling;
+  const rd = el.parentElement && el.parentElement.querySelector('.fc-read');
   if (rd && rd.classList.contains('fc-read')) {
     const wd = new Intl.DateTimeFormat('en-AU', { timeZone: 'UTC', weekday: 'short' }).format(new Date(sel.date + 'T00:00:00Z'));
     rd.innerHTML = `<strong>${esc(fmtL(sel.litres))}</strong><span>${esc(wd)} ${fmtDate(sel.date)}${sel.by ? `, ${esc(sel.by)}` : ''}${si === n - 1 ? ' (latest)' : ''}${thr != null && sel.litres < thr ? '. Below reorder level' : ''}</span>`;
@@ -1496,14 +1574,30 @@ function drawCharts() { $$('[data-chart="fuel"]').forEach(el => { drawFuelChart(
 let resizeT;
 window.addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(() => $$('[data-chart="fuel"]').forEach(drawFuelChart), 120); });
 
+function tankGauge(fr, thr, cap, H) {
+  const lv = fr ? fr.litres : 0, max = Math.max(cap || 0, lv, 1);
+  const pct = v => Math.max(0, Math.min(100, v / max * 100));
+  const st = !fr ? '' : cap && lv > cap ? 'over' : thr != null && lv < thr ? 'low' : '';
+  const label = fr ? `${Math.round(lv / (cap || max) * 100)}%` : '—';
+  return `<div class="gauge" style="height:${H}px" role="img" aria-label="IOR fuel tank ${fr ? fmtL(lv) : 'no reading'}${cap ? `, ${label} of ${fmtL(cap)} max safe fill` : ''}${thr != null ? `, reorder level ${fmtL(thr)}` : ''}">
+    <div class="g-tank"><div class="g-fill ${st}" style="height:${pct(lv).toFixed(1)}%"></div>
+      ${cap ? `<span class="g-ln max" style="bottom:${pct(cap).toFixed(1)}%"></span>` : ''}${thr != null ? `<span class="g-ln" style="bottom:${pct(thr).toFixed(1)}%"></span>` : ''}
+</div><span class="g-pct">${label}${cap ? ' full' : ''}</span>
+    <div class="g-scale" aria-hidden="true">${cap ? `<span style="bottom:${pct(cap).toFixed(1)}%"><b>${Math.round(cap).toLocaleString('en-AU')}</b>max safe</span>` : ''}${thr != null ? `<span class="thr" style="bottom:${pct(thr).toFixed(1)}%"><b>${Math.round(thr).toLocaleString('en-AU')}</b>reorder</span>` : ''}<span style="bottom:0"><b>0</b></span></div>
+  </div>`;
+}
+
 function fuelSummary(page) {
   const fr = latestReading(), thr = S.settings.fuelThreshold, cap = S.settings.tankCapacity, low = isLowStock(fr);
+  const add = Number(S.settings.orderTemplate.litres) || 3500;
   const age = fr ? -daysUntil(fr.date) : null;
   const ageTxt = age == null ? '' : age <= 0 ? 'today' : age === 1 ? 'yesterday' : `${age} days ago`;
-  const n = fuelSeries().length, o = nextOrder();
+  const n = fuelSeries().length, o = nextOrder(), H = page ? 230 : 210;
   const chart = n >= 2
-    ? `<div class="fc-read" aria-live="polite"></div><div class="fchart" data-chart="fuel" data-h="${page ? 220 : 190}"></div>`
-    : `<div class="fchart"><div class="fc-empty">${n ? 'Only one reading so far. Log another reading to see how stock is changing.' : 'No readings yet. Log the bulk tank level to start the chart.'}</div></div>`;
+    ? `<div class="fchart" data-chart="fuel" data-h="${H}"></div><div class="fc-read" aria-live="polite"></div>`
+    : `<div class="fchart" style="min-height:${H}px"><div class="fc-empty" style="min-height:${H}px">${n ? 'Only one reading so far. Log another reading to see how stock is changing.' : 'No readings yet. Log the tank level to start the graph.'}</div></div>`;
+  const over = fr && cap ? fr.litres > cap : false;
+  const after = fr ? fr.litres + add : null, afterOver = after != null && cap && after > cap;
   let order;
   if (o) {
     const st = orderStatus(o);
@@ -1511,14 +1605,131 @@ function fuelSummary(page) {
       <dl class="no-grid"><dt>Status</dt><dd>${esc(lab(ORDER_ST, o.status))}${st.s === 'overdue' ? ' ' + badge('overdue', st.txt) : ''}</dd>
       <dt>Requested delivery</dt><dd>${o.requestedDate ? fmtDate(o.requestedDate) : badge('missing', 'Not entered')}</dd>
       <dt>Confirmed delivery</dt><dd>${o.confirmedDate ? `<strong>${fmtDate(o.confirmedDate)}</strong> ${badge('complete', 'Confirmed')}` : badge('missing', 'Not confirmed')}</dd></dl>
-      <p class="hint" style="margin-top:6px">Ordered fuel isn’t counted in stock until it’s delivered and a new reading is logged.</p>`;
-  } else order = `<p class="empty">No fuel on order.${low ? ' Stock is below the reorder level.' : ''}</p>`;
+      <p class="hint" style="margin-top:6px">Ordered fuel isn’t counted until it arrives. Press Refill when the delivery is in the tank.</p>`;
+  } else order = `<p class="empty">No fuel on order.${low ? ' Stock is below the reorder level, so order now.' : ''}</p>`;
   return `<div class="fuel-head"><div class="fuel-fig">${fr ? Math.round(fr.litres).toLocaleString('en-AU') : '—'}<small>L</small></div>
-      <div>${low ? badge('low', 'Low stock') : fr && thr != null ? badge('ok', 'Above reorder level') : ''}</div></div>
-    <p class="fuel-meta">${fr ? `Latest reading ${fmtDate(fr.date)} (${ageTxt})${fr.by ? ` by ${esc(fr.by)}` : ''}` : 'No reading yet'}${fr && cap ? `. ${Math.round(fr.litres / cap * 100)}% of ${fmtL(cap)} tank${S.settings.exampleCapacity ? ' (example capacity)' : ''}` : ''}${page ? `. Reorder level ${fmtL(thr)} <button class="btn-text" style="padding:0 0 0 4px;min-height:0" data-act="threshold">Change</button>` : ''}</p>
-    ${chart}
-    <div class="next-order"><h3 class="mini-h">Next order</h3>${order}</div>
-    <div class="btn-row"><button class="btn btn-sm btn-secondary" data-act="add" data-kind="reading">Log reading</button>${o ? (page ? `<button class="btn btn-sm btn-secondary" data-reg="${reg(() => markDelivered(o))}">Mark delivered</button>` : `<button class="btn btn-sm btn-secondary" data-reg="${reg(() => openEditor('order', o.id))}">Order details</button>`) : `<button class="btn btn-sm btn-secondary" data-act="orderTemplate">Order fuel</button>`}</div>`;
+      <div>${over ? badge('alert', 'Above max safe fill') : low ? badge('low', 'Low stock, order now') : fr && thr != null ? badge('complete', 'Above reorder level') : ''}</div></div>
+    <p class="fuel-meta">${fr ? `Latest reading ${fmtDate(fr.date)} (${ageTxt})${fr.by ? ` by ${esc(fr.by)}` : ''}` : 'No reading yet'}${page ? `. Reorder at ${fmtL(thr)} <button class="btn-text" style="padding:0 0 0 4px;min-height:0" data-act="threshold">Change</button>` : ''}</p>
+    <div class="tankrow">${tankGauge(fr, thr, cap, H)}<div class="tankchart">${chart}</div></div>
+    <div class="fstats">
+      <div><span class="k">Room to max</span><b>${fr && cap ? fmtL(Math.max(0, cap - fr.litres)) : '—'}</b></div>
+      <div class="${afterOver ? 'warn' : ''}"><span class="k">After +${Math.round(add).toLocaleString('en-AU')} L refill</span><b>${after != null ? fmtL(after) : '—'}</b></div>
+      <div class="${low ? 'warn' : ''}"><span class="k">Reorder at</span><b>${fmtL(thr)}</b></div>
+    </div>
+    <div class="btn-row"><button class="btn btn-primary" data-act="refill">Refill +${Math.round(add).toLocaleString('en-AU')} L</button><button class="btn btn-secondary" data-act="add" data-kind="reading">Log reading</button>${o ? `<button class="btn btn-secondary" data-reg="${reg(() => openEditor('order', o.id))}">Order details</button>` : `<button class="btn btn-secondary" data-act="orderTemplate">Order ${Math.round(add).toLocaleString('en-AU')} L</button>`}</div>
+    <div class="next-order"><h3 class="mini-h">Next order</h3>${order}</div>`;
+}
+
+// Refill: the delivery is in the tank. Logs a new reading of latest + order quantity
+// (3,500 L by default) and marks the open order delivered.
+async function refill() {
+  const fr = latestReading(), add = Number(S.settings.orderTemplate.litres) || 3500, cap = S.settings.tankCapacity, o = nextOrder();
+  if (!fr) { openEditor('reading', null, { notes: `Refill +${add} L` }); toast('No earlier reading. Enter the tank level after the refill.'); return; }
+  const after = fr.litres + add;
+  const msg = `Log a ${fmtL(add)} refill now? The IOR tank goes from ${fmtL(fr.litres)} to ${fmtL(after)}.`
+    + (cap && after > cap ? ` Warning: that is above the ${fmtL(cap)} max safe fill. Check the level before confirming.` : '')
+    + (o ? ` The ${fmtL(o.litres)} order${o.supplier ? ' from ' + o.supplier : ''} will be marked delivered.` : '');
+  if (!(await askConfirm(msg, `Refill +${Math.round(add).toLocaleString('en-AU')} L`))) return;
+  withUndo('Refill logged', () => {
+    const now = nowStamp(), who = S.settings.userName || '';
+    S.fuelReadings.push({ id: uid(), date: todayISO(), litres: after, by: who, notes: `Refill +${add} L${o && o.supplier ? ', ' + o.supplier + ' delivery' : ''}`, createdAt: now, updatedAt: now, updatedBy: who, archived: false });
+    if (o) { o.status = 'delivered'; if (!o.confirmedDate) o.confirmedDate = todayISO(); delete o.example; stamp(o); }
+  });
+}
+
+/* ---------- Weather: YBSU METAR and TAF from the Worker route /api/wx ---------- */
+const WX_ID = 'YBSU';
+const WX = { status: 'idle', data: null, at: 0 };
+const hm24 = (d, tz) => new Intl.DateTimeFormat('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(d);
+const lday = d => new Intl.DateTimeFormat('en-AU', { timeZone: TZ, weekday: 'short', day: '2-digit', month: '2-digit' }).format(d);
+const agoTxt = d => { const m = Math.round((Date.now() - d) / 60000); return m < 1 ? 'just now' : m < 60 ? `${m} min ago` : `${Math.floor(m / 60)} h ${m % 60} min ago`; };
+const toDate = v => v == null || v === '' ? null : typeof v === 'number' ? new Date(v < 1e12 ? v * 1000 : v) : isNaN(Date.parse(v)) ? null : new Date(v);
+function ddhh(dd, hh, mm, ref) {
+  const r = ref || new Date();
+  const mk = k => new Date(Date.UTC(r.getUTCFullYear(), r.getUTCMonth() + k, +dd, +hh, +(mm || 0)));
+  let d = mk(0);
+  if (d - r > 15 * 864e5) d = mk(-1); else if (r - d > 15 * 864e5) d = mk(1);
+  return d;
+}
+function decodeMetar(raw) {
+  const f = [], hz = [];
+  const w = raw.match(/\b(\d{3}|VRB)(\d{2,3})(?:G(\d{2,3}))?KT\b/);
+  if (w) {
+    f.push(['Wind', +w[2] === 0 && w[1] === '000' ? 'Calm' : `${w[1] === 'VRB' ? 'Variable' : w[1] + '°'} ${+w[2]} kt${w[3] ? `, gusts ${+w[3]}` : ''}`]);
+    if (w[3] && +w[3] >= 25) hz.push('Strong gusts');
+  }
+  if (/\bCAVOK\b/.test(raw)) f.push(['Visibility', 'CAVOK']);
+  else { const v = raw.match(/KT\s+(?:\d{3}V\d{3}\s+)?(\d{4})(?:NDV)?\b/); if (v) f.push(['Visibility', +v[1] >= 9999 ? '10 km or more' : +v[1] >= 5000 ? `${+v[1] / 1000} km` : `${+v[1]} m`]); }
+  const cl = [...raw.matchAll(/\b(FEW|SCT|BKN|OVC)(\d{3})(CB|TCU)?\b/g)].map(m => `${m[1]} ${(+m[2] * 100).toLocaleString('en-AU')} ft${m[3] ? ' ' + m[3] : ''}`);
+  if (cl.length) f.push(['Cloud', cl.join(', ')]); else if (/\b(NSC|SKC|NCD|CLR)\b/.test(raw)) f.push(['Cloud', 'No significant cloud']);
+  const t = raw.match(/\s(M?\d{2})\/(M?\d{2})?(?=\s)/), c = x => x ? (x[0] === 'M' ? -Number(x.slice(1)) : Number(x)) : null;
+  if (t) f.push(['Temp / dew point', `${c(t[1])}° / ${t[2] ? c(t[2]) + '°' : '—'}`]);
+  const q = raw.match(/\bQ(\d{4})\b/); if (q) f.push(['QNH', `${+q[1]} hPa`]);
+  const body = raw.split(/\sRMK\s/)[0];
+  const wx = body.match(/\s((?:[+-]|VC)?(?:TS|SH|FZ|BL|DR|MI|BC|PR)?(?:RA|DZ|SN|GR|GS|FG|BR|HZ|FU|DU|SA|SQ|PL|IC)+|[+-]?TS)(?=\s|$)/);
+  if (wx) f.push(['Weather', wx[1]]);
+  if (/\b[+-]?(VC)?TS|CB\b/.test(body)) hz.push('Thunderstorm or CB');
+  if (/\bTCU\b/.test(body)) hz.push('Towering cumulus');
+  if (/\bFG\b/.test(body)) hz.push('Fog');
+  return { f, hz };
+}
+function tafLines(raw, ref) {
+  const [main, rmk] = raw.replace(/^TAF\s+(AMD\s+|COR\s+)?/, '').trim().split(/\s+RMK\s+/);
+  const span = p => { const g = p.match(/\b(\d{2})(\d{2})\/(\d{2})(\d{2})\b/); if (!g) return ''; const a = ddhh(g[1], g[2], 0, ref), b = ddhh(g[3], g[4], 0, ref); return `${lday(a)} ${hm24(a, TZ)} to ${hm24(b, TZ)}`; };
+  const out = main.split(/\s+(?=(?:FM\d{6}|BECMG|TEMPO|INTER|PROB\d{2})\b)/).map((p, i) => {
+    let m;
+    if (i === 0) return { label: 'Main forecast', cls: 'base', text: p };
+    if ((m = p.match(/^FM(\d{2})(\d{2})(\d{2})/))) { const d = ddhh(m[1], m[2], m[3], ref); return { label: `From ${lday(d)} ${hm24(d, TZ)}`, cls: 'fm', text: p }; }
+    if (/^BECMG/.test(p)) return { label: `Becoming ${span(p)}`, cls: 'fm', text: p };
+    if (/^TEMPO/.test(p)) return { label: `Temporarily ${span(p)}`, cls: 'tempo', text: p };
+    if (/^INTER/.test(p)) return { label: `Intermittently ${span(p)}`, cls: 'tempo', text: p };
+    if ((m = p.match(/^PROB(\d{2})/))) return { label: `${m[1]}% chance ${span(p)}`, cls: 'tempo', text: p };
+    return { label: '', cls: 'fm', text: p };
+  });
+  if (rmk) out.push({ label: 'Remarks', cls: 'rmk', text: 'RMK ' + rmk });
+  return out;
+}
+function wxBody() {
+  const d = WX.data;
+  if (!d) return WX.status === 'error'
+    ? `<div class="wx-empty"><p>${WX_ID} weather couldn’t be loaded right now. Check NAIPS.</p><button class="btn btn-sm btn-secondary" data-act="wxRetry">Try again</button></div>`
+    : `<div class="wx-empty"><p>Loading ${WX_ID} weather…</p></div>`;
+  const m = d.metar, t = d.taf;
+  let mh, th;
+  if (m && (m.rawOb || m.rawText)) {
+    const raw = String(m.rawOb || m.rawText).trim();
+    const g = raw.match(/\b(\d{2})(\d{2})(\d{2})Z\b/);
+    const ot = toDate(m.obsTime) || (g ? ddhh(g[1], g[2], g[3]) : null);
+    const old = ot && Date.now() - ot > 90 * 60000;
+    const { f, hz } = decodeMetar(' ' + raw + ' ');
+    mh = `<div class="wx-col"><div class="wx-h"><span class="wx-tag">${/^SPECI/.test(raw) ? 'SPECI' : 'METAR'}</span>${ot ? `<span class="wx-when${old ? ' old' : ''}">Observed ${hm24(ot, TZ)} local, ${hm24(ot, 'UTC')}Z (${agoTxt(ot)})${old ? '. Old report' : ''}</span>` : ''}</div>
+      ${hz.length ? `<div class="wx-hz">${hz.map(h => badge('hz', h)).join('')}</div>` : ''}
+      <dl class="wx-facts">${f.map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>
+      <p class="wx-raw">${esc(raw)}</p></div>`;
+  } else mh = `<div class="wx-col"><div class="wx-h"><span class="wx-tag">METAR</span></div><p class="empty">No current METAR for ${WX_ID}.</p></div>`;
+  if (t && (t.rawTAF || t.rawText)) {
+    const raw = String(t.rawTAF || t.rawText).trim().replace(/\s+/g, ' ');
+    const it = toDate(t.issueTime), vf = toDate(t.validTimeFrom), vt = toDate(t.validTimeTo);
+    const lines = tafLines(raw, vf || it || new Date());
+    const tzHz = [/\bTS|CB\b/.test(raw) && 'Thunderstorm or CB', /\bFG\b/.test(raw) && 'Fog', /\bTCU\b/.test(raw) && 'Towering cumulus'].filter(Boolean);
+    th = `<div class="wx-col"><div class="wx-h"><span class="wx-tag">TAF${/^TAF\s+AMD/.test(raw) ? ' AMD' : ''}</span><span class="wx-when">${it ? `Issued ${lday(it)} ${hm24(it, TZ)} local` : ''}${vf && vt ? `. Valid ${lday(vf)} ${hm24(vf, TZ)} to ${lday(vt)} ${hm24(vt, TZ)}` : ''}</span></div>
+      ${tzHz.length ? `<div class="wx-hz">${tzHz.map(h => badge('hz', 'Forecast: ' + h)).join('')}</div>` : ''}
+      <div>${lines.map(l => `<div class="tl ${l.cls}"><span class="tl-l">${esc(l.label)}</span><span class="tl-t">${esc(l.text)}</span></div>`).join('')}</div></div>`;
+  } else th = `<div class="wx-col"><div class="wx-h"><span class="wx-tag">TAF</span></div><p class="empty">No current TAF for ${WX_ID}.</p></div>`;
+  return `<div class="wx">${mh}${th}</div>
+    <div class="wx-foot"><span>${WX.status === 'error' ? 'Latest update failed, showing the last report. ' : ''}From aviationweather.gov, checked ${hm24(new Date(WX.at), TZ)}. Not an official briefing: always check NAIPS before flight.</span><button class="btn-text" data-act="wxRetry">Refresh</button></div>`;
+}
+function paintWx() { const el = document.getElementById('wx-body'); if (el) el.innerHTML = wxBody(); }
+async function loadWx() {
+  if (WX.status === 'loading') return;
+  WX.status = 'loading'; if (!WX.data) paintWx();
+  try {
+    const r = await fetch(`/api/wx?ids=${WX_ID}`, { headers: { Accept: 'application/json' }, cache: 'no-store' });
+    const j = await r.json();
+    if (!r.ok || j.error) throw new Error(j.error || 'HTTP ' + r.status);
+    WX.data = j; WX.at = Date.now(); WX.status = 'ok';
+  } catch (e) { WX.status = 'error'; }
+  paintWx();
 }
 
 function renderOverview() {
@@ -1544,7 +1755,7 @@ function renderOverview() {
     mOver ? sub(`<span class="ist-overdue">+${mOver} overdue</span>`) : ''], 'data-act="scroll" data-id="p-maint"');
   // 3. Fuel
   const fr = latestReading(), low = isLowStock(fr), thr = S.settings.fuelThreshold;
-  const k3 = kpi(!fr ? 'missing' : low ? 'low' : '', 'drop', !fr ? ['missing', 'No reading'] : low ? ['low', 'Low stock'] : ['ok', 'Stock OK'], 'Bulk fuel remaining', fr ? `${Math.round(fr.litres).toLocaleString('en-AU')}<small>L</small>` : '—', [
+  const k3 = kpi(!fr ? 'missing' : low ? 'low' : '', 'drop', !fr ? ['missing', 'No reading'] : low ? ['low', 'Low stock'] : ['ok', 'Stock OK'], 'IOR fuel tank', fr ? `${Math.round(fr.litres).toLocaleString('en-AU')}<small>L</small>` : '—', [
     fr ? sub(low ? `<strong>Low stock</strong>, reorder at ${fmtL(thr)}` : `Reorder level ${fmtL(thr)}`) : sub('No reading yet'),
     fr ? sub(`Read ${fmtDate(fr.date)}`, true) : ''], 'data-act="go" data-view="fuel"');
   // 4. Instructors (currency checks; qualifications counted separately)
@@ -1596,17 +1807,23 @@ function renderOverview() {
   const hr = Number(new Intl.DateTimeFormat('en-AU', { timeZone: TZ, hour: 'numeric', hourCycle: 'h23' }).format(new Date()));
   const first = String(S.settings.userName || '').trim().split(/\s+/)[0];
   const lvl = n.overdue || n.alert ? 'crit' : n.low || n.soon ? 'warn' : 'ok';
-  return `<section class="hero"><div class="hero-in"><div>
+  const now = new Date();
+  return `<section class="hero"><div class="hero-in"><div class="h-greet">
       <p class="eyebrow">Operations · Caloundra YCDR</p>
       <h1>${hr < 12 ? 'Good morning' : hr < 17 ? 'Good afternoon' : 'Good evening'}${first ? ', ' + esc(first) : ''}</h1>
-      <p class="hero-date">${esc(longDate)}, Brisbane time</p>
-      <button type="button" class="ops ops-${lvl}" data-act="kpiOverdue"><strong>${{ crit: 'Action needed', warn: 'Watch', ok: 'All clear' }[lvl]}</strong><span>${lvl === 'ok' ? 'Nothing overdue or due soon' : esc(attSub)}</span></button></div>
-    <div class="quick"><button class="btn btn-primary" data-act="add" data-kind="task">Add task</button><button class="btn btn-secondary" data-act="hours">Update hours</button><button class="btn btn-secondary" data-act="add" data-kind="reading">Log fuel reading</button><button class="btn btn-secondary" data-act="addMenu" aria-haspopup="dialog">Add…</button></div></div></section>
+      <p class="hero-date">${esc(longDate)}, Brisbane time</p></div>
+    <div class="h-clock"><div class="clockcard" role="group" aria-label="Current time">
+      <div class="ck-lbl"><span>Local · Brisbane</span><span>AEST UTC+10</span></div>
+      <div class="ck-big" data-clk="local">${clockStr(now, TZ)}</div>
+      <div class="ck-utc"><span class="z">UTC</span><span class="v" data-clk="utc">${clockStr(now, 'UTC')}</span><span class="dd" data-clk="utcday">${utcDay(now)}</span></div></div></div>
+    <div class="h-act"><button type="button" class="ops ops-${lvl}" data-act="kpiOverdue"><strong>${{ crit: 'Action needed', warn: 'Watch', ok: 'All clear' }[lvl]}</strong><span>${lvl === 'ok' ? 'Nothing overdue or due soon' : esc(attSub)}</span></button>
+    <div class="quick"><button class="btn btn-primary" data-act="add" data-kind="task">Add task</button><button class="btn btn-secondary" data-act="hours">Update hours</button><button class="btn btn-secondary" data-act="add" data-kind="reading">Log fuel reading</button><button class="btn btn-secondary" data-act="addMenu" aria-haspopup="dialog">Add…</button></div></div></div></section>
   <section class="kpis" aria-label="Summary">${k1}${k2}${k3}${k4}${k5}</section>
   ${banners()}
   <div class="grid">
+    <section class="panel span-12" id="p-wx"><div class="panel-h"><h2>${ICO('cloud')}YBSU weather</h2><span class="sub">Sunshine Coast Airport, METAR and TAF</span></div><div id="wx-body">${wxBody()}</div></section>
     <section class="panel span-7" id="p-maint"><div class="panel-h"><h2>${ICO('wrench')}Maintenance hours remaining</h2><span class="sub">Next hour-based item per aircraft</span></div>${maintChart()}</section>
-    <section class="panel span-5"><div class="panel-h"><h2>${ICO('drop')}Bulk fuel</h2><button class="btn-text" data-act="go" data-view="fuel">Fuel details</button></div>${fuelSummary(false)}</section>
+    <section class="panel span-5"><div class="panel-h"><h2>${ICO('drop')}IOR fuel tank</h2><button class="btn-text" data-act="go" data-view="fuel">Fuel details</button></div>${fuelSummary(false)}</section>
     <section class="panel span-7" id="p-attention"><div class="panel-h"><h2>${ICO('flag')}Priority actions</h2><span class="sub">${esc(attSub)}</span></div>${attHTML}</section>
     <section class="panel span-5" id="p-inst"><div class="panel-h"><h2>${ICO('user')}Instructor checks</h2><button class="btn-text" data-act="go" data-view="instructors">All instructors</button></div>${instHTML}${qualHTML}</section>
     <section class="panel span-12"><div class="panel-h"><h2>${ICO('plane')}Aircraft</h2><span class="sub">${full + restr} of ${S.aircraft.length} available${restr ? `, ${restr} with restrictions` : ''}</span></div><div class="fleet">${fleet}</div></section>
@@ -1709,7 +1926,7 @@ function renderFuel() {
       <label class="tog"><input type="checkbox" data-act="toggleFuelDone"${showFuelDone ? ' checked' : ''}> Show delivered and resolved</label>
     </div></div>
     <div class="grid">
-      <section class="panel span-5"><div class="panel-h"><h2>${ICO('drop')}Bulk tank</h2></div>${fuelSummary(true)}</section>
+      <section class="panel span-5"><div class="panel-h"><h2>${ICO('drop')}IOR fuel tank</h2></div>${fuelSummary(true)}</section>
       <section class="panel span-7"><div class="panel-h"><h2>${ICO('receipt')}Fuel orders</h2><span class="sub">${hiddenOrders > 0 && !showFuelDone ? `${hiddenOrders} delivered or archived hidden` : ''}</span></div>
         <div class="tmpl"><div><span class="t">Standard order: ${fmtL(t.litres)} ${esc(t.product)}${t.supplier ? ` from ${esc(t.supplier)}` : ''}</span>${t.notes ? `<span class="d">${esc(t.notes)}</span>` : ''}</div>
           <div class="btn-row" style="margin:0"><button class="btn btn-sm btn-primary" data-act="orderTemplate">New order</button><button class="btn btn-sm btn-secondary" data-act="editTemplate">Edit template</button><button class="btn-text" data-act="add" data-kind="order">Other order</button></div></div>
@@ -1825,6 +2042,8 @@ const ACT = {
   clearEx: async () => { if (await askConfirm('Remove all records marked Example? Your own records stay.', 'Clear example data')) withUndo('Example data cleared', clearExamples); },
   toggleAtt: () => { showAllAtt = !showAllAtt; render(); },
   addMenu: openAddMenu,
+  refill: () => refill(),
+  wxRetry: () => { WX.status = WX.status === 'loading' ? 'loading' : 'idle'; loadWx(); },
   warnings: openWarnings,
   kpiOverdue: () => { if (!showAllAtt && attentionItems().filter(a => a.sev === 'overdue').length > 5) { showAllAtt = true; render(); } ACT.scroll({ id: 'p-attention' }); },
   up: d => { upWindow = Number(d.days); render(); },
@@ -1854,11 +2073,17 @@ window.addEventListener('storage', e => {
 });
 
 let lastDay = todayISO();
+const clockStr = (d, tz) => new Intl.DateTimeFormat('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' }).format(d);
+const utcDay = d => new Intl.DateTimeFormat('en-AU', { timeZone: 'UTC', weekday: 'short', day: '2-digit', month: '2-digit' }).format(d);
 function tick() {
   const now = new Date();
   const dd = new Intl.DateTimeFormat('en-AU', { timeZone: TZ, weekday: 'short', day: '2-digit', month: '2-digit' }).format(now);
-  const tt = new Intl.DateTimeFormat('en-AU', { timeZone: TZ, hour: 'numeric', minute: '2-digit' }).format(now);
-  $('#clock').innerHTML = `<span class="cd">${esc(dd)}, </span>${esc(tt)} AEST`;
+  const loc = clockStr(now, TZ), utc = clockStr(now, 'UTC');
+  $('#clock').innerHTML = `<span class="cd">${esc(dd)}, </span>${loc} AEST`;
+  $$('[data-clk="local"]').forEach(e => { e.textContent = loc; });
+  $$('[data-clk="utc"]').forEach(e => { e.textContent = utc; });
+  $$('[data-clk="utcday"]').forEach(e => { e.textContent = utcDay(now); });
+  if (now.getSeconds() === 0 && WX.data) paintWx();  // keep "x min ago" current
   const d = todayISO();
   if (d !== lastDay) { lastDay = d; if (!dlg.open) render(); }
 }
@@ -1869,8 +2094,10 @@ function tick() {
   else { S = emptyState(); applyExamples(); }
   persist();
   applyTheme();
-  tick(); setInterval(tick, 20000);
+  tick(); setInterval(tick, 1000);
   route();
+  loadWx(); setInterval(loadWx, 5 * 60 * 1000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && Date.now() - WX.at > 2 * 60 * 1000) loadWx(); });
 })();
 </script>
 </body>

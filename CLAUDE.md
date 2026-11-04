@@ -7,7 +7,11 @@ Instructor. It is separate from the public GoFly website.
 ## Where things are
 
 - `public/index.html`: the entire app (HTML, CSS and JavaScript in one file, no build step).
-- `wrangler.jsonc`: Cloudflare Workers config, Worker name `gofly-ops`, serves `./public` as static assets.
+- `wrangler.jsonc`: Cloudflare Workers config, Worker name `gofly-ops`, serves `./public` as static
+  assets (binding `ASSETS`) with `src/worker.js` as the Worker.
+- `src/worker.js`: one API route, `GET /api/wx?ids=YBSU`, which fetches the latest METAR and TAF
+  from aviationweather.gov (public, no key) and caches them for 2 minutes. Everything else is
+  served from `./public`. Check config changes with `wrangler deploy --dry-run`.
 - Deployment: Cloudflare Workers Builds is connected to this GitHub repo. Every push to `main`
   deploys to production. Tom's standing instruction: commit and push every finished change
   straight to `main` (no preview branches), after the checks in "Before pushing" pass.
@@ -30,10 +34,18 @@ Instructor. It is separate from the public GoFly website.
 - Engine hours and air time are separate counters. Each maintenance item chooses which one it
   counts against (or calendar date only). Each aircraft can set its own hours warning
   (`aircraft.hoursWarn`); blank means use `settings.hoursWarn`. Use `warnFor(ac)`.
+- IOR fuel tank (Tom's figures): max safe fill 5,000 L (`settings.tankCapacity`), reorder level
+  1,500 L (`settings.fuelThreshold`), standard order 3,500 L (`settings.orderTemplate.litres`).
+  "Refill" means the delivery is in the tank: it logs a new reading of latest + 3,500 L and marks
+  the open order delivered (with undo), warning if it would pass max safe fill.
+- Overview shows a large clock: Brisbane local time with seconds, UTC underneath (24-hour).
+- YBSU METAR and TAF widget near the top. Always labelled as not an official briefing (check
+  NAIPS). Decode only what the report says; never invent or forecast weather.
 - Calendar deadlines (`dueSoonDays`) and hour-based warnings are reported separately. Low fuel is
   "Low stock", never "Overdue". Ordered fuel is not added to stock until a new reading is logged.
 - Charts show hours remaining, not percentages, unless interval and start reading are known. No
-  invented trends: the fuel chart only plots logged readings. No tank gauge without a capacity.
+  invented trends: the fuel chart only plots logged readings. The tank gauge and graph share the
+  same 0 to max-safe-fill scale so their reorder and max lines line up.
 - Example data must stay clearly labelled (`example: true`, shown as an "Example" chip) and be
   removable with "Clear example data". Editing an example record makes it a real record.
 - Works on desktop, tablet and phone (bottom tab bar under 760px), light and dark mode.
