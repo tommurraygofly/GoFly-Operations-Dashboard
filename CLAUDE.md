@@ -84,8 +84,14 @@ Cloudflare Access JWT before allowing writes.
 
 ## Look and feel
 
-Inter for text, Barlow Condensed for headings and aircraft idents. Status colours only on
-badges, bars and markers. Touch targets about 44px on touch screens.
+GoFly-branded tiles and widgets. Logos and app icons are in `public/brand/` (made from Tom's
+supplied logos; `gofly-logo-dark-bg.png` for black backgrounds, `gofly-logo-light-bg.png` for
+light). Black header and an overview welcome band with an overall status (Action needed / Watch /
+All clear), summary tiles tinted red or orange when they need attention, and widgets with icon
+headings (`ICO(name)`, icons in `ICONS`). Inter for text; Barlow Condensed bold italic uppercase
+for headings and aircraft idents, echoing the logo. Status shown by colour plus icon plus words
+(red action/overdue, orange watch/due soon/low stock, green OK, dashed grey not entered). The
+GoFly website is for information only; don't copy its theme. Touch targets about 44px.
 
 ## Before pushing
 
