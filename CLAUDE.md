@@ -40,7 +40,12 @@ Instructor. It is separate from the public GoFly website.
   the open order delivered (with undo), warning if it would pass max safe fill.
 - Overview shows a large clock: Brisbane local time with seconds, UTC underneath (24-hour).
 - YBSU METAR and TAF widget near the top. Always labelled as not an official briefing (check
-  NAIPS). Decode only what the report says; never invent or forecast weather.
+  NAIPS). Decode only what the report says; never invent or forecast weather. YCDR has no
+  METAR/TAF, so YBSU is the source.
+- YCDR runway wind diagram (`windDiagram()`): runways 05/23 and 12/30, both 735 m, drawn to scale
+  north-up from settings `rwy05Mag`/`rwy12Mag` (magnetic, default 050/120) plus `magVar`
+  (default 11° E), since METAR wind is true. Shows head/crosswind per runway and highlights the
+  runway end with most headwind. Labelled as YBSU wind. No crosswind limits unless Tom gives them.
 - Calendar deadlines (`dueSoonDays`) and hour-based warnings are reported separately. Low fuel is
   "Low stock", never "Overdue". Ordered fuel is not added to stock until a new reading is logged.
 - Charts show hours remaining, not percentages, unless interval and start reading are known. No
