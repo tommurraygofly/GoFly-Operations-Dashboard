@@ -146,6 +146,12 @@ main{max-width:1320px;margin:0 auto;padding:var(--mainpad) var(--mainpad) 48px}
 .kpi-s{font-size:.82rem;line-height:1.4;color:var(--ink-2)}
 .kpi-s.m{color:var(--muted)}
 .kpi-tag{display:inline-flex;align-items:center;gap:6px}
+.kbar{display:block;margin:2px 0 6px}
+.kbar-t{position:relative;display:block;height:10px;border-radius:5px;background:var(--track);border:1px solid var(--line-strong);overflow:visible}
+.kbar-f{position:absolute;left:0;top:0;bottom:0;border-radius:4px;background:var(--green);min-width:3px}
+.kbar-f.low{background:var(--orange)}.kbar-f.over{background:var(--red)}
+.kbar-r{position:absolute;top:-4px;bottom:-4px;width:0;border-left:2px solid var(--red)}
+.kbar-p{display:block;margin-top:4px;font-size:.74rem;font-weight:600;color:var(--muted)}
 .kpi-overdue{background:linear-gradient(var(--crit-bg),var(--crit-bg)),var(--surface);border-color:var(--crit-line)}
 .kpi-overdue .ico{background:var(--red);color:#fff}
 .kpi-soon,.kpi-low{background:linear-gradient(var(--soon-bg),var(--soon-bg)),var(--surface);border-color:var(--soon-line)}
@@ -1613,6 +1619,13 @@ function drawCharts() { $$('[data-chart="fuel"]').forEach(el => { drawFuelChart(
 let resizeT;
 window.addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(() => $$('[data-chart="fuel"]').forEach(drawFuelChart), 120); });
 
+// Mini level bar for the summary tile: same colours and 0 to max-safe-fill scale as the gauge.
+function kpiTank(l, thr, cap) {
+  if (!cap) return '';
+  const pct = v => Math.max(0, Math.min(100, v / cap * 100));
+  const st = l > cap ? 'over' : thr != null && l < thr ? 'low' : '';
+  return `<span class="kbar" aria-hidden="true"><span class="kbar-t"><span class="kbar-f ${st}" style="width:${pct(l).toFixed(1)}%"></span>${thr != null ? `<span class="kbar-r" style="left:${pct(thr).toFixed(1)}%"></span>` : ''}</span><span class="kbar-p">${Math.round(pct(l))}% of ${Math.round(cap).toLocaleString('en-AU')} L</span></span>`;
+}
 function tankGauge(fr, thr, cap, H) {
   const lv = fr ? fr.litres : 0, max = cap || Math.max(lv, 1);
   const pct = v => Math.max(0, Math.min(100, v / max * 100));
@@ -1885,6 +1898,7 @@ function renderOverview() {
   // 3. Fuel
   const fr = latestReading(), low = isLowStock(fr), thr = S.settings.fuelThreshold;
   const k3 = kpi(!fr ? 'missing' : low ? 'low' : '', 'drop', !fr ? ['missing', 'No reading'] : low ? ['low', 'Low stock'] : ['ok', 'Stock OK'], 'IOR fuel tank', fr ? `${Math.round(fr.litres).toLocaleString('en-AU')}<small>L</small>` : '—', [
+    fr ? kpiTank(fr.litres, thr, S.settings.tankCapacity) : '',
     fr ? sub(low ? `<strong>Low stock</strong>, reorder at ${fmtL(thr)}` : `Reorder level ${fmtL(thr)}`) : sub('No reading yet'),
     fr ? sub(`Read ${fmtDate(fr.date)}`, true) : ''], 'data-act="go" data-view="fuel"');
   // 4. Instructors (currency checks; qualifications counted separately)
