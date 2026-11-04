@@ -66,7 +66,8 @@ Instructor. It is separate from the public GoFly website.
   the open order delivered (with undo). 5,000 L is a hard maximum: readings above it can't be
   saved, a refill that won't fit is blocked (it offers to log the actual level instead), and the
   gauge and graph scale stop at 5,000 L.
-- Overview shows a large clock: Brisbane local time with seconds, UTC underneath (24-hour).
+- The header clock (top right, every page) shows Brisbane time with seconds and the date, with
+  UTC beside it (24-hour); on phones local time sits over UTC. No separate clock card on the overview.
 - YBSU METAR and TAF widget near the top. Always labelled as not an official briefing (check
   NAIPS). Decode only what the report says; never invent or forecast weather. YCDR has no
   METAR/TAF, so YBSU is the source.

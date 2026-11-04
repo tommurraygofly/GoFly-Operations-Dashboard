@@ -74,7 +74,14 @@ h1,h2,h3{font-family:var(--font-c);font-weight:700;letter-spacing:.01em}
 .brand{display:flex;align-items:center;gap:12px;text-decoration:none;margin-right:auto;color:#fff}
 .brand img{height:30px;width:auto;display:block}
 .brand-sub{font:600 italic 1.05rem/1 var(--font-c);text-transform:uppercase;letter-spacing:.08em;color:var(--head-muted);padding-left:12px;border-left:1px solid #333}
-.clock{font:500 .85rem var(--font);color:var(--head-muted);white-space:nowrap}
+.clock{display:flex;align-items:stretch;background:#0D0D0D;border:1px solid #2A2A2A;border-radius:11px;overflow:hidden;white-space:nowrap}
+.ck-c{display:grid;gap:1px;padding:4px 12px 5px;line-height:1.1}
+.ck-c+.ck-c{border-left:1px solid #2A2A2A}
+.ck-c small{display:flex;justify-content:space-between;gap:8px;font:600 .6rem/1.2 var(--font);letter-spacing:.08em;text-transform:uppercase;color:#8F8F8F}
+.ck-c .ck-tz{color:var(--orange);font-weight:700}
+.ck-c b{font:700 1.15rem/1.1 var(--font);font-variant-numeric:tabular-nums;letter-spacing:-.01em;color:#fff}
+.ck-u b{font-weight:600;color:#CFCFCF}
+.ck-u .ck-tz{color:#fff}
 .sync{display:inline-flex;align-items:center;gap:7px;background:transparent;border:1px solid #333;border-radius:999px;padding:5px 11px 5px 9px;min-height:32px;color:#D0D0D0;font:600 .78rem var(--font);cursor:pointer;white-space:nowrap}
 .sync:hover{border-color:var(--orange)}
 .sync .sd{width:8px;height:8px;border-radius:50%;background:#777}
@@ -131,19 +138,10 @@ main{max-width:1320px;margin:0 auto;padding:var(--mainpad) var(--mainpad) 48px}
 .hero::after{content:"";position:absolute;right:-40px;top:0;bottom:0;width:min(46vw,560px);pointer-events:none;opacity:.9;
   background:linear-gradient(100deg,transparent 0 30%,var(--orange) 30% 44%,transparent 44% 52%,rgba(255,255,255,.08) 52% 58%,transparent 58% 64%,rgba(241,90,38,.35) 64% 68%,transparent 68%);
   -webkit-mask-image:linear-gradient(90deg,transparent,#000 40%),linear-gradient(180deg,#000 35%,transparent 85%);-webkit-mask-composite:source-in;mask-image:linear-gradient(90deg,transparent,#000 40%),linear-gradient(180deg,#000 35%,transparent 85%);mask-composite:intersect}
-.hero-in{position:relative;z-index:1;display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"greet clock" "act clock";gap:16px 28px;align-items:end}
-.h-greet{grid-area:greet}.h-clock{grid-area:clock;align-self:center}
+.hero-in{position:relative;z-index:1;display:grid;grid-template-columns:minmax(0,1fr);grid-template-areas:"greet" "act";gap:16px 28px;align-items:end}
+.h-greet{grid-area:greet}
 .h-act{grid-area:act;display:flex;flex-wrap:wrap;align-items:center;gap:12px 16px}
 .h-act .ops{margin-top:0}
-/* Big clock: local with seconds, UTC underneath */
-.clockcard{background:#0D0D0D;border:1px solid #2A2A2A;border-radius:16px;padding:14px 20px 14px;min-width:300px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
-.ck-lbl{display:flex;align-items:center;justify-content:space-between;gap:10px;font:700 .7rem/1.2 var(--font);letter-spacing:.12em;text-transform:uppercase;color:var(--orange)}
-.ck-lbl span:last-child{color:#8F8F8F;letter-spacing:.06em}
-.ck-big{font:700 3.6rem/1 var(--font);font-variant-numeric:tabular-nums;letter-spacing:-.02em;color:#fff;margin:6px 0 10px}
-.ck-utc{display:flex;align-items:baseline;gap:10px;padding-top:10px;border-top:1px solid #2A2A2A;color:#D6D6D6}
-.ck-utc .z{font:700 .7rem/1 var(--font);letter-spacing:.1em;background:#fff;color:#000;border-radius:4px;padding:4px 6px;align-self:center}
-.ck-utc .v{font:600 1.65rem/1 var(--font);font-variant-numeric:tabular-nums}
-.ck-utc .dd{margin-left:auto;font-size:.8rem;color:#8F8F8F}
 .eyebrow{margin:0 0 6px;font:600 .74rem/1.2 var(--font);letter-spacing:.14em;text-transform:uppercase;color:var(--orange)}
 .hero h1{margin:0;font:700 italic clamp(2rem,3.6vw,2.8rem)/1 var(--font-c);text-transform:uppercase;letter-spacing:.01em}
 .hero-date{margin:8px 0 0;color:#BDBDBD;font-size:.92rem}
@@ -667,8 +665,14 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
   .top-row{padding:10px 14px;gap:10px}
   .brand img{height:24px}
   .brand-sub{display:none}
-  .clock{font-size:.85rem}
-  .clock .cd,.hide-sm{display:none}
+  .clock{flex-direction:column;justify-content:center;background:none;border:0;border-radius:0}
+  .ck-c{display:flex;align-items:baseline;justify-content:flex-end;gap:4px;padding:0}
+  .ck-c+.ck-c{border-left:0}
+  .ck-c small [data-clk]{display:none}
+  .ck-c small{order:2;font-size:.55rem}
+  .ck-l b{font-size:.98rem}
+  .ck-u b{font-size:.74rem}
+  .hide-sm{display:none}
   .sync{padding:5px 8px}.sync .st{display:none}
   .sync-offline .st{display:inline}
   .tabs{position:fixed;left:0;right:0;bottom:0;max-width:none;background:var(--head);justify-content:space-around;padding:0 2px env(safe-area-inset-bottom,0px);border-top:1px solid #222;gap:0;z-index:25}
@@ -679,10 +683,7 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
   #toast{bottom:calc(86px + env(safe-area-inset-bottom,0px))}
   .hero{padding-top:20px;padding-bottom:70px}
   .hero::after{width:60vw;opacity:.55}
-  .hero-in{grid-template-columns:1fr;grid-template-areas:"greet" "clock" "act";gap:14px}
-  .clockcard{min-width:0;padding:12px 16px}
-  .ck-big{font-size:3rem;margin:4px 0 8px}
-  .ck-utc .v{font-size:1.35rem}
+  .hero-in{grid-template-columns:1fr;grid-template-areas:"greet" "act";gap:14px}
   .h-act{display:block}
   .quick{display:grid;grid-template-columns:1fr 1fr;margin-top:12px}
   .quick .btn{width:100%}
@@ -714,7 +715,10 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
     <a class="brand" href="#overview" aria-label="GoFly Operations, overview"><img src="brand/gofly-logo-dark-bg.png" alt="GoFly" width="77" height="30"><span class="brand-sub">Operations</span></a>
     <button type="button" class="who" id="who" data-act="lock" hidden></button>
     <button type="button" class="sync sync-local" id="sync" data-act="syncNow" aria-label="Sync status"><span class="sd"></span><span class="st">This device only</span></button>
-    <div class="clock" id="clock"></div>
+    <div class="clock" id="clock" role="group" aria-label="Current time">
+      <span class="ck-c ck-l"><small><span data-clk="localday"></span><span class="ck-tz">AEST</span></small><b data-clk="local">--:--:--</b></span>
+      <span class="ck-c ck-u"><small><span data-clk="utcday"></span><span class="ck-tz">UTC</span></small><b data-clk="utc">--:--:--</b></span>
+    </div>
     <button class="btn-ghost" type="button" data-act="settings">Data<span class="hide-sm"> &amp; settings</span></button>
   </div>
   <nav class="tabs" aria-label="Sections">
@@ -2572,15 +2576,10 @@ function renderOverview() {
   const hr = Number(new Intl.DateTimeFormat('en-AU', { timeZone: TZ, hour: 'numeric', hourCycle: 'h23' }).format(new Date()));
   const first = Who ? Who.name : '';
   const lvl = n.overdue || n.due || n.alert ? 'crit' : n.low || n.soon ? 'warn' : 'ok';
-  const now = new Date();
   return `<section class="hero"><div class="hero-in"><div class="h-greet">
       <p class="eyebrow">Operations · Caloundra YCDR</p>
       <h1>${hr < 12 ? 'Good morning' : hr < 17 ? 'Good afternoon' : 'Good evening'}${first ? ', ' + esc(first) : ''}</h1>
       <p class="hero-date">${esc(longDate)}, Brisbane time</p></div>
-    <div class="h-clock"><div class="clockcard" role="group" aria-label="Current time">
-      <div class="ck-lbl"><span>Local · Brisbane</span><span>AEST UTC+10</span></div>
-      <div class="ck-big" data-clk="local">${clockStr(now, TZ)}</div>
-      <div class="ck-utc"><span class="z">UTC</span><span class="v" data-clk="utc">${clockStr(now, 'UTC')}</span><span class="dd" data-clk="utcday">${utcDay(now)}</span></div></div></div>
     <div class="h-act"><button type="button" class="ops ops-${lvl}" data-act="kpiOverdue"><strong>${{ crit: 'Action needed', warn: 'Watch', ok: 'All clear' }[lvl]}</strong><span>${lvl === 'ok' ? 'Nothing overdue or due soon' : esc(attSub)}</span></button>
     <div class="quick"><button class="btn btn-primary" data-act="add" data-kind="task">Add task</button><button class="btn btn-secondary" data-act="hours">Update hours</button><button class="btn btn-secondary" data-act="add" data-kind="reading">Log fuel reading</button><button class="btn btn-secondary" data-act="addMenu" aria-haspopup="dialog">Add…</button></div></div></div></section>
   <section class="kpis" aria-label="Summary">${k1}${k2}${k3}${k4}${k5}</section>
@@ -2892,12 +2891,12 @@ window.addEventListener('storage', e => {
 
 let lastDay = todayISO();
 const clockStr = (d, tz) => new Intl.DateTimeFormat('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' }).format(d);
-const utcDay = d => new Intl.DateTimeFormat('en-AU', { timeZone: 'UTC', weekday: 'short', day: '2-digit', month: '2-digit' }).format(d);
+const utcDay = d => new Intl.DateTimeFormat('en-AU', { timeZone: 'UTC', weekday: 'short', day: '2-digit', month: '2-digit' }).format(d).replace(',', '');
 function tick() {
   const now = new Date();
-  const dd = new Intl.DateTimeFormat('en-AU', { timeZone: TZ, weekday: 'short', day: '2-digit', month: '2-digit' }).format(now);
+  const dd = new Intl.DateTimeFormat('en-AU', { timeZone: TZ, weekday: 'short', day: '2-digit', month: '2-digit' }).format(now).replace(',', '');
   const loc = clockStr(now, TZ), utc = clockStr(now, 'UTC');
-  $('#clock').innerHTML = `<span class="cd">${esc(dd)}, </span>${loc} AEST`;
+  $$('[data-clk="localday"]').forEach(e => { e.textContent = dd; });
   $$('[data-clk="local"]').forEach(e => { e.textContent = loc; });
   $$('[data-clk="utc"]').forEach(e => { e.textContent = utc; });
   $$('[data-clk="utcday"]').forEach(e => { e.textContent = utcDay(now); });
