@@ -566,6 +566,57 @@ main{max-width:1320px;margin:0 auto;padding:var(--mainpad) var(--mainpad) 48px}
 .ac-exp{flex-basis:100%;display:flex;flex-wrap:wrap;gap:6px 22px;font-size:.88rem;align-items:center}
 .ac-exp .k{color:var(--muted)}
 
+/* ===== Forecasts ===== */
+.fc-card{margin-top:12px;padding:10px 12px;border:1px dashed var(--line-strong);border-radius:10px}
+.fc-card.fc-warn{border-style:solid;border-color:var(--soon-line);background:var(--soon-bg)}
+.fc-card .mini-h{margin-bottom:4px}
+.fc-main{margin:0;font-size:.92rem}
+.fc-sub{margin:4px 0 0;font-size:.78rem;color:var(--muted)}
+.mc-fc{display:block;margin-top:4px;font-size:.78rem;color:var(--muted)}
+.mc-fc::before{content:"";display:inline-block;width:8px;height:8px;margin-right:6px;border:1.5px dashed var(--orange);border-radius:50%;vertical-align:0}
+
+/* ===== Defect photos + severity ===== */
+.ph-grid{display:flex;flex-wrap:wrap;gap:8px}
+.ph-grid:empty{display:none}
+.ph{position:relative;width:84px;height:84px;border-radius:10px;overflow:hidden;background:var(--surface-2);border:1px solid var(--line)}
+.ph img{width:100%;height:100%;object-fit:cover;display:block;cursor:zoom-in}
+.ph.ph-err::after{content:"Unavailable";position:absolute;inset:0;display:grid;place-items:center;font-size:.7rem;color:var(--muted)}
+.ph-x{position:absolute;top:4px;right:4px;width:26px;height:26px;border-radius:50%;border:0;background:rgba(0,0,0,.65);color:#fff;font-size:1rem;line-height:1;cursor:pointer}
+.ph-bar{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin-top:8px}
+.ph-add{position:relative;cursor:pointer}
+.ph-add svg{width:16px;height:16px}
+.ph-add input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.ph-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;align-items:center}
+.ph-mini-w{width:56px;height:56px;border-radius:8px;overflow:hidden;background:var(--surface-2);border:1px solid var(--line)}
+.ph-mini{width:100%;height:100%;object-fit:cover;display:block}
+dialog.lightbox{padding:0;background:transparent;box-shadow:none;max-width:96vw;max-height:94vh;width:auto;height:auto;border:0}
+dialog.lightbox::backdrop{background:rgba(0,0,0,.88)}
+dialog.lightbox img{display:block;max-width:96vw;max-height:90vh;border-radius:8px;cursor:zoom-out}
+dialog.lightbox .icon-btn{position:fixed;top:12px;right:12px;color:#fff;background:rgba(0,0,0,.5)}
+.def-g{color:var(--red)!important;font-weight:700}
+.def-u{color:var(--red)!important;font-weight:600}
+
+/* ===== Daily brief ===== */
+.brief{font-size:.92rem}
+.br-top{margin:0 0 6px;color:var(--muted)}
+.br-top b{color:var(--ink)}
+.br-h{margin:16px 0 6px;font:700 italic 1.1rem var(--font-c);text-transform:uppercase;border-bottom:2px solid var(--orange);padding-bottom:3px}
+.br-l{list-style:none;margin:0;padding:0}
+.br-l li{padding:5px 0;border-bottom:1px solid var(--line);overflow-wrap:anywhere}
+.br-red{color:var(--red);font-weight:600}.br-amb{color:var(--soon-ink);font-weight:600}.br-mut{color:var(--muted);font-size:.85em}
+.quick .btn svg{width:16px;height:16px}
+#printArea{display:none}
+@media print{
+  body>*:not(#printArea){display:none!important}
+  body{background:#fff!important;overflow:visible!important}
+  #printArea{display:block;color:#000;font:11pt/1.4 Inter,Arial,sans-serif;padding:0 4mm}
+  #printArea .pr-logo{height:30px}
+  #printArea .pr-h{font:700 italic 20pt 'Barlow Condensed',Arial,sans-serif;text-transform:uppercase;margin:6px 0 2px}
+  #printArea .br-h{color:#000;border-bottom-color:#F15A26;break-after:avoid}
+  #printArea .br-l li{border-bottom:1px solid #ddd;break-inside:avoid}
+  #printArea .br-red{color:#B00020}#printArea .br-amb{color:#A93A0E}#printArea .br-mut,#printArea .br-top{color:#555}
+}
+
 /* ===== Waiting on ===== */
 .wg{border-top:1px solid var(--line);padding:10px 0}
 .list li:first-child .wg{border-top:0;padding-top:2px}
@@ -687,6 +738,7 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
   .h-act{display:block}
   .quick{display:grid;grid-template-columns:1fr 1fr;margin-top:12px}
   .quick .btn{width:100%}
+  .quick .btn:last-child:nth-child(odd){grid-column:1/-1}
   .ops{border-radius:14px;align-items:flex-start;flex-wrap:wrap}
   .kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
   .kpi,.kpi:nth-child(n+4){grid-column:auto}
@@ -800,7 +852,7 @@ function emptyState() {
   return {
     schema: SCHEMA,
     settings: {
-      userName: '', theme: 'auto', dueSoonDays: 14, hoursAmber: 50, hoursRed: 20, cautionHrs: 30, sparingHrs: 15, fuelThreshold: 1500, tankCapacity: 5000, rwy05Mag: 50, rwy12Mag: 120, magVar: 11, spDays: 90, renewJuniorMonths: 24, renewSeniorMonths: 12, renewChiefMonths: 24, expiryWarnDays: 30, docWarnDays: 30, renewWarnDays: 30,
+      userName: '', theme: 'auto', dueSoonDays: 14, hoursAmber: 50, hoursRed: 20, cautionHrs: 30, sparingHrs: 15, fuelThreshold: 1500, tankCapacity: 5000, fuelOrderAt: 1000, rwy05Mag: 50, rwy12Mag: 120, magVar: 11, spDays: 90, renewJuniorMonths: 24, renewSeniorMonths: 12, renewChiefMonths: 24, expiryWarnDays: 30, docWarnDays: 30, renewWarnDays: 30,
       orderTemplate: { product: 'Premium Unleaded 98', litres: 3500, supplier: 'IOR', notes: '' }
     },
     aircraft: AIRCRAFT_IDS.map(blankAircraft),
@@ -839,6 +891,13 @@ function normalise(d) {
   // Maintenance levels are now the same for every aircraft (amber 50 hrs, red 20 hrs).
   o.aircraft.forEach(a => { delete a.hoursWarn; });
   delete o.settings.hoursWarn;
+  // Hours history for the maintenance forecast (one entry per day an hours figure changed).
+  o.aircraft.forEach(a => {
+    if (!Array.isArray(a.hoursLog)) {
+      a.hoursLog = [];
+      if (a.engineHours != null || a.airTime != null) a.hoursLog.push({ d: a.updatedAt ? new Intl.DateTimeFormat('en-CA', { timeZone: TZ }).format(new Date(a.updatedAt)) : todayISO(), e: a.engineHours ?? null, a: a.airTime ?? null });
+    }
+  });
   o.schema = SCHEMA;
   return o;
 }
@@ -853,6 +912,8 @@ function applyExamples() {
     '8515': { regoExpiry: D(75), insuranceExpiry: D(240), status: 'serviceable', engineHours: 902.5, responsible: 'Ops Manager' },
     '8514': { status: 'serviceable', engineHours: 944.1, airTime: 870.9, responsible: '' }
   };
+  const RATE = { '7788': 0.75, '1675': 0.5, '8582': 0.2, '8515': 0.6, '8514': 0.9 };
+  Object.entries(acx).forEach(([k, x]) => { x.hoursLog = [28, 21, 14, 7, 0].map(n => ({ d: D(-n), e: x.engineHours != null ? Math.round((x.engineHours - RATE[k] * n) * 10) / 10 : null, a: x.airTime != null ? Math.round((x.airTime - RATE[k] * 0.92 * n) * 10) / 10 : null })); });
   S.aircraft.forEach(a => {
     const x = acx[a.ident];
     if (x && a.engineHours == null && !a.updatedAt) Object.assign(a, x, { example: true, updatedAt: now, updatedBy: 'Example data' });
@@ -867,8 +928,8 @@ function applyExamples() {
     E({ aircraftId: ac('8514'), title: 'Oil and filter change', counter: 'air', dueHours: 880.0, dueDate: null, bookingDate: null, status: 'open', notes: 'Tracked against air time.' })
   );
   S.defects.push(
-    E({ aircraftId: ac('1675'), description: 'Landing light inoperative', raised: D(-4), status: 'waiting', waitingOn: 'Parts supplier', followUp: 'Fit replacement when the part arrives.' }),
-    E({ aircraftId: ac('8582'), description: 'Right brake feels soft', raised: D(-2), status: 'open', waitingOn: '', followUp: 'Maintenance provider to inspect during the 100-hourly.' })
+    E({ aircraftId: ac('1675'), severity: 'semi', photos: [], description: 'Landing light inoperative', raised: D(-4), status: 'waiting', waitingOn: 'Parts supplier', followUp: 'Fit replacement when the part arrives.' }),
+    E({ aircraftId: ac('8582'), severity: 'urgent', photos: [], description: 'Right brake feels soft', raised: D(-2), status: 'open', waitingOn: '', followUp: 'Maintenance provider to inspect during the 100-hourly.' })
   );
   S.fuelReadings.push(
     E({ date: D(-7), litres: 4800, by: 'Ops Manager', notes: '' }),
@@ -1225,6 +1286,9 @@ const BADGE = { overdue: 'Overdue', due: 'Verify booking', good: 'Good', soon: '
 // Priority order for the action list. Low stock and unserviceable aircraft sit just below overdue.
 const PRI = { overdue: 0, due: 0.5, alert: 1, low: 1, soon: 2, missing: 3, info: 4, ok: 5, good: 5, complete: 6 };
 const AREA = { task: 'tasks', aircraft: 'aircraft', maint: 'aircraft', defect: 'aircraft', fuel: 'fuel', order: 'fuel', issue: 'fuel', check: 'instructors', renewal: 'instructors', acexp: 'aircraft', doc: 'docs', qual: 'instructors', paperwork: 'instructors' };
+const DEF_SEV = [['', 'Choose severity…'], ['grounding', 'Grounding: aircraft not to fly'], ['urgent', 'Urgent'], ['semi', 'Semi-urgent'], ['nil', 'Nil effect']];
+const SEV_BADGE = { grounding: ['due', 'Grounding'], urgent: ['alert', 'Urgent'], semi: ['soon', 'Semi-urgent'], nil: ['info', 'Nil effect'] };
+const sevBadge = d => SEV_BADGE[d.severity] ? badge(...SEV_BADGE[d.severity]) : badge('missing', 'Severity not set');
 const AC_SHORT = { serviceable: 'Available', restricted: 'Restricted', maintenance: 'In maintenance', unserviceable: 'Unserviceable' };
 /* Availability shown for flying aircraft (Tom's rule), from the hour-based maintenance item due
    soonest: under 30 hrs left "Use caution", under 15 "Use sparingly", past due "Maintenance overdue".
@@ -1426,11 +1490,14 @@ function attentionItems() {
   S.defects.forEach(d => {
     if (d.archived || d.status === 'closed') return;
     const ac = acById(d.aircraftId);
-    push({ sev: 'info', src: 'defect', title: `${ac ? ac.ident + ': ' : ''}${d.description}`, detail: d.status === 'waiting' ? `Defect, waiting on ${d.waitingOn || 'someone else'}` : 'Open defect', badge: 'Defect', fn: () => openEditor('defect', d.id) });
+    const sv = { grounding: ['alert', 'due', -2], urgent: ['alert', 'alert', -1], semi: ['soon', 'soon', 0], nil: ['info', 'info', 0] }[d.severity] || ['info', 'info', 0];
+    push({ sev: sv[0], bcls: sv[1], k: sv[2], src: 'defect', title: `${ac ? ac.ident + ': ' : ''}${d.description}`, detail: `${SEV_BADGE[d.severity] ? SEV_BADGE[d.severity][1] + ' defect' : 'Defect'}${d.status === 'waiting' ? `, waiting on ${d.waitingOn || 'someone else'}` : ''}${(d.photos || []).length ? ` · ${plural(d.photos.length, 'photo')}` : ''}`, badge: SEV_BADGE[d.severity] ? SEV_BADGE[d.severity][1] : 'Defect', fn: () => openEditor('defect', d.id) });
   });
   const fr = latestReading(), thr = S.settings.fuelThreshold;
   if (!fr) push({ sev: 'missing', src: 'fuel', title: 'IOR tank reading', detail: 'No fuel reading entered yet', badge: 'Not entered', fn: () => openEditor('reading') });
   else {
+    const fcF = fuelForecast();
+    if (!isLowStock(fr) && fcF.ready && !nextOrder() && (fcF.past || fcF.dLeft <= 3)) push({ sev: 'soon', src: 'fuel', title: 'Order fuel (forecast)', detail: fcF.past ? `Estimated at or below ${fmtL(fcF.target)} now` : `Forecast to reach ${fmtL(fcF.target)} around ${fmtDate(fcF.orderDate)}`, badge: 'Order soon', fn: () => go('fuel') });
     if (isLowStock(fr)) {
       const o = nextOrder();
       push({ sev: 'low', src: 'fuel', title: `IOR tank ${fmtL(fr.litres)}`, detail: `Below the ${fmtL(thr)} reorder level. ${o ? (o.confirmedDate ? `Delivery confirmed for ${fmtDate(o.confirmedDate)}.` : 'On order, delivery not confirmed.') : 'Nothing on order.'}`, badge: 'Low stock', fn: () => go('fuel') });
@@ -1471,7 +1538,8 @@ function attentionItems() {
       detail: `${lab(DOC_CATS, d.category)}${st.due ? `, ${d.kind === 'expiry' ? 'expires' : 'review due'} ${fmtDate(st.due)}` : ''}`,
       badge: st.s === 'missing' ? 'Not entered' : d.kind === 'expiry' ? (st.d < 0 ? 'Expired' : 'Expires soon') : (st.d < 0 ? 'Review overdue' : 'Review soon') });
   });
-  return out.sort((a, b) => (PRI[a.sev] - PRI[b.sev]) || (a.k - b.k));
+  const top = a => a.bcls === 'due' && a.src === 'defect' ? -1 : PRI[a.sev];
+  return out.sort((a, b) => (top(a) - top(b)) || (a.k - b.k));
 }
 function countBy(list) { const n = { overdue: 0, due: 0, alert: 0, low: 0, soon: 0, missing: 0, info: 0 }; list.forEach(a => n[a.sev]++); return n; }
 
@@ -1485,6 +1553,7 @@ function upcoming(days) {
     add(m.dueDate, n + m.title, 'Maintenance due', () => openEditor('maint', m.id));
     add(m.bookingDate, n + m.title, 'Booked in for maintenance', () => openEditor('maint', m.id));
   });
+  { const f = fuelForecast(); if (f.ready && !nextOrder()) add(f.orderDate, 'Order fuel (forecast)', `Tank forecast to reach about ${fmtL(f.target)}`, () => go('fuel')); }
   S.fuelOrders.forEach(o => {
     if (o.archived || ['delivered', 'cancelled', 'draft'].includes(o.status)) return;
     add(o.confirmedDate || o.requestedDate, `Fuel delivery, ${fmtL(o.litres)}`, o.confirmedDate ? `Confirmed with ${o.supplier || 'supplier'}` : 'Requested, not yet confirmed', () => openEditor('order', o.id));
@@ -1525,6 +1594,71 @@ function waitingGroups() {
 }
 
 // The hour-based item each aircraft will reach first, for the maintenance chart.
+/* ---------- Forecasting (a guide only, never a requirement) ----------
+   learnRate() learns a usage rate from logged values: it looks at each pair of readings, skips
+   pairs that went the "wrong" way (a fuel refill, an hours correction), and averages the rest,
+   weighting recent pairs more (weight halves every 30 days) and longer gaps more (up to 14 days).
+   It improves automatically as more readings and hours updates are logged. */
+function learnRate(points, dir) {
+  let wSum = 0, rSum = 0, n = 0, span = 0;
+  const now = Date.now();
+  for (let i = 1; i < points.length; i++) {
+    const a = points[i - 1], b = points[i], days = (b.t - a.t) / 864e5;
+    if (days <= 0) continue;
+    const dv = (b.v - a.v) * dir;
+    if (dv < 0) continue;
+    const w = Math.pow(0.5, Math.max(0, now - b.t) / 864e5 / 30) * Math.min(days, 14);
+    rSum += w * dv / days; wSum += w; n++; span += days;
+  }
+  if (!n || !wSum) return null;
+  return { rate: rSum / wSum, n, span, conf: n >= 3 && span >= 7 ? 'good' : 'early' };
+}
+const dayT = iso => Date.parse(iso + 'T00:00:00Z');
+const fmtWkDate = iso => `${new Intl.DateTimeFormat('en-AU', { timeZone: 'UTC', weekday: 'short' }).format(new Date(iso + 'T00:00:00Z'))} ${fmtDate(iso)}`;
+// Fuel: when will the tank reach the order level (default 1,000 L)?
+function fuelForecast() {
+  const byDay = new Map();
+  S.fuelReadings.filter(r => !r.archived && r.date && r.litres != null)
+    .sort((a, b) => String(a.date).localeCompare(String(b.date)) || String(a.createdAt).localeCompare(String(b.createdAt)))
+    .forEach(r => byDay.set(r.date, Number(r.litres)));       // last reading of each day
+  const pts = [...byDay].map(([d, v]) => ({ t: dayT(d), v }));
+  const L = learnRate(pts, -1), fr = latestReading();
+  if (!fr || !L || L.rate < 1) return { ready: false };
+  const target = Number(S.settings.fuelOrderAt ?? 1000);
+  const since = Math.max(0, -daysUntil(fr.date));
+  const estNow = Math.max(0, fr.litres - L.rate * since);
+  const orderDate = addDays(fr.date, Math.floor(Math.max(0, fr.litres - target) / L.rate));
+  const dLeft = Math.max(0, daysUntil(orderDate));
+  return { ready: true, rate: L.rate, n: L.n, span: L.span, conf: L.conf, estNow, target, orderDate, dLeft, past: estNow <= target };
+}
+// Maintenance: from the hours history, when is the next hour-based item due, and when to book it
+// (when it reaches the amber "book soon" level, 50 hrs by default).
+function logHours(ac) {
+  if (ac.engineHours == null && ac.airTime == null) return;
+  const d = todayISO();
+  ac.hoursLog = (ac.hoursLog || []).filter(h => h.d !== d).concat([{ d, e: ac.engineHours ?? null, a: ac.airTime ?? null }])
+    .sort((x, y) => x.d.localeCompare(y.d)).slice(-200);
+}
+function maintForecast(ac) {
+  const h = hourItemFor(ac);
+  if (!h.m || h.rem == null) return null;
+  const key = h.m.counter === 'air' ? 'a' : 'e';
+  const log = (ac.hoursLog || []).filter(x => x[key] != null);
+  const L = learnRate(log.map(x => ({ t: dayT(x.d), v: Number(x[key]) })), 1);
+  if (!L || L.rate < 0.01) return { ready: false };
+  const since = log.length ? Math.max(0, -daysUntil(log[log.length - 1].d)) : 0;
+  const remNow = h.rem - L.rate * since;
+  const amber = hrsLevels().amber;
+  return { ready: true, rate: L.rate, perWeek: L.rate * 7, conf: L.conf, remNow,
+    dueDate: addDays(todayISO(), Math.max(0, Math.round(remNow / L.rate))),
+    bookDate: addDays(todayISO(), Math.max(0, Math.round((remNow - amber) / L.rate))),
+    bookNow: remNow <= amber };
+}
+const isBooked = m => m && (m.status === 'booked' || m.status === 'progress');
+const maintFcText = (f, m) => !f ? '' : !f.ready ? 'Forecast: learning from your hours updates'
+  : isBooked(m) ? `Forecast: due around ${fmtDate(f.dueDate)} · already ${m.status === 'progress' ? 'in progress' : 'booked in'}`
+  : f.bookNow ? `Forecast: book now · due around ${fmtDate(f.dueDate)}` : `Forecast: book by ${fmtDate(f.bookDate)} · due around ${fmtDate(f.dueDate)} · ~${fmtH(f.perWeek)} hrs/week`;
+
 function hourItemFor(ac) {
   const items = S.maintenance.filter(m => m.aircraftId === ac.id && !m.archived && m.status !== 'done' && m.counter !== 'none' && m.dueHours != null)
     .map(m => { const cur = counterVal(ac, m.counter); return { m, cur, rem: cur == null ? null : Math.round((m.dueHours - cur) * 10) / 10 }; });
@@ -1551,6 +1685,7 @@ const SCHEMAS = {
     beforeSave: (r, old) => { if (r.status === 'done' && (!old || old.status !== 'done')) r.completedAt = nowStamp(); if (r.status !== 'done') delete r.completedAt; }
   },
   aircraft: { title: 'Aircraft', coll: 'aircraft', deletable: false,
+    beforeSave: (r, old) => { if (!old || r.engineHours !== old.engineHours || r.airTime !== old.airTime) logHours(r); },
     fields: [
       { k: 'ident', l: 'Aircraft', t: 'readonly' },
       { k: 'type', l: 'Type (optional)', t: 'text' },
@@ -1585,10 +1720,19 @@ const SCHEMAS = {
       { k: 'aircraftId', l: 'Aircraft', t: 'aircraft' },
       { k: 'raised', l: 'Date raised', t: 'date' },
       { k: 'description', l: 'Defect', t: 'text', req: true, wide: true },
+      { k: 'severity', l: 'Severity', t: 'select', o: DEF_SEV, req: true, hint: 'Grounding means the aircraft must not fly.' },
       { k: 'status', l: 'Status', t: 'select', o: DEF_ST },
       { k: 'waitingOn', l: 'Waiting on', t: 'text' },
-      { k: 'followUp', l: 'Follow-up action', t: 'textarea', wide: true }
-    ]
+      { k: 'followUp', l: 'Follow-up action', t: 'textarea', wide: true },
+      { k: 'photos', l: 'Photos', t: 'photos' }
+    ],
+    // A grounding defect offers to take the aircraft off line (Tom decides).
+    afterSave: async d => {
+      const ac = acById(d.aircraftId);
+      if (d.severity !== 'grounding' || d.status === 'closed' || !ac || ac.status === 'unserviceable') return;
+      if (!(await askConfirm(`Grounding defect on ${ac.ident}. Mark ${ac.ident} as Unserviceable so it isn’t flown?`, `Mark ${ac.ident} unserviceable`))) return;
+      withUndo(`${ac.ident} marked unserviceable`, () => { ac.status = 'unserviceable'; if (!ac.restrictions) ac.restrictions = `Grounding defect: ${d.description}`; delete ac.example; stamp(ac); });
+    }
   },
   reading: { title: 'Fuel reading', coll: 'fuelReadings', archivable: false,
     validate: r => { const cap = S.settings.tankCapacity; return cap && r.litres > cap ? `The IOR tank holds a maximum of ${fmtL(cap)}. Check the reading.` : ''; },
@@ -1685,6 +1829,7 @@ const SCHEMAS = {
       { k: 'rwy05Mag', l: 'YCDR runway 05 heading (magnetic)', t: 'number', suffix: '°', hint: 'Runway 23 is the reciprocal.' },
       { k: 'rwy12Mag', l: 'YCDR runway 12 heading (magnetic)', t: 'number', suffix: '°', hint: 'Runway 30 is the reciprocal.' },
       { k: 'magVar', l: 'Magnetic variation (east)', t: 'number', suffix: '°', hint: 'METAR wind is in degrees true. About 11° E at Caloundra; check current charts.' },
+      { k: 'fuelOrderAt', l: 'Forecast: order when the tank reaches', t: 'litres', req: true, hint: 'The fuel forecast suggests ordering around this level (a safe buffer).' },
       { k: 'tankCapacity', l: 'IOR tank max safe fill', t: 'litres', req: true, hint: 'Top of the tank gauge. Refills that would go above this are flagged.' }
     ]
   }
@@ -1711,6 +1856,7 @@ function openDlg(title, html, buttons) {
   });
   if (!dlg.open) { if (dlg.showModal) dlg.showModal(); else dlg.setAttribute('open', ''); }
   $('#dlgBody').scrollTop = 0;
+  hydratePhotos($('#dlgBody'));
   if (!matchMedia('(max-width:760px)').matches) {
     const first = $('#dlgBody').querySelector('input:not([type=hidden]):not([type=file]),select,textarea');
     if (first) first.focus();
@@ -1729,8 +1875,73 @@ dlg.addEventListener('click', e => {
   const add = e.target.closest('[data-addrow]');
   if (add) { const box = document.getElementById(add.dataset.addrow); box.insertAdjacentHTML('beforeend', rowHTML({})); box.lastElementChild.querySelector('input').focus(); return; }
   const del = e.target.closest('[data-delrow]');
-  if (del) del.closest('.row-item').remove();
+  if (del) { del.closest('.row-item').remove(); return; }
+  const px = e.target.closest('[data-phdel]');
+  if (px) { const box = px.closest('.ph-grid'); box.dataset.ids = JSON.stringify(JSON.parse(box.dataset.ids || '[]').filter(i => i !== px.dataset.phdel)); px.closest('.ph').remove(); return; }
+  const pv = e.target.closest('.ph img[data-photo]');
+  if (pv) openPhoto(pv.dataset.photo);
 });
+dlg.addEventListener('change', async e => {
+  const inp = e.target.closest('input[data-photofor]'); if (!inp) return;
+  const box = document.getElementById(inp.dataset.photofor), msg = document.getElementById(inp.dataset.photofor + '_msg');
+  const files = [...inp.files]; inp.value = '';
+  if (!files.length) return;
+  box.dataset.busy = '1'; msg.textContent = `Uploading ${plural(files.length, 'photo')}…`;
+  let ok = 0, fail = 0;
+  for (const f of files) {
+    try {
+      const id = await uploadPhoto(f);
+      box.dataset.ids = JSON.stringify(JSON.parse(box.dataset.ids || '[]').concat([id]));
+      box.insertAdjacentHTML('beforeend', phThumb(id)); hydratePhotos(box); ok++;
+    } catch (err) { fail++; }
+  }
+  box.dataset.busy = '';
+  msg.textContent = fail ? `${plural(fail, 'photo')} couldn’t upload. Check your connection and try again.` : `${plural(ok, 'photo')} added. Save to keep ${ok > 1 ? 'them' : 'it'}.`;
+});
+/* Defect photos: resized on the device (max 1600 px JPEG), stored through /api/files and shown
+   only to signed-in people. */
+const phThumb = id => `<span class="ph"><img data-photo="${esc(id)}" alt="Defect photo"><button type="button" class="ph-x" data-phdel="${esc(id)}" aria-label="Remove photo">×</button></span>`;
+async function shrinkImage(file, max, q) {
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url; });
+    const k = Math.min(1, max / Math.max(img.naturalWidth, img.naturalHeight));
+    const c = document.createElement('canvas');
+    c.width = Math.max(1, Math.round(img.naturalWidth * k)); c.height = Math.max(1, Math.round(img.naturalHeight * k));
+    c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+    return c.toDataURL('image/jpeg', q);
+  } finally { URL.revokeObjectURL(url); }
+}
+async function uploadPhoto(file) {
+  if (!Who || !Who.token) throw new Error('Not signed in');
+  let data = await shrinkImage(file, 1600, 0.78);
+  if (data.length > 1400000) data = await shrinkImage(file, 1200, 0.7);
+  const r = await fetch('/api/files', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + Who.token }, body: JSON.stringify({ type: 'image/jpeg', data: data.split(',')[1] }) });
+  if (!r.ok) throw new Error('Upload failed ' + r.status);
+  return (await r.json()).id;
+}
+const photoCache = new Map();
+function photoURL(id) {
+  if (!photoCache.has(id)) photoCache.set(id, fetch('/api/files/' + encodeURIComponent(id), { headers: { Authorization: 'Bearer ' + (Who && Who.token) } })
+    .then(r => { if (!r.ok) throw new Error(String(r.status)); return r.blob(); }).then(b => URL.createObjectURL(b))
+    .catch(e => { photoCache.delete(id); throw e; }));
+  return photoCache.get(id);
+}
+function hydratePhotos(root) {
+  (root || document).querySelectorAll('img[data-photo]:not([src])').forEach(img => {
+    photoURL(img.dataset.photo).then(u => { img.src = u; }).catch(() => { img.alt = 'Photo unavailable'; const p = img.closest('.ph, .ph-mini-w'); if (p) p.classList.add('ph-err'); });
+  });
+}
+function openPhoto(id) {
+  const lb = document.createElement('dialog');
+  lb.className = 'lightbox';
+  lb.innerHTML = '<img alt="Defect photo"><button type="button" class="icon-btn" aria-label="Close">×</button>';
+  document.body.appendChild(lb);
+  lb.addEventListener('click', () => lb.close());
+  lb.addEventListener('close', () => lb.remove());
+  photoURL(id).then(u => { lb.querySelector('img').src = u; }).catch(() => { lb.querySelector('img').alt = 'Photo unavailable'; });
+  if (lb.showModal) lb.showModal(); else lb.setAttribute('open', '');
+}
 
 function askConfirm(msg, okLabel = 'OK') {
   const c = $('#cfm');
@@ -1764,6 +1975,11 @@ function fieldHTML(f, r) {
     case 'select': input = `<select id="${id}">${f.o.map(([val, l]) => `<option value="${esc(val)}"${val === v ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select>`; break;
     case 'aircraft': input = `<select id="${id}">${S.aircraft.map(a => `<option value="${esc(a.id)}"${a.id === v ? ' selected' : ''}>${esc(a.ident)}${a.type ? ' (' + esc(a.type) + ')' : ''}</option>`).join('')}</select>`; break;
     case 'readonly': input = `<div class="ro">${esc(v)}</div>`; break;
+    case 'photos': {
+      const ids = Array.isArray(v) ? v : [];
+      return `<div class="field wide"><span class="lbl">${esc(f.l)}</span><div class="ph-grid" id="${id}" data-ids="${esc(JSON.stringify(ids))}">${ids.map(phThumb).join('')}</div>
+        <div class="ph-bar"><label class="btn btn-sm btn-secondary ph-add">${svgI('camera')}<span>Take or add photos</span><input type="file" accept="image/*" multiple data-photofor="${id}"></label><span class="hint ph-msg" id="${id}_msg" role="status"></span></div></div>`;
+    }
     case 'rows':
       return `<div class="field wide"><span class="lbl">${esc(f.l)}</span><div class="rows" id="${id}">${(v || []).map(rowHTML).join('')}</div><div><button type="button" class="btn btn-sm btn-secondary" data-addrow="${id}">Add qualification or expiry</button></div></div>`;
   }
@@ -1775,6 +1991,11 @@ function collect(fields) {
   for (const f of fields) {
     const el = document.getElementById('f_' + f.k);
     if (!el || f.t === 'readonly') continue;
+    if (f.t === 'photos') {
+      if (el.dataset.busy === '1') errs.push('Wait for the photos to finish uploading.');
+      try { out[f.k] = JSON.parse(el.dataset.ids || '[]'); } catch (e) { out[f.k] = []; }
+      continue;
+    }
     if (f.t === 'rows') {
       out[f.k] = [...el.querySelectorAll('.row-item')].map(x => ({ label: x.querySelector('.ri-label').value.trim(), expiry: x.querySelector('.ri-date').value || null })).filter(q => q.label || q.expiry);
       continue;
@@ -1830,6 +2051,7 @@ function openEditor(kind, id, defaults) {
     if (existing) { Object.keys(existing).forEach(k => { if (!(k in r)) delete existing[k]; }); Object.assign(existing, r); }
     else { r.id = uid(); r.createdAt = nowStamp(); r.archived = false; S[sc.coll].push(r); }
     closeDlg(); commit(); toast(existing ? 'Changes saved' : `${sc.title} added`);
+    if (sc.afterSave) setTimeout(() => sc.afterSave(existing || r, !existing), 50);
   } });
   const title = kind === 'aircraft' ? `Update ${r.ident}` : (existing ? `Edit ${name}` : `New ${name}`);
   openDlg(title, body, btns);
@@ -1853,6 +2075,7 @@ function openHours() {
     closeDlg();
     if (!changes.length) { toast('No changes to save'); return; }
     changes.forEach(([a, k, v]) => { a[k] = v; delete a.example; stamp(a); });
+    new Set(changes.map(c => c[0])).forEach(logHours);
     commit();
     toast(`Hours updated for ${plural(new Set(changes.map(c => c[0].ident)).size, 'aircraft').replace('aircrafts', 'aircraft')}`);
   } }]);
@@ -1893,6 +2116,67 @@ function openWarnings() {
       Object.assign(s, vals);
       closeDlg(); commit(); toast('Warning levels saved');
     } }]);
+}
+
+/* Daily brief: today's aircraft, fuel, weather, actions and what's coming up, on one page.
+   Print, copy or share. Built only from what's in the dashboard. */
+function windSummary(raw) {
+  const wd = runwayWind(' ' + raw + ' ');
+  if (!wd) return '';
+  if (wd.spd === 0) return 'Calm';
+  if (wd.dir == null) return `Variable ${wd.spd} kt`;
+  const st = S.settings, vr = Number(st.magVar ?? 11) || 0, m05 = Number(st.rwy05Mag ?? 50), m12 = Number(st.rwy12Mag ?? 120);
+  const b = [['05', m05], ['23', (m05 + 180) % 360], ['12', m12], ['30', (m12 + 180) % 360]].map(([n, mh]) => { const a = (wd.dir - (mh + vr)) * Math.PI / 180; return { n, head: wd.spd * Math.cos(a), cross: wd.spd * Math.sin(a) }; }).sort((x, y) => y.head - x.head)[0];
+  return `${String(wd.dir).padStart(3, '0')}° ${wd.spd} kt${wd.gust ? ` gusting ${wd.gust}` : ''} (true). Favours RWY ${b.n}: ${Math.round(b.head)} kt head, ${Math.round(Math.abs(b.cross))} kt cross${Math.abs(b.cross) >= 0.5 ? (b.cross > 0 ? ' from right' : ' from left') : ''}.`;
+}
+function buildBrief() {
+  const now = new Date();
+  const dateTxt = new Intl.DateTimeFormat('en-AU', { timeZone: TZ, weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(now);
+  const H = [], T = [`GoFly daily brief, ${dateTxt}`, `Prepared by ${Who ? Who.name : ''} at ${hm24(now, TZ)}`];
+  const sec = (title, items) => { if (!items.length) return; H.push(`<h3 class="br-h">${esc(title)}</h3><ul class="br-l">${items.map(i => `<li>${i.h}</li>`).join('')}</ul>`); T.push('', title.toUpperCase(), ...items.map(i => '- ' + i.t)); };
+  const it = (lead, rest, cls) => ({ h: `${lead ? `<b>${esc(lead)}</b> ` : ''}${cls ? `<span class="br-${cls}">` : ''}${esc(rest)}${cls ? '</span>' : ''}`, t: `${lead ? lead + ': ' : ''}${rest}` });
+  sec('Aircraft', S.aircraft.map(a => {
+    const u = acUse(a), nx = acSummary(a).next, f = maintForecast(a);
+    const defs = S.defects.filter(d => d.aircraftId === a.id && !d.archived && d.status !== 'closed' && (d.severity === 'grounding' || d.severity === 'urgent'));
+    const parts = [u.long];
+    if (a.restrictions && a.status !== 'serviceable') parts.push(a.restrictions);
+    if (nx) parts.push(`next ${nx.m.title}: ${nx.st.parts.map(p => p.txt).join(', ')}`);
+    if (f && f.ready && !isBooked(nx && nx.m)) parts.push(f.bookNow ? 'book maintenance now (forecast)' : `book by ${fmtDate(f.bookDate)} (forecast)`);
+    defs.forEach(d => { if (!parts.join(' ').includes(d.description)) parts.push(`${SEV_BADGE[d.severity][1]} defect: ${d.description}`); });
+    acExpiries(a).filter(x => x.st.s !== 'ok').forEach(x => parts.push(`${x.label}: ${x.st.txt.toLowerCase()}`));
+    return it(a.ident, parts.join(' · '), a.status === 'unserviceable' || defs.some(d => d.severity === 'grounding') ? 'red' : u.lvl ? 'amb' : '');
+  }));
+  const fr = latestReading(), o = nextOrder(), f = fuelForecast();
+  sec('IOR fuel tank', [
+    fr ? it('Level', `${fmtL(fr.litres)} on ${fmtDate(fr.date)}${isLowStock(fr) ? ' (low stock)' : ''}`, isLowStock(fr) ? 'red' : '') : it('Level', 'No reading yet'),
+    ...(f.ready ? [it('Forecast', o ? (() => { const w = o.confirmedDate || o.requestedDate; if (!w) return 'Order placed'; const est = f.estNow - f.rate * Math.max(0, daysUntil(w)); return est > 0 ? `Order placed. About ${fmtL(est)} left when it arrives ${fmtWkDate(w)}` : `Order placed, but the tank may run low before it arrives ${fmtWkDate(w)}`; })() : f.past ? `Order now (estimated at or below ${fmtL(f.target)})` : `Order around ${fmtWkDate(f.orderDate)} · using ~${fmtL(f.rate)} a day`, !o && (f.past || f.dLeft <= 3) ? 'amb' : '')] : []),
+    ...(o ? [it('On order', `${fmtL(o.litres)} ${o.product || ''}, ${o.confirmedDate ? `delivery confirmed ${fmtDate(o.confirmedDate)}` : o.requestedDate ? `requested ${fmtDate(o.requestedDate)}, not confirmed` : 'no date yet'}`)] : [])
+  ]);
+  const d = WX.data;
+  if (d && (d.metar || d.taf)) {
+    const wx = [];
+    if (d.metar && d.metar.rawOb) { const ws = windSummary(d.metar.rawOb); if (ws) wx.push(it('Wind (YBSU)', ws)); wx.push(it('METAR', d.metar.rawOb)); }
+    if (d.taf && d.taf.rawTAF) wx.push(it('TAF', String(d.taf.rawTAF).replace(/\s+/g, ' ')));
+    wx.push(it('', 'Not an official briefing. Check NAIPS before flight.', 'mut'));
+    sec('Weather', wx);
+  }
+  sec('Action needed', attentionItems().filter(a => ['overdue', 'due', 'alert', 'low'].includes(a.sev)).slice(0, 14).map(a => it(a.title, `${a.badge}. ${a.detail}`, a.sev === 'low' ? 'amb' : 'red')));
+  sec('Next 7 days', upcoming(7).slice(0, 14).map(e => it(e.d === 0 ? 'Today' : e.d === 1 ? 'Tomorrow' : fmtWkDate(e.date), `${e.title} (${e.detail})`)));
+  return { html: `<div class="brief"><p class="br-top"><b>${esc(dateTxt)}</b><br>Prepared by ${esc(Who ? Who.name : '')} at ${hm24(now, TZ)}</p>${H.join('')}</div>`, text: T.join('\n') };
+}
+function openBrief() {
+  const b = buildBrief();
+  const btns = [{ label: 'Print', cls: 'btn-text', left: true, on: () => printBrief(b.html) }];
+  if (navigator.share) btns.push({ label: 'Share', cls: 'btn btn-secondary', on: () => navigator.share({ title: 'GoFly daily brief', text: b.text }).catch(() => {}) });
+  btns.push({ label: 'Copy text', cls: 'btn btn-primary', on: async () => { try { await navigator.clipboard.writeText(b.text); toast('Brief copied'); } catch (e) { toast('Couldn’t copy here. Use Share or Print instead.'); } } });
+  openDlg('Daily brief', b.html, btns);
+}
+function printBrief(html) {
+  let pa = document.getElementById('printArea');
+  if (!pa) { pa = document.createElement('div'); pa.id = 'printArea'; document.body.appendChild(pa); }
+  pa.innerHTML = `<img src="brand/gofly-logo-light-bg.png" alt="GoFly" class="pr-logo"><h1 class="pr-h">Daily brief</h1>${html}`;
+  closeDlg();
+  setTimeout(() => window.print(), 60);
 }
 
 function openAddMenu() {
@@ -2043,7 +2327,7 @@ function openSettings() {
   const groups = [
     ['Maintenance', ['hoursAmber', 'hoursRed', 'cautionHrs', 'sparingHrs', 'dueSoonDays']],
     ['Instructor checks', ['spDays', 'renewJuniorMonths', 'renewSeniorMonths', 'renewChiefMonths', 'renewWarnDays', 'expiryWarnDays']],
-    ['IOR fuel tank', ['fuelThreshold', 'tankCapacity']],
+    ['IOR fuel tank', ['fuelThreshold', 'tankCapacity', 'fuelOrderAt']],
     ['Documents and expiries', ['docWarnDays']],
     ['YCDR runways and wind', ['rwy05Mag', 'rwy12Mag', 'magVar']],
     ['This device', ['theme']]
@@ -2113,6 +2397,7 @@ const ICONS = {
   calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
   clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
   receipt: '<path d="M6 2h12v20l-3-2-3 2-3-2-3 2z"/><path d="M9 7h6M9 11h6M9 15h4"/>',
+  camera: '<path d="M4 7h3l2-3h6l2 3h3a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="4"/>',
   doc: '<path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/>',
   list: '<path d="M9 6h12M9 12h12M9 18h12"/><path d="M3 6l1.5 1.5L7 5M3 12l1.5 1.5L7 11M3 18l1.5 1.5L7 17"/>'
 };
@@ -2144,6 +2429,14 @@ function niceScale(lo, hi, n) {
 }
 const fmtTick = v => Number(v).toLocaleString('en-AU', { maximumFractionDigits: 1 }).replace('-', '−');
 
+function bookingGuide() {
+  const rows = S.aircraft.map(ac => ({ ac, f: maintForecast(ac), h: hourItemFor(ac) })).filter(x => x.f && x.f.ready)
+    .sort((a, b) => a.f.bookDate.localeCompare(b.f.bookDate));
+  return `<div class="mc-cal"><h3 class="mini-h">Booking guide <span class="n2">(forecast from your hours updates, guide only)</span></h3>${rows.length ? `<ul class="list">${rows.map(({ ac, f, h }) => {
+    const d = daysUntil(f.bookDate), bk = isBooked(h.m), cls = bk ? 'ok' : f.bookNow ? 'due' : d <= 14 ? 'soon' : 'ok';
+    return `<li><button class="irow" data-reg="${reg(() => openEditor('maint', h.m.id))}"><span class="mk mk-${cls}"></span><span><span class="nm">${esc(ac.ident)} ${esc(h.m.title)}</span><span class="dt">Due around ${fmtDate(f.dueDate)} · ~${fmtH(f.perWeek)} hrs/week${f.conf === 'early' ? ' · early estimate' : ''}</span></span><span class="ist ist-${cls}">${bk ? (h.m.bookingDate ? `Booked ${fmtDate(h.m.bookingDate)}` : 'Booked') : f.bookNow ? 'Book now' : `Book by ${fmtDate(f.bookDate)}`}</span></button></li>`;
+  }).join('')}</ul>` : '<p class="empty">Learning flying rates. Update aircraft hours a few times and booking dates will appear here.</p>'}</div>`;
+}
 function maintChart() {
   const L = hrsLevels();
   const rows = S.aircraft.map(ac => ({ ac, h: hourItemFor(ac) }));
@@ -2170,7 +2463,7 @@ function maintChart() {
       <span class="mc-top"><span class="mc-who"><span class="mc-id">${esc(ac.ident)}</span><span class="mc-st"><span class="dot dot-${esc(acUse(ac).cls)}"></span>${esc(acUse(ac).short)}</span></span>
         <span class="mc-val${h.rem == null ? ' na' : ''}">${HRS_LABEL[st] ? badge(st, HRS_LABEL[st]) + ' ' : ''}${val}</span></span>
       <span class="mc-track" aria-hidden="true">${zero}${bar}${tick}</span>
-      <span class="mc-sub">${sub}</span></button>`;
+      <span class="mc-sub">${sub}</span>${h.rem != null ? `<span class="mc-fc">${esc(maintFcText(maintForecast(ac), h.m))}</span>` : ''}</button>`;
   }).join('');
   const axis = `<div class="mc-axis" aria-hidden="true">${sc.ticks.map((t, i) => `<span style="left:${P(t).toFixed(2)}%">${fmtTick(t)}${i === sc.ticks.length - 1 ? ' hrs' : ''}</span>`).join('')}</div>`;
   const cal = S.maintenance.filter(m => !m.archived && m.status !== 'done' && m.counter === 'none')
@@ -2182,6 +2475,7 @@ function maintChart() {
   return `<div class="mc-legend" aria-hidden="true"><span><i class="sw"></i>Good, over ${+L.amber} hrs</span><span><i class="sw sw-soon"></i>Book soon, ${+L.amber} hrs or less</span><span><i class="sw sw-overdue"></i>Verify booking, ${+L.red} hrs or less, or overdue</span></div>
     <div>${body}</div>${axis}
     <div class="panel-foot"><span class="hint">Same levels for every aircraft. Lines on each bar mark ${+L.amber} and ${+L.red} hrs.</span><button class="btn-text" data-act="warnings">Warning levels</button></div>
+    ${bookingGuide()}
     ${calHTML}`;
 }
 
@@ -2276,6 +2570,19 @@ function tankGauge(fr, thr, cap, H) {
   </div>`;
 }
 
+function fuelFcCard(o) {
+  const f = fuelForecast();
+  if (!f.ready) return `<div class="fc-card"><h3 class="mini-h">Forecast <span class="n2">· guide only</span></h3><p class="empty" style="margin:0">Learning your usage. Log a few more readings and this will suggest when to order.</p></div>`;
+  const when = o && (o.confirmedDate || o.requestedDate);
+  let main;
+  if (o) {
+    const est = when ? f.estNow - f.rate * Math.max(0, daysUntil(when)) : null;
+    main = when ? (est > 0 ? `Order placed. Estimated about <strong>${fmtL(est)}</strong> left when it arrives ${fmtWkDate(when)}.` : `Order placed, but the tank may run low before it arrives ${fmtWkDate(when)}.`) : 'Order placed. Add a delivery date to see the estimate on arrival.';
+  } else main = f.past ? `<strong>Order now.</strong> Estimated at or below ${fmtL(f.target)}.` : `Order around <strong>${fmtWkDate(f.orderDate)}</strong> (${f.dLeft === 0 ? 'today' : `in ${plural(f.dLeft, 'day')}`}), when it reaches about ${fmtL(f.target)}.`;
+  return `<div class="fc-card${!o && (f.past || f.dLeft <= 3) ? ' fc-warn' : ''}"><h3 class="mini-h">Forecast <span class="n2">· guide only</span></h3>
+    <p class="fc-main">${main}</p>
+    <p class="fc-sub">Estimated now ~${fmtL(f.estNow)} · using ~${fmtL(f.rate)} a day · ${f.conf === 'good' ? `learned from ${f.n} readings over ${Math.round(f.span)} days` : 'early estimate, improves as you log readings'}</p></div>`;
+}
 function fuelSummary(page) {
   const fr = latestReading(), thr = S.settings.fuelThreshold, cap = S.settings.tankCapacity, low = isLowStock(fr);
   const add = Number(S.settings.orderTemplate.litres) || 3500;
@@ -2306,6 +2613,7 @@ function fuelSummary(page) {
       <div class="${low ? 'warn' : ''}"><span class="k">Reorder at</span><b>${fmtL(thr)}</b></div>
     </div>
     <div class="btn-row"><button class="btn btn-primary" data-act="refill">Refill +${Math.round(add).toLocaleString('en-AU')} L</button><button class="btn btn-secondary" data-act="add" data-kind="reading">Log reading</button>${o ? `<button class="btn btn-secondary" data-reg="${reg(() => openEditor('order', o.id))}">Order details</button>` : `<button class="btn btn-secondary" data-act="orderTemplate">Order ${Math.round(add).toLocaleString('en-AU')} L</button>`}</div>
+    ${fuelFcCard(o)}
     <div class="next-order"><h3 class="mini-h">Next order</h3>${order}</div>`;
 }
 
@@ -2539,7 +2847,8 @@ function renderOverview() {
   const k3 = kpi(!fr ? 'missing' : low ? 'low' : '', 'drop', !fr ? ['missing', 'No reading'] : low ? ['low', 'Low stock'] : ['ok', 'Stock OK'], 'IOR fuel tank', fr ? `${Math.round(fr.litres).toLocaleString('en-AU')}<small>L</small>` : '—', [
     fr ? kpiTank(fr.litres, thr, S.settings.tankCapacity) : '',
     fr ? sub(low ? `<strong>Low stock</strong>, reorder at ${fmtL(thr)}` : `Reorder level ${fmtL(thr)}`) : sub('No reading yet'),
-    fr ? sub(`Read ${fmtDate(fr.date)}`, true) : ''], 'data-act="go" data-view="fuel"');
+    fr ? sub(`Read ${fmtDate(fr.date)}`, true) : '',
+    (() => { const f = fuelForecast(); return f.ready && !nextOrder() ? sub(f.past ? '<strong>Forecast: order now</strong>' : `Forecast: order ~${fmtDate(f.orderDate)}`, !f.past && f.dLeft > 3) : ''; })()], 'data-act="go" data-view="fuel"');
   // 4. Instructors (currency checks; qualifications counted separately)
   const actI = S.instructors.filter(p => !p.archived);
   const ws = actI.map(p => worstOf(checkState(p), renewState(p)).s);
@@ -2559,7 +2868,7 @@ function renderOverview() {
     od.length ? sub(`${od.filter(a => a.basis !== 'hours').length} past a date, ${od.filter(a => a.basis === 'hours').length} over hours`, true) : sub('Nothing overdue', true)], 'data-act="kpiOverdue"');
 
   const shown = showAllAtt ? att : att.slice(0, 5);
-  const attHTML = att.length ? `<ul class="list">${shown.map(a => `<li><button class="item" data-reg="${reg(a.fn)}"><span class="mk mk-${a.sev}"></span><span class="tx"><span class="t">${esc(a.title)}</span><span class="d">${esc(a.detail)}</span></span><span class="r">${badge(a.sev, a.badge)}</span></button></li>`).join('')}</ul>${att.length > 5 ? `<button class="btn-text" data-act="toggleAtt">${showAllAtt ? 'Show top 5' : `View all ${att.length}`}</button>` : ''}` : '<p class="empty">Nothing needs attention right now.</p>';
+  const attHTML = att.length ? `<ul class="list">${shown.map(a => `<li><button class="item" data-reg="${reg(a.fn)}"><span class="mk mk-${a.bcls || a.sev}"></span><span class="tx"><span class="t">${esc(a.title)}</span><span class="d">${esc(a.detail)}</span></span><span class="r">${badge(a.bcls || a.sev, a.badge)}</span></button></li>`).join('')}</ul>${att.length > 5 ? `<button class="btn-text" data-act="toggleAtt">${showAllAtt ? 'Show top 5' : `View all ${att.length}`}</button>` : ''}` : '<p class="empty">Nothing needs attention right now.</p>';
   const attSub = [n.overdue && `${n.overdue} overdue`, n.due && `${n.due} verify booking`, n.alert && `${n.alert} unserviceable`, n.low && 'low stock', n.soon && `${n.soon} due soon`, n.missing && `${n.missing} not entered`].filter(Boolean).join(', ') || 'All clear';
 
   const groups = waitingGroups();
@@ -2576,7 +2885,8 @@ function renderOverview() {
       <span class="acx">${acExpiries(ac).map(x => `<span class="ex-r"><span class="dot dot-${x.st.na ? 'na' : x.st.s === 'ok' ? 'ok-g' : x.st.s}"></span><span class="ex-n">${x.k === 'regoExpiry' ? 'Rego' : 'Insurance'}</span><span class="ex-d ist-${x.st.s}${x.st.na ? ' muted' : ''}">${x.st.na ? 'N/A' : x.st.due ? fmtDate(x.st.due) : 'Not entered'}</span></span>`).join('')}</span>
       ${ac.restrictions && ac.status !== 'serviceable' ? `<span class="restr">${esc(trunc(ac.restrictions, 80))}</span>` : ''}
       <span class="nx"><span class="k">Next maintenance</span>${nx ? `<span>${esc(nx.m.title)}</span><span>${nx.st.parts.map(p => badge(p.s, p.txt)).join(' ')}</span>` : '<span class="muted">None entered</span>'}</span>
-      ${defects ? `<span class="ln">${plural(defects, 'open defect')}</span>` : ''}
+      ${(() => { const od = S.defects.filter(d => d.aircraftId === ac.id && !d.archived && d.status !== 'closed'); const g = od.filter(d => d.severity === 'grounding').length, u = od.filter(d => d.severity === 'urgent').length;
+        return g ? `<span class="ln def-g">${plural(g, 'grounding defect')}</span>` : u ? `<span class="ln def-u">${plural(u, 'urgent defect')}</span>` : defects ? `<span class="ln">${plural(defects, 'open defect')}</span>` : ''; })()}
     </span></button>`;
   }).join('');
 
@@ -2600,7 +2910,7 @@ function renderOverview() {
       <h1>${hr < 12 ? 'Good morning' : hr < 17 ? 'Good afternoon' : 'Good evening'}${first ? ', ' + esc(first) : ''}</h1>
       <p class="hero-date">${esc(longDate)}</p></div>
     <div class="h-act"><button type="button" class="ops ops-${lvl}" data-act="kpiOverdue"><strong>${{ crit: 'Action needed', warn: 'Watch', ok: 'All clear' }[lvl]}</strong><span>${lvl === 'ok' ? 'Nothing overdue or due soon' : esc(attSub)}</span></button>
-    <div class="quick"><button class="btn btn-primary" data-act="add" data-kind="task">Add task</button><button class="btn btn-secondary" data-act="hours">Update hours</button><button class="btn btn-secondary" data-act="add" data-kind="reading">Log fuel reading</button><button class="btn btn-secondary" data-act="addMenu" aria-haspopup="dialog">Add…</button></div></div></div></section>
+    <div class="quick"><button class="btn btn-primary" data-act="add" data-kind="task">Add task</button><button class="btn btn-secondary" data-act="hours">Update hours</button><button class="btn btn-secondary" data-act="add" data-kind="reading">Log fuel reading</button><button class="btn btn-secondary" data-act="addMenu" aria-haspopup="dialog">Add…</button><button class="btn btn-secondary" data-act="brief">${svgI('doc')}Daily brief</button></div></div></div></section>
   <section class="kpis" aria-label="Summary">${k1}${k2}${k3}${k4}${k5}</section>
   ${banners()}
   <div class="grid">
@@ -2627,11 +2937,12 @@ function recMaint(m) {
   </div>`;
 }
 function recDefect(d) {
-  const st = d.status === 'closed' ? badge('complete', 'Closed') : d.status === 'waiting' ? badge('waiting', `Waiting on ${d.waitingOn || 'someone else'}`) : badge('info', 'Open');
+  const st = (d.status === 'closed' ? badge('complete', 'Closed') : sevBadge(d) + (d.status === 'waiting' ? ' ' + badge('waiting', `Waiting on ${d.waitingOn || 'someone else'}`) : ''));
   return `<div class="rec${d.archived ? ' is-arch' : ''}">
     <button class="rec-main" data-reg="${reg(() => openEditor('defect', d.id))}"><span class="t">${esc(d.description)}${exChip(d)}${d.archived ? ' <span class="b b-ok">Archived</span>' : ''}</span>
       <span class="d">Raised ${fmtDate(d.raised)}</span>
-      ${d.followUp ? `<span class="n">Follow-up: ${esc(d.followUp)}</span>` : '<span class="n muted">No follow-up action recorded</span>'}</button>
+      ${d.followUp ? `<span class="n">Follow-up: ${esc(d.followUp)}</span>` : '<span class="n muted">No follow-up action recorded</span>'}
+      ${(d.photos || []).length ? `<span class="ph-row">${d.photos.slice(0, 6).map(id => `<span class="ph-mini-w"><img class="ph-mini" data-photo="${esc(id)}" alt="Defect photo"></span>`).join('')}${d.photos.length > 6 ? `<span class="muted">+${d.photos.length - 6}</span>` : ''}</span>` : ''}</button>
     <span class="rec-side">${st}${d.status !== 'closed' && !d.archived ? `<button class="btn btn-sm btn-secondary" data-reg="${reg(() => withUndo('Defect closed', () => { d.status = 'closed'; d.closedAt = nowStamp(); delete d.example; stamp(d); }))}">Close</button>` : ''}</span>
   </div>`;
 }
@@ -2648,7 +2959,7 @@ function renderAircraft() {
       <div class="ac-head">
         <div class="ac-id"><span class="id">${esc(ac.ident)}</span>${ac.type ? `<span class="ty">${esc(ac.type)}</span>` : ''}${exChip(ac)}</div>
         <div class="ac-state"><span class="stt">${esc(use.long)}</span>${use.lvl && use.lvl !== 'overdue' ? `<span class="muted" style="display:block">${fmtH(use.rem)} hrs to the next hour-based maintenance item</span>` : ''}${ac.restrictions ? `<span class="restr">${esc(ac.restrictions)}</span>` : '<span class="muted">No restrictions recorded</span>'}
-          <span class="ac-next"><span class="k">Next maintenance:</span>${nx ? `<strong>${esc(nx.m.title)}</strong> ${nx.st.parts.map(p => badge(p.s, p.txt)).join(' ')}` : '<span class="muted">None entered</span>'}</span></div>
+          <span class="ac-next"><span class="k">Next maintenance:</span>${nx ? `<strong>${esc(nx.m.title)}</strong> ${nx.st.parts.map(p => badge(p.s, p.txt)).join(' ')}` : '<span class="muted">None entered</span>'}</span>${(() => { const f = maintForecast(ac); return f ? `<span class="mc-fc" style="margin-top:6px">${esc(maintFcText(f, hourItemFor(ac).m))}</span>` : ''; })()}</div>
         <dl class="ctr"><div><dt>Engine hours</dt><dd>${ac.engineHours != null ? fmtH(ac.engineHours) : badge('missing', 'Not entered')}</dd></div><div><dt>Air time</dt><dd>${ac.airTime != null ? fmtH(ac.airTime) : '<span class="na muted">Not tracked</span>'}</dd></div></dl>
         <div class="ac-act"><button class="btn btn-sm btn-secondary" data-reg="${reg(() => openEditor('aircraft', ac.id))}">Update record</button></div>
         <div class="ac-exp">${acExpiries(ac).map(x => `<span><span class="k">${esc(x.label)}</span> ${x.st.due ? fmtDate(x.st.due) + ' ' : ''}${x.st.s === 'ok' ? `<span class="ist ist-ok">${esc(x.st.txt)}</span>` : badge(x.st.s, x.st.txt)}</span>`).join('')}</div>
@@ -2842,6 +3153,7 @@ function render() {
   main.innerHTML = fn();
   if (view === 'tasks') renderTaskList();
   drawCharts();
+  hydratePhotos(main);
   updateTabs();
   if (pendingScroll) { const el = document.getElementById(pendingScroll); pendingScroll = null; if (el) el.scrollIntoView({ block: 'start' }); }
 }
@@ -2874,6 +3186,7 @@ const ACT = {
   clearEx: async () => { if (await askConfirm(`Remove all records marked Example?${syncMeta().synced ? ' This removes them for everyone.' : ''} Your own records stay.`, 'Clear example data')) withUndo('Example data cleared', clearExamples); },
   toggleAtt: () => { showAllAtt = !showAllAtt; render(); },
   addMenu: openAddMenu,
+  brief: () => openBrief(),
   docCat: d => { docFilter = d.c; render(); },
   lock: () => lockApp(),
   syncNow: () => { syncTick().then(() => toast(Sync.state === 'ok' ? 'Synced with everyone' : Sync.state === 'local' ? 'Not connected to the shared database. Saved on this device.' : 'Offline. Changes are saved here and will sync later.')); },

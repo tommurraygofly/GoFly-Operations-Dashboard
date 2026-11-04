@@ -4,6 +4,7 @@
 //   POST /api/login        team PIN + one of the named users -> a 12-hour session token.
 //   POST /api/logout       ends that session.
 //   GET/POST /api/sync     shared records in the D1 database (binding DB). Needs a session token.
+//   POST /api/files        store a photo (defects); GET/DELETE /api/files/<id>. Needs a session token.
 // The PIN is the only lock (no Cloudflare Access), so:
 //   - the PIN is never in this code: it's the Cloudflare secret GOFLY_PIN. If it isn't set, nobody
 //     can sign in;
@@ -21,6 +22,7 @@ export default {
     if (url.pathname === '/api/login') return login(request, env);
     if (url.pathname === '/api/logout') return logout(request, env);
     if (url.pathname === '/api/sync') return sync(request, env, url);
+    if (url.pathname === '/api/files' || url.pathname.startsWith('/api/files/')) return files(request, env, url);
     return env.ASSETS.fetch(request);
   }
 };
@@ -44,7 +46,8 @@ async function ensureSchema(db) {
     db.prepare('CREATE INDEX IF NOT EXISTS records_updated ON records (updated_at)'),
     db.prepare('CREATE TABLE IF NOT EXISTS sessions (token TEXT PRIMARY KEY, name TEXT NOT NULL, expires INTEGER NOT NULL)'),
     db.prepare('CREATE TABLE IF NOT EXISTS login_fails (ip TEXT NOT NULL, at INTEGER NOT NULL)'),
-    db.prepare('CREATE INDEX IF NOT EXISTS login_fails_at ON login_fails (at)')
+    db.prepare('CREATE INDEX IF NOT EXISTS login_fails_at ON login_fails (at)'),
+    db.prepare('CREATE TABLE IF NOT EXISTS files (id TEXT PRIMARY KEY, type TEXT NOT NULL, data TEXT NOT NULL, size INTEGER NOT NULL, created INTEGER NOT NULL, created_by TEXT)')
   ]);
   schemaReady = true;
 }
@@ -91,13 +94,51 @@ async function logout(request, env) {
   return json({ ok: true });
 }
 
+async function sessionUser(request, env) {
+  const t = bearer(request);
+  const ses = t && /^[0-9a-f]{64}$/.test(t) ? await env.DB.prepare('SELECT name, expires FROM sessions WHERE token = ?1').bind(t).first() : null;
+  return ses && ses.expires >= Date.now() ? ses.name : null;
+}
+
+/* ---------- Photos (defects) ----------
+   Stored in D1 as base64 text, already resized on the phone to roughly 100-400 KB.
+   Only signed-in people can upload or view them. */
+const MAX_PHOTO_B64 = 1500000; // about 1.1 MB of image
+async function files(request, env, url) {
+  if (!env.DB) return json({ error: 'Shared database not connected' }, 503);
+  await ensureSchema(env.DB);
+  const user = await sessionUser(request, env);
+  if (!user) return json({ error: 'Signed out. Sign in again.', expired: true }, 401);
+  const id = url.pathname.slice('/api/files/'.length);
+  if (request.method === 'POST' && url.pathname === '/api/files') {
+    let b; try { b = await request.json(); } catch (e) { return json({ error: 'Bad JSON' }, 400); }
+    const type = String(b && b.type || '');
+    const data = String(b && b.data || '');
+    if (!/^image\/(jpeg|png|webp)$/.test(type) || !data || !/^[A-Za-z0-9+/=]+$/.test(data)) return json({ error: 'Send a JPEG, PNG or WebP image' }, 400);
+    if (data.length > MAX_PHOTO_B64) return json({ error: 'Photo too large' }, 413);
+    const newId = [...crypto.getRandomValues(new Uint8Array(12))].map(x => x.toString(16).padStart(2, '0')).join('');
+    await env.DB.prepare('INSERT INTO files (id, type, data, size, created, created_by) VALUES (?1, ?2, ?3, ?4, ?5, ?6)').bind(newId, type, data, Math.round(data.length * 3 / 4), Date.now(), user).run();
+    return json({ id: newId });
+  }
+  if (!/^[0-9a-f]{24}$/.test(id)) return json({ error: 'Not found' }, 404);
+  if (request.method === 'GET') {
+    const row = await env.DB.prepare('SELECT type, data FROM files WHERE id = ?1').bind(id).first();
+    if (!row) return json({ error: 'Not found' }, 404);
+    const bytes = Uint8Array.from(atob(row.data), c => c.charCodeAt(0));
+    return new Response(bytes, { headers: { 'Content-Type': row.type, 'Cache-Control': 'private, max-age=86400' } });
+  }
+  if (request.method === 'DELETE') {
+    await env.DB.prepare('DELETE FROM files WHERE id = ?1').bind(id).run();
+    return json({ ok: true });
+  }
+  return json({ error: 'Method not allowed' }, 405);
+}
+
 async function sync(request, env, url) {
   if (!env.DB) return json({ error: 'Shared database not connected' }, 503);
   await ensureSchema(env.DB);
-  const t = bearer(request);
-  const ses = t && /^[0-9a-f]{64}$/.test(t) ? await env.DB.prepare('SELECT name, expires FROM sessions WHERE token = ?1').bind(t).first() : null;
-  if (!ses || ses.expires < Date.now()) return json({ error: 'Signed out. Sign in again.', expired: true }, 401);
-  const user = ses.name;
+  const user = await sessionUser(request, env);
+  if (!user) return json({ error: 'Signed out. Sign in again.', expired: true }, 401);
   // If Access token checking is switched on (ACCESS_TEAM_DOMAIN + ACCESS_AUD), require it too.
   if (env.ACCESS_TEAM_DOMAIN && env.ACCESS_AUD && !(await identity(request, env))) return json({ error: 'Sign in through Cloudflare Access' }, 401);
 

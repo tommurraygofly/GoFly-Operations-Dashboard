@@ -9,7 +9,7 @@ Instructor. It is separate from the public GoFly website.
 - `public/index.html`: the entire app (HTML, CSS and JavaScript in one file, no build step).
 - `wrangler.jsonc`: Cloudflare Workers config, Worker name `gofly-ops`, serves `./public` as static
   assets (binding `ASSETS`) with `src/worker.js` as the Worker.
-- `src/worker.js`: two API routes. `GET /api/wx?ids=YBSU` fetches the latest METAR and TAF from
+- `src/worker.js`: API routes (also `/api/login`, `/api/logout`, `/api/files` for defect photos). `GET /api/wx?ids=YBSU` fetches the latest METAR and TAF from
   aviationweather.gov (public, no key), cached 2 minutes. `GET/POST /api/sync` reads and writes
   shared records in the D1 database `gofly-ops` (binding `DB`, Oceania, id in `wrangler.jsonc`).
   The `records` table is created on first use. Everything else is served from `./public`. Check
@@ -81,8 +81,22 @@ Instructor. It is separate from the public GoFly website.
   runway end with most headwind. Labelled as YBSU wind. No crosswind limits unless Tom gives them.
 - Calendar deadlines (`dueSoonDays`) and hour-based warnings are reported separately. Low fuel is
   "Low stock", never "Overdue". Ordered fuel is not added to stock until a new reading is logged.
-- Charts show hours remaining, not percentages, unless interval and start reading are known. No
-  invented trends: the fuel chart only plots logged readings. The tank gauge and graph share the
+- Charts show hours remaining, not percentages, unless interval and start reading are known. The
+  fuel chart only plots logged readings.
+- Forecasts (Tom asked for them; always labelled "guide only", never a requirement): `learnRate`
+  learns a recency-weighted rate from logged values (skips refills/corrections).
+  `fuelForecast` predicts when the tank reaches the order level (`settings.fuelOrderAt`, 1,000 L)
+  and the level when an open order arrives. `maintForecast` uses each aircraft's `hoursLog`
+  (one entry per day, written by `logHours` from Update hours and the aircraft form) to estimate
+  when the next hour-based item is due and when to book it (when it reaches the amber level);
+  items already booked or in progress show "Booked". Shown in the fuel card, fuel tile,
+  booking guide (under the hours chart), chart rows, aircraft page and daily brief.
+- Defects: severity is required (`DEF_SEV`: grounding, urgent, semi-urgent, nil effect). A
+  grounding defect offers to mark the aircraft Unserviceable (Tom confirms) and goes to the top
+  of Priority actions. Photos (`t: 'photos'` field): resized on the device, stored in D1 table
+  `files` via `/api/files` (session required), shown as thumbnails and a tap-to-enlarge viewer.
+- Daily brief (`openBrief`, overview button): aircraft, fuel, weather, action needed, next 7 days;
+  print, copy or share. Built only from dashboard data. The tank gauge and graph share the
   same 0 to max-safe-fill scale so their reorder and max lines line up.
 - Example data must stay clearly labelled (`example: true`, shown as an "Example" chip) and be
   removable with "Clear example data". Editing an example record makes it a real record.
