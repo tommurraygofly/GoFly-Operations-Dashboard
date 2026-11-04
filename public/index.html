@@ -575,6 +575,16 @@ main{max-width:1320px;margin:0 auto;padding:var(--mainpad) var(--mainpad) 48px}
 .mc-fc{display:block;margin-top:4px;font-size:.78rem;color:var(--muted)}
 .mc-fc::before{content:"";display:inline-block;width:8px;height:8px;margin-right:6px;border:1.5px dashed var(--orange);border-radius:50%;vertical-align:0}
 
+.burn{margin-top:12px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2)}
+.burn .mini-h{margin-bottom:6px}
+.burn-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px}
+.burn-big{font:700 1.9rem/1 var(--font);letter-spacing:-.02em;font-variant-numeric:normal}
+.burn-big small{font-size:.85rem;font-weight:600;color:var(--muted);margin-left:4px;letter-spacing:0}
+.burn-cells{display:flex;flex-wrap:wrap;gap:6px 16px;flex:1;min-width:0}
+.burn-c{display:grid;line-height:1.25}
+.burn-c b{font-size:.95rem}
+.burn-c span{font-size:.7rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+
 /* ===== Defect photos + severity ===== */
 .ph-grid{display:flex;flex-wrap:wrap;gap:8px}
 .ph-grid:empty{display:none}
@@ -1616,12 +1626,37 @@ function learnRate(points, dir) {
 const dayT = iso => Date.parse(iso + 'T00:00:00Z');
 const fmtWkDate = iso => `${new Intl.DateTimeFormat('en-AU', { timeZone: 'UTC', weekday: 'short' }).format(new Date(iso + 'T00:00:00Z'))} ${fmtDate(iso)}`;
 // Fuel: when will the tank reach the order level (default 1,000 L)?
-function fuelForecast() {
+function fuelPoints() {
   const byDay = new Map();
   S.fuelReadings.filter(r => !r.archived && r.date && r.litres != null)
     .sort((a, b) => String(a.date).localeCompare(String(b.date)) || String(a.createdAt).localeCompare(String(b.createdAt)))
     .forEach(r => byDay.set(r.date, Number(r.litres)));       // last reading of each day
-  const pts = [...byDay].map(([d, v]) => ({ t: dayT(d), v }));
+  return [...byDay].map(([d, v]) => ({ t: dayT(d), v }));
+}
+/* Average daily fuel burn, from the readings only. Each pair of readings where the level went
+   down is a usage period; pairs that went up (a refill) are skipped. Period averages share
+   out a usage period by how much of it falls inside the period. "Learned" is the
+   recency-weighted rate the forecast uses. */
+function fuelBurn() {
+  const pts = fuelPoints(), segs = [];
+  for (let i = 1; i < pts.length; i++) {
+    const a = pts[i - 1], b = pts[i], days = (b.t - a.t) / 864e5;
+    if (days > 0 && b.v <= a.v) segs.push({ t0: a.t, t1: b.t, days, used: a.v - b.v });
+  }
+  if (!segs.length) return { ready: false, readings: pts.length };
+  const today = dayT(todayISO());
+  const avg = from => {
+    let used = 0, days = 0;
+    segs.forEach(sg => { if (sg.t1 <= from) return; const f = (sg.t1 - Math.max(sg.t0, from)) / (sg.t1 - sg.t0); used += sg.used * f; days += sg.days * f; });
+    return days >= 1 ? used / days : null;
+  };
+  const L = learnRate(pts, -1);
+  const total = segs.reduce((x, sg) => x + sg.used, 0), totalDays = segs.reduce((x, sg) => x + sg.days, 0);
+  return { ready: true, learned: L ? L.rate : total / totalDays, conf: L ? L.conf : 'early', d7: avg(today - 7 * 864e5), d30: avg(today - 30 * 864e5),
+    all: total / totalDays, totalUsed: total, totalDays, n: segs.length, readings: pts.length };
+}
+function fuelForecast() {
+  const pts = fuelPoints();
   const L = learnRate(pts, -1), fr = latestReading();
   if (!fr || !L || L.rate < 1) return { ready: false };
   const target = Number(S.settings.fuelOrderAt ?? 1000);
@@ -2149,6 +2184,7 @@ function buildBrief() {
   const fr = latestReading(), o = nextOrder(), f = fuelForecast();
   sec('IOR fuel tank', [
     fr ? it('Level', `${fmtL(fr.litres)} on ${fmtDate(fr.date)}${isLowStock(fr) ? ' (low stock)' : ''}`, isLowStock(fr) ? 'red' : '') : it('Level', 'No reading yet'),
+    ...(() => { const bn = fuelBurn(); return bn.ready ? [it('Daily burn', `~${fmtL(bn.learned)} a day (7-day ${bn.d7 == null ? '—' : fmtL(bn.d7)}, 30-day ${bn.d30 == null ? '—' : fmtL(bn.d30)})`)] : []; })(),
     ...(f.ready ? [it('Forecast', o ? (() => { const w = o.confirmedDate || o.requestedDate; if (!w) return 'Order placed'; const est = f.estNow - f.rate * Math.max(0, daysUntil(w)); return est > 0 ? `Order placed. About ${fmtL(est)} left when it arrives ${fmtWkDate(w)}` : `Order placed, but the tank may run low before it arrives ${fmtWkDate(w)}`; })() : f.past ? `Order now (estimated at or below ${fmtL(f.target)})` : `Order around ${fmtWkDate(f.orderDate)} · using ~${fmtL(f.rate)} a day`, !o && (f.past || f.dLeft <= 3) ? 'amb' : '')] : []),
     ...(o ? [it('On order', `${fmtL(o.litres)} ${o.product || ''}, ${o.confirmedDate ? `delivery confirmed ${fmtDate(o.confirmedDate)}` : o.requestedDate ? `requested ${fmtDate(o.requestedDate)}, not confirmed` : 'no date yet'}`)] : [])
   ]);
@@ -2570,6 +2606,17 @@ function tankGauge(fr, thr, cap, H) {
   </div>`;
 }
 
+function fuelBurnCard() {
+  const b = fuelBurn(), f = fuelForecast();
+  const head = '<h3 class="mini-h">Average daily fuel burn <span class="n2">· learned from your readings</span></h3>';
+  if (!b.ready) return `<div class="burn">${head}<p class="empty" style="margin:0">Log at least two readings a few days apart and this will work out your daily burn.</p></div>`;
+  const cell = (v, k) => `<span class="burn-c"><b>${v == null ? '—' : fmtL(v)}</b><span>${k}</span></span>`;
+  const daysLeft = f.ready && b.learned > 0 ? Math.floor(f.estNow / b.learned) : null;
+  return `<div class="burn">${head}
+    <div class="burn-row"><div class="burn-big">${Math.round(b.learned).toLocaleString('en-AU')}<small>L / day</small></div>
+      <div class="burn-cells">${cell(b.d7, 'Last 7 days')}${cell(b.d30, 'Last 30 days')}${cell(b.all, 'All readings')}</div></div>
+    <p class="fc-sub">${daysLeft != null ? `About <strong>${plural(daysLeft, 'day')}</strong> of fuel left at this rate. ` : ''}${fmtL(b.totalUsed)} used over ${plural(Math.round(b.totalDays), 'day')} of readings (refills skipped)${b.conf === 'early' ? '. Early estimate, improves as you log more' : ''}.</p></div>`;
+}
 function fuelFcCard(o) {
   const f = fuelForecast();
   if (!f.ready) return `<div class="fc-card"><h3 class="mini-h">Forecast <span class="n2">· guide only</span></h3><p class="empty" style="margin:0">Learning your usage. Log a few more readings and this will suggest when to order.</p></div>`;
@@ -2613,6 +2660,7 @@ function fuelSummary(page) {
       <div class="${low ? 'warn' : ''}"><span class="k">Reorder at</span><b>${fmtL(thr)}</b></div>
     </div>
     <div class="btn-row"><button class="btn btn-primary" data-act="refill">Refill +${Math.round(add).toLocaleString('en-AU')} L</button><button class="btn btn-secondary" data-act="add" data-kind="reading">Log reading</button>${o ? `<button class="btn btn-secondary" data-reg="${reg(() => openEditor('order', o.id))}">Order details</button>` : `<button class="btn btn-secondary" data-act="orderTemplate">Order ${Math.round(add).toLocaleString('en-AU')} L</button>`}</div>
+    ${fuelBurnCard()}
     ${fuelFcCard(o)}
     <div class="next-order"><h3 class="mini-h">Next order</h3>${order}</div>`;
 }
@@ -2848,6 +2896,7 @@ function renderOverview() {
     fr ? kpiTank(fr.litres, thr, S.settings.tankCapacity) : '',
     fr ? sub(low ? `<strong>Low stock</strong>, reorder at ${fmtL(thr)}` : `Reorder level ${fmtL(thr)}`) : sub('No reading yet'),
     fr ? sub(`Read ${fmtDate(fr.date)}`, true) : '',
+    (() => { const bn = fuelBurn(); return bn.ready ? sub(`Burn ~${fmtL(bn.learned)} a day`, true) : ''; })(),
     (() => { const f = fuelForecast(); return f.ready && !nextOrder() ? sub(f.past ? '<strong>Forecast: order now</strong>' : `Forecast: order ~${fmtDate(f.orderDate)}`, !f.past && f.dLeft > 3) : ''; })()], 'data-act="go" data-view="fuel"');
   // 4. Instructors (currency checks; qualifications counted separately)
   const actI = S.instructors.filter(p => !p.archived);

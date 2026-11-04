@@ -86,7 +86,8 @@ Instructor. It is separate from the public GoFly website.
 - Forecasts (Tom asked for them; always labelled "guide only", never a requirement): `learnRate`
   learns a recency-weighted rate from logged values (skips refills/corrections).
   `fuelForecast` predicts when the tank reaches the order level (`settings.fuelOrderAt`, 1,000 L)
-  and the level when an open order arrives. `maintForecast` uses each aircraft's `hoursLog`
+  and the level when an open order arrives. `fuelBurn` shows average daily fuel burn (learned rate, plus 7-day,
+  30-day and all-readings averages from falling readings only) and days of fuel left. `maintForecast` uses each aircraft's `hoursLog`
   (one entry per day, written by `logHours` from Update hours and the aircraft form) to estimate
   when the next hour-based item is due and when to book it (when it reaches the amber level);
   items already booked or in progress show "Booked". Shown in the fuel card, fuel tile,
