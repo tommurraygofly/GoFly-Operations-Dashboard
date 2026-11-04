@@ -44,6 +44,15 @@ Instructor. It is separate from the public GoFly website.
   Next due = last completed + interval (`spDue`, `renewDue`); an expiry typed from the
   certificate (`renewalExpiry`) overrides the calculated date. Warning windows: `dueSoonDays`
   for S&P, `renewWarnDays` (30) for renewals and SI flight reviews.
+- Instructor expiries (`EXPIRIES`, `expState`): RAAus membership and CASA medical are mandatory
+  (missing = flagged); first aid and CPR are optional (tracked once entered). Plus free-form
+  "other expiries" (`quals`). Warning window `expiryWarnDays` (30).
+- Aircraft registration and insurance expiries (`regoExpiry`, `insuranceExpiry`, `acExpiries`),
+  entered by Tom; missing = flagged. Never infer availability from them.
+- Documents and compliance (Docs tab, collection `documents`, `renderDocs`, `docState`): each
+  document has a type (`DOC_CATS`), tracks an expiry or a next review date (Tom enters it), and
+  an optional review interval in months that "Mark reviewed" uses to set the next date.
+  Warning window `docWarnDays` (30). The Worker's `COLLS` must include every synced collection.
 - Engine hours and air time are separate counters. Each maintenance item chooses which one it
   counts against (or calendar date only).
 - Hour-based maintenance levels, the same for every aircraft (`hoursState`, `hrsLevels`):
@@ -98,7 +107,7 @@ The script is split into numbered sections:
    shows Synced / Syncing / Offline / This device only.
 3. **Data model**: `emptyState()`, `normalise()` (migration, always keeps the five aircraft),
    `applyExamples()`, `clearExamples()`. State lives in `S`. Collections: `aircraft`,
-   `maintenance`, `defects`, `fuelReadings`, `fuelOrders`, `fuelIssues`, `instructors`, `tasks`,
+   `maintenance`, `defects`, `fuelReadings`, `fuelOrders`, `fuelIssues`, `instructors`, `tasks`, `documents`,
    plus `settings` (userName, theme, dueSoonDays, hoursWarn, fuelThreshold, tankCapacity,
    orderTemplate) and `meta`.
 4. **Rules**: all overdue, due soon and missing-info logic (`dateStatus`, `maintStatus`,
@@ -116,7 +125,7 @@ The script is split into numbered sections:
    `fuelSummary()` (SVG line drawn at real width by `drawCharts()`, tap or arrow keys to read
    values), Priority actions (top 5), instructor rows, aircraft cards, Waiting on, Coming up.
    `renderOverview`, `renderAircraft`, `renderFuel`, `renderInstructors`,
-   `renderTasks`. Hash routing (`#overview`, `#aircraft`, `#fuel`, `#instructors`, `#tasks`).
+   `renderTasks`, `renderDocs`. Hash routing (`#overview`, `#aircraft`, `#fuel`, `#instructors`, `#tasks`, `#docs`).
    Click handlers use `data-act` (the `ACT` map) or `data-reg` (functions registered per render).
 
 Other conventions: every record gets `id`, `createdAt`, `updatedAt`, `updatedBy`, and `archived`
@@ -153,8 +162,8 @@ headings (`ICO(name)`, icons in `ICONS`). Inter for text; Barlow Condensed bold 
 for headings and aircraft idents, echoing the logo. Status shown by colour plus icon plus words
 (red action/overdue, orange watch/due soon/low stock, green OK, dashed grey not entered). The
 GoFly website is for information only; don't copy its theme. Touch targets about 44px.
-Data & settings is grouped (Maintenance, Instructor checks, IOR fuel tank, YCDR runways and
-wind, This device); add new settings to the right group in `openSettings`.
+Data & settings is grouped (Maintenance, Instructor checks, IOR fuel tank, Documents and expiries,
+YCDR runways and wind, This device); add new settings to the right group in `openSettings`.
 
 ## Before pushing
 

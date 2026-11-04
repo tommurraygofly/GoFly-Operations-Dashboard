@@ -202,6 +202,7 @@ main{max-width:1320px;margin:0 auto;padding:var(--mainpad) var(--mainpad) 48px}
 .pill-ok{background:var(--ok-bg);color:var(--ok-ink)}
 .pill-missing{border:1px dashed var(--line-strong);color:var(--muted)}
 .dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--line-strong);flex:none}
+.dot-overdue,.dot-due{background:var(--red)}.dot-soon,.dot-low{background:var(--orange)}.dot-missing{background:transparent;border:1.5px dashed var(--line-strong)}
 .dot-serviceable{background:var(--green)}.dot-restricted{background:var(--orange)}.dot-maintenance{background:var(--grey-band)}.dot-unserviceable{background:var(--red)}
 @media (max-width:1180px){.kpis{grid-template-columns:repeat(6,minmax(0,1fr))}.kpi{grid-column:span 2}.kpi:nth-child(n+4){grid-column:span 3}}
 
@@ -499,12 +500,12 @@ main{max-width:1320px;margin:0 auto;padding:var(--mainpad) var(--mainpad) 48px}
 .meta{font-size:.8rem;color:var(--muted);margin:0}
 
 /* ===== Instructor board + profile ===== */
-.ins-sum{grid-template-columns:repeat(4,minmax(0,1fr));margin:0 0 14px}
+.ins-sum{grid-template-columns:repeat(5,minmax(0,1fr));margin:0 0 14px}
 .ins-sum.fstats div:last-child{grid-column:auto}
 .fstats .soonc{background:var(--soon-bg);border-color:var(--soon-line)}
 .fstats .soonc b{color:var(--soon-ink)}
 .ins{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
-.ins-row{display:grid;grid-template-columns:4px minmax(0,1.25fr) minmax(0,1fr) minmax(0,1fr) 220px;gap:8px 18px;align-items:center;padding:14px 18px 14px 0;border-top:1px solid var(--line)}
+.ins-row{display:grid;grid-template-columns:4px minmax(0,1.15fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) 210px;gap:8px 18px;align-items:center;padding:14px 18px 14px 0;border-top:1px solid var(--line)}
 .ins-row:first-child{border-top:0}
 .ins-row>.mk{align-self:stretch;border-radius:0 2px 2px 0;background:var(--line-strong)}
 .ins-hd{padding-top:10px;padding-bottom:10px;font-size:.68rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);background:var(--surface-2)}
@@ -518,16 +519,24 @@ main{max-width:1320px;margin:0 auto;padding:var(--mainpad) var(--mainpad) 48px}
 .ins-due{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;font-weight:600}
 .ins-last{font-size:.78rem;color:var(--muted)}
 .ins-a{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}
+.ins-ex{gap:3px}
+.ex-r{display:grid;grid-template-columns:9px 56px minmax(0,1fr);gap:6px;align-items:center;font-size:.8rem}
+.ex-n{color:var(--muted)}
+.ex-d{font-weight:600;white-space:nowrap}
+.ex-d.ist-ok{color:var(--ink);font-weight:500}
+.dot-ok-g{background:var(--green)}
+@media (max-width:1280px) and (min-width:981px){.ins-row{grid-template-columns:4px minmax(0,1.1fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr) 130px}.ins-a{flex-direction:column;align-items:stretch}}
 @media (max-width:980px){
   .ins-sum{grid-template-columns:repeat(2,minmax(0,1fr))}
   .ins-hd{display:none}
   .ins-row{grid-template-columns:4px minmax(0,1fr) minmax(0,1fr);padding:14px 14px 14px 0}
-  .ins-row>.mk{grid-row:span 3}
+  .ins-row>.mk{grid-row:span 4}
+  .ins-ex{grid-column:2/-1}
   .ins-who{grid-column:2/-1}
   .ins-l{display:block}
   .ins-a{grid-column:2/-1;justify-content:flex-start}
 }
-@media (max-width:480px){.ins-row{grid-template-columns:4px minmax(0,1fr)}.ins-row>.mk{grid-row:span 4}.ins-a .btn{flex:1}}
+@media (max-width:480px){.ins-row{grid-template-columns:4px minmax(0,1fr)}.ins-row>.mk{grid-row:span 5}.ins-a .btn{flex:1}}
 .ist2{display:grid;gap:2px;justify-items:end}
 .irow .nm .cchip{margin-left:4px;vertical-align:1px}
 .ip-head{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center;margin:0 0 12px;font-size:.88rem}
@@ -543,6 +552,22 @@ main{max-width:1320px;margin:0 auto;padding:var(--mainpad) var(--mainpad) 48px}
 .ip-due{font:700 1.4rem/1.15 var(--font)}
 .ip-m{font-size:.78rem;color:var(--muted)}
 
+/* ===== Documents ===== */
+.doc-sum{grid-template-columns:repeat(4,minmax(0,1fr))}
+.docs{list-style:none;margin:0;padding:0;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+.doc-row{display:grid;grid-template-columns:4px minmax(0,1.5fr) minmax(0,1fr) 160px;gap:8px 18px;align-items:center;padding:14px 18px 14px 0;border-top:1px solid var(--line)}
+.doc-row:first-child{border-top:0}
+.doc-row>.mk{align-self:stretch;border-radius:0 2px 2px 0;background:var(--line-strong)}
+.doc-main{background:none;border:0;padding:0;text-align:left;cursor:pointer;color:inherit;display:grid;gap:4px;min-width:0}
+.doc-main:hover .t{text-decoration:underline;text-underline-offset:3px}
+.doc-meta{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;font-size:.8rem;color:var(--muted)}
+.doc-when{display:grid;gap:2px;min-width:0}
+.doc-when .ins-l{display:block}
+@media (max-width:860px){.doc-sum{grid-template-columns:1fr 1fr}.doc-row{grid-template-columns:4px minmax(0,1fr);padding:14px 14px 14px 0}.doc-row>.mk{grid-row:span 3}.doc-row .ins-a{justify-content:flex-start}}
+.acx{display:grid;gap:2px}
+.ac-exp{flex-basis:100%;display:flex;flex-wrap:wrap;gap:6px 22px;font-size:.88rem;align-items:center}
+.ac-exp .k{color:var(--muted)}
+
 /* ===== Waiting on ===== */
 .wg{border-top:1px solid var(--line);padding:10px 0}
 .list li:first-child .wg{border-top:0;padding-top:2px}
@@ -557,7 +582,8 @@ main{max-width:1320px;margin:0 auto;padding:var(--mainpad) var(--mainpad) 48px}
 .w-when.overdue{color:var(--red);font-weight:700}.w-when.soon{color:var(--soon-ink);font-weight:700}
 
 /* ===== Coming up ===== */
-.seg{display:inline-flex;border:1px solid var(--line-strong);border-radius:9px;overflow:hidden;background:var(--surface)}
+.seg{display:inline-flex;max-width:100%;border:1px solid var(--line-strong);border-radius:9px;overflow-x:auto;scrollbar-width:none;background:var(--surface)}
+.seg button{white-space:nowrap;flex:none}
 .seg button{border:0;background:none;padding:4px 11px;min-height:32px;cursor:pointer;font-weight:600;font-size:.8rem;color:var(--ink)}
 .seg button[aria-pressed="true"]{background:var(--ink);color:var(--surface)}
 .day{margin-top:8px}
@@ -646,7 +672,7 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
   .sync{padding:5px 8px}.sync .st{display:none}
   .sync-offline .st{display:inline}
   .tabs{position:fixed;left:0;right:0;bottom:0;max-width:none;background:var(--head);justify-content:space-around;padding:0 2px env(safe-area-inset-bottom,0px);border-top:1px solid #222;gap:0;z-index:25}
-  .tabs a{flex:1;flex-direction:column;justify-content:center;gap:4px;padding:8px 2px 7px;min-height:58px;font-size:.7rem;border-bottom:0;border-top:3px solid transparent;position:relative}
+  .tabs a{flex:1;flex-direction:column;justify-content:center;gap:4px;padding:8px 1px 7px;min-height:58px;font-size:.66rem;min-width:0;border-bottom:0;border-top:3px solid transparent;position:relative}
   .tabs a[aria-current="page"]{border-top-color:var(--orange)}
   .tabs .count{position:absolute;top:4px;left:calc(50% + 6px)}
   main{padding-bottom:100px}
@@ -697,6 +723,7 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
     <a href="#fuel" data-view="fuel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3s6 7 6 11a6 6 0 0 1-12 0c0-4 6-11 6-11z"/></svg><span>Fuel</span><i class="count" data-count="fuel"></i></a>
     <a href="#instructors" data-view="instructors"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg><span>Instructors</span><i class="count" data-count="instructors"></i></a>
     <a href="#tasks" data-view="tasks"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 6h12M9 12h12M9 18h12"/><path d="M3 6l1.5 1.5L7 5M3 12l1.5 1.5L7 11M3 18l1.5 1.5L7 17"/></svg><span>Tasks</span><i class="count" data-count="tasks"></i></a>
+    <a href="#docs" data-view="docs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></svg><span>Docs</span><i class="count" data-count="docs"></i></a>
   </nav>
 </header>
 <main id="main"></main>
@@ -759,7 +786,7 @@ const LocalAdapter = {
 const Store = { adapter: LocalAdapter, ok: true };
 
 /* ---------- 3. Data model ---------- */
-const LISTS = ['maintenance', 'defects', 'fuelReadings', 'fuelOrders', 'fuelIssues', 'instructors', 'tasks'];
+const LISTS = ['maintenance', 'defects', 'fuelReadings', 'fuelOrders', 'fuelIssues', 'instructors', 'tasks', 'documents'];
 let S = null;
 
 function blankAircraft(ident) {
@@ -769,11 +796,11 @@ function emptyState() {
   return {
     schema: SCHEMA,
     settings: {
-      userName: '', theme: 'auto', dueSoonDays: 14, hoursAmber: 50, hoursRed: 20, fuelThreshold: 1500, tankCapacity: 5000, rwy05Mag: 50, rwy12Mag: 120, magVar: 11, spDays: 90, renewJuniorMonths: 24, renewSeniorMonths: 12, renewChiefMonths: 24, renewWarnDays: 30,
+      userName: '', theme: 'auto', dueSoonDays: 14, hoursAmber: 50, hoursRed: 20, fuelThreshold: 1500, tankCapacity: 5000, rwy05Mag: 50, rwy12Mag: 120, magVar: 11, spDays: 90, renewJuniorMonths: 24, renewSeniorMonths: 12, renewChiefMonths: 24, expiryWarnDays: 30, docWarnDays: 30, renewWarnDays: 30,
       orderTemplate: { product: 'Premium Unleaded 98', litres: 3500, supplier: 'IOR', notes: '' }
     },
     aircraft: AIRCRAFT_IDS.map(blankAircraft),
-    maintenance: [], defects: [], fuelReadings: [], fuelOrders: [], fuelIssues: [], instructors: [], tasks: [],
+    maintenance: [], defects: [], fuelReadings: [], fuelOrders: [], fuelIssues: [], instructors: [], tasks: [], documents: [],
     meta: { savedAt: null }
   };
 }
@@ -788,6 +815,12 @@ function normalise(d) {
   // Instructor profiles: RAAus grade and check history. Older records had a free-text role.
   o.instructors.forEach(p => {
     if (!Array.isArray(p.checks)) p.checks = [];
+    if (Array.isArray(p.quals)) p.quals = p.quals.filter(q => {
+      const l = String(q.label || '');
+      const k = /raaus/i.test(l) ? 'raausExpiry' : /casa|medical/i.test(l) ? 'medicalExpiry' : /first\s*aid/i.test(l) ? 'firstAidExpiry' : /\bcpr\b/i.test(l) ? 'cprExpiry' : null;
+      if (k && q.expiry && !p[k]) { p[k] = q.expiry; return false; }
+      return true;
+    });
     if (p.grade === undefined) {
       const r = String(p.role || '').toLowerCase();
       p.grade = /deputy|dcfi/.test(r) ? 'dcfi' : /chief|\bcfi\b/.test(r) ? 'cfi' : /supervis/.test(r) ? 'supervising' : /senior/.test(r) ? 'senior' : /junior/.test(r) ? 'junior' : '';
@@ -810,10 +843,10 @@ function applyExamples() {
   const t = todayISO(), D = n => addDays(t, n), now = nowStamp();
   const E = o => ({ id: uid(), example: true, createdAt: now, updatedAt: now, updatedBy: 'Example data', archived: false, ...o });
   const acx = {
-    '7788': { status: 'serviceable', engineHours: 2140.3, airTime: 1987.6, responsible: 'Ops Manager', notes: 'Oil topped up at last daily inspection.' },
-    '1675': { status: 'restricted', restrictions: 'Day VFR only until the landing light is replaced.', engineHours: 3415.8, responsible: 'Ops Manager' },
-    '8582': { status: 'maintenance', restrictions: 'Off line for scheduled maintenance.', engineHours: 1876.2, airTime: 1720.4, responsible: 'Maintenance provider' },
-    '8515': { status: 'serviceable', engineHours: 902.5, responsible: 'Ops Manager' },
+    '7788': { regoExpiry: D(140), insuranceExpiry: D(240), status: 'serviceable', engineHours: 2140.3, airTime: 1987.6, responsible: 'Ops Manager', notes: 'Oil topped up at last daily inspection.' },
+    '1675': { regoExpiry: D(21), insuranceExpiry: D(240), status: 'restricted', restrictions: 'Day VFR only until the landing light is replaced.', engineHours: 3415.8, responsible: 'Ops Manager' },
+    '8582': { regoExpiry: D(300), insuranceExpiry: D(240), status: 'maintenance', restrictions: 'Off line for scheduled maintenance.', engineHours: 1876.2, airTime: 1720.4, responsible: 'Maintenance provider' },
+    '8515': { regoExpiry: D(75), insuranceExpiry: D(240), status: 'serviceable', engineHours: 902.5, responsible: 'Ops Manager' },
     '8514': { status: 'serviceable', engineHours: 944.1, airTime: 870.9, responsible: '' }
   };
   S.aircraft.forEach(a => {
@@ -846,10 +879,17 @@ function applyExamples() {
     E({ title: 'Bowser hose reel retracts slowly', equipment: 'Bowser', reported: D(-3), status: 'open', waitingOn: '', notes: 'Still usable. Check spring tension.' })
   );
   S.instructors.push(
-    E({ name: 'Alex Example', grade: 'cfi', raausNo: '', lastCheck: null, lastRenewal: D(-700), checks: [{ id: uid(), type: 'renewal', label: 'SI flight review', date: D(-700), by: 'Example examiner', notes: '' }], quals: [{ label: 'Medical', expiry: D(60) }, { label: 'ASIC', expiry: D(210) }], restrictions: '', paperwork: '', notes: '' }),
-    E({ name: 'Jordan Example', grade: 'junior', raausNo: '', lastCheck: D(-97), lastRenewal: D(-700), checks: [{ id: uid(), type: 'sp', date: D(-97), by: 'Alex Example', notes: '' }], quals: [{ label: 'Medical', expiry: D(12) }], restrictions: 'Supervised instruction only.', paperwork: 'Signed check form not yet filed.', notes: '' }),
-    E({ name: 'Riley Example', grade: 'senior', raausNo: '', lastCheck: null, lastRenewal: D(-355), checks: [], quals: [], restrictions: '', paperwork: '', notes: '' }),
-    E({ name: 'Sam Example', grade: 'junior', raausNo: '', lastCheck: null, lastRenewal: null, checks: [], quals: [{ label: 'Medical', expiry: D(150) }], restrictions: '', paperwork: '', notes: 'New starter. Log their checks once known.' })
+    E({ name: 'Alex Example', grade: 'cfi', raausNo: '', lastCheck: null, lastRenewal: D(-700), checks: [{ id: uid(), type: 'renewal', label: 'SI flight review', date: D(-700), by: 'Example examiner', notes: '' }], raausExpiry: D(200), medicalExpiry: D(60), firstAidExpiry: D(400), quals: [{ label: 'ASIC', expiry: D(210) }], restrictions: '', paperwork: '', notes: '' }),
+    E({ name: 'Jordan Example', grade: 'junior', raausNo: '', lastCheck: D(-97), lastRenewal: D(-700), checks: [{ id: uid(), type: 'sp', date: D(-97), by: 'Alex Example', notes: '' }], raausExpiry: D(95), medicalExpiry: D(12), cprExpiry: D(-5), quals: [], restrictions: 'Supervised instruction only.', paperwork: 'Signed check form not yet filed.', notes: '' }),
+    E({ name: 'Riley Example', grade: 'senior', raausNo: '', lastCheck: null, lastRenewal: D(-355), checks: [], raausExpiry: D(150), medicalExpiry: D(300), quals: [], restrictions: '', paperwork: '', notes: '' }),
+    E({ name: 'Sam Example', grade: 'junior', raausNo: '', lastCheck: null, lastRenewal: null, checks: [], quals: [], restrictions: '', paperwork: '', notes: 'New starter. Log their checks once known.' })
+  );
+  S.documents.push(
+    E({ title: 'Operations Manual', category: 'manual', kind: 'review', date: D(20), reviewMonths: 12, lastReviewed: D(-345), responsible: 'CFI', reference: 'Version 4.2', notes: '' }),
+    E({ title: 'Public liability insurance', category: 'insurance', kind: 'expiry', date: D(160), responsible: 'Ops Manager', reference: 'Policy certificate', notes: '' }),
+    E({ title: 'Student enrolment form', category: 'form', kind: 'review', date: D(-6), reviewMonths: 12, lastReviewed: D(-371), responsible: 'Admin', reference: 'Form F-01', notes: 'Update the fee schedule.' }),
+    E({ title: 'Emergency response plan', category: 'procedure', kind: 'review', date: D(64), reviewMonths: 12, lastReviewed: D(-301), responsible: 'CFI', reference: '', notes: '' }),
+    E({ title: 'Fuel facility (IOR) site approval', category: 'approval', kind: 'expiry', date: null, responsible: 'Ops Manager', reference: '', notes: 'Enter the expiry from the approval letter.' })
   );
   S.tasks.push(
     E({ title: 'Chase landing light part for 1675', category: 'Maintenance follow-up', owner: 'Ops Manager', due: D(-1), priority: 'high', status: 'waiting', waitingOn: 'Parts supplier', notes: '' }),
@@ -1180,7 +1220,7 @@ const RANK = { overdue: 0, due: 0.5, soon: 1, missing: 2, info: 3, ok: 4, good: 
 const BADGE = { overdue: 'Overdue', due: 'Verify booking', good: 'Good', soon: 'Due soon', complete: 'Complete', missing: 'Not entered', ok: 'On track', info: 'Note', waiting: 'Waiting', low: 'Low stock', alert: 'Alert' };
 // Priority order for the action list. Low stock and unserviceable aircraft sit just below overdue.
 const PRI = { overdue: 0, due: 0.5, alert: 1, low: 1, soon: 2, missing: 3, info: 4, ok: 5, good: 5, complete: 6 };
-const AREA = { task: 'tasks', aircraft: 'aircraft', maint: 'aircraft', defect: 'aircraft', fuel: 'fuel', order: 'fuel', issue: 'fuel', check: 'instructors', renewal: 'instructors', qual: 'instructors', paperwork: 'instructors' };
+const AREA = { task: 'tasks', aircraft: 'aircraft', maint: 'aircraft', defect: 'aircraft', fuel: 'fuel', order: 'fuel', issue: 'fuel', check: 'instructors', renewal: 'instructors', acexp: 'aircraft', doc: 'docs', qual: 'instructors', paperwork: 'instructors' };
 const AC_SHORT = { serviceable: 'Available', restricted: 'Restricted', maintenance: 'In maintenance', unserviceable: 'Unserviceable' };
 
 const badge = (s, txt) => `<span class="b b-${s}">${esc(txt || BADGE[s])}</span>`;
@@ -1295,8 +1335,34 @@ function renewState(p) {
   if (!p.grade) return { s: 'missing', d: null, due: null, txt: 'Grade not set' };
   return dueState(renewDue(p), Number(S.settings.renewWarnDays ?? 30));
 }
+/* Instructor expiries. RAAus membership and CASA medical are mandatory (missing = flagged);
+   first aid and CPR are optional (only tracked once a date is entered). */
+const EXPIRIES = [['raausExpiry', 'RAAus membership', true], ['medicalExpiry', 'CASA medical', true], ['firstAidExpiry', 'First aid', false], ['cprExpiry', 'CPR', false]];
+function expState(iso, mandatory) {
+  if (!iso) return mandatory ? { s: 'missing', d: null, due: null, txt: 'Not entered' } : { s: 'ok', na: true, d: null, due: null, txt: 'Optional' };
+  const d = daysUntil(iso), w = Number(S.settings.expiryWarnDays ?? 30);
+  return { s: d < 0 ? 'overdue' : d <= w ? 'soon' : 'ok', d, due: iso, txt: d < 0 ? `Expired ${plural(-d, 'day')} ago` : d === 0 ? 'Expires today' : `Expires in ${plural(d, 'day')}` };
+}
+const instExpiries = p => EXPIRIES.map(([k, label, mand]) => ({ k, label, mand, st: expState(p[k], mand) }))
+  .concat((p.quals || []).filter(q => q.expiry).map(q => ({ k: null, label: q.label || 'Other expiry', mand: false, st: expState(q.expiry, false) })));
+/* Aircraft registration and insurance expiries (entered by Tom; missing = flagged). */
+const AC_EXPIRIES = [['regoExpiry', 'Registration'], ['insuranceExpiry', 'Insurance']];
+const acExpiries = ac => AC_EXPIRIES.map(([k, label]) => ({ k, label, st: expState(ac[k], true) }));
+
+/* Documents and compliance: each has an expiry date or a next review date, entered by Tom.
+   Optional review interval (months): "Mark reviewed" then sets the next review date. */
+const DOC_CATS = [['manual', 'Manual'], ['procedure', 'Policy or procedure'], ['form', 'Form'], ['approval', 'Licence or approval'], ['insurance', 'Insurance'], ['other', 'Other']];
+const DOC_KINDS = [['review', 'Review date'], ['expiry', 'Expiry date']];
+function docState(d) {
+  const label = d.kind === 'expiry' ? 'Expiry' : 'Review';
+  if (!d.date) return { s: 'missing', d: null, due: null, txt: `${label} date not entered` };
+  const n = daysUntil(d.date), w = Number(S.settings.docWarnDays ?? 30);
+  return { s: n < 0 ? 'overdue' : n <= w ? 'soon' : 'ok', d: n, due: d.date,
+    txt: d.kind === 'expiry' ? (n < 0 ? `Expired ${plural(-n, 'day')} ago` : n === 0 ? 'Expires today' : `Expires in ${plural(n, 'day')}`)
+      : (n < 0 ? `Review ${plural(-n, 'day')} overdue` : n === 0 ? 'Review due today' : `Review due in ${plural(n, 'day')}`) };
+}
 const worstOf = (...st) => st.reduce((w, x) => RANK[x.s] < RANK[w.s] ? x : w);
-const instOrder = p => { const a = checkState(p), b = renewState(p), w = worstOf(a, b); return [RANK[w.s], Math.min(a.d ?? 1e6, b.d ?? 1e6)]; };
+const instOrder = p => { const all = [checkState(p), renewState(p), ...instExpiries(p).map(x => x.st)], w = worstOf(...all); return [RANK[w.s], Math.min(...all.map(x => x.d ?? 1e6))]; };
 const sortInst = (a, b) => { const x = instOrder(a), y = instOrder(b); return x[0] - y[0] || x[1] - y[1] || String(a.name).localeCompare(String(b.name)); };
 
 /* Everything that needs action, in priority order. Each item records:
@@ -1318,6 +1384,12 @@ function attentionItems() {
     if (a.status === 'unserviceable') push({ sev: 'alert', src: 'aircraft', title: `${a.ident} unserviceable`, detail: a.restrictions || 'Aircraft unserviceable', badge: 'Unserviceable', fn });
     else if (a.status === 'restricted') push({ sev: 'info', src: 'aircraft', title: `${a.ident} has restrictions`, detail: a.restrictions || 'Restriction details not entered', badge: 'Restricted', fn });
     else if (a.status === 'maintenance') push({ sev: 'info', src: 'aircraft', title: `${a.ident} in maintenance`, detail: a.restrictions || 'Off line', badge: 'In maintenance', fn });
+    acExpiries(a).forEach(({ label, st }) => {
+      if (st.s === 'ok') return;
+      push({ sev: st.s, src: 'acexp', basis: 'date', k: st.d ?? 0, title: `${a.ident} ${label.toLowerCase()}`, fn,
+        detail: st.s === 'missing' ? `${label} expiry not entered` : `${label} ${st.d < 0 ? 'expired' : 'expires'} ${fmtDate(st.due)}`,
+        badge: st.s === 'missing' ? 'Not entered' : st.d < 0 ? 'Expired' : 'Expires soon' });
+    });
     if (a.engineHours == null) push({ sev: 'missing', src: 'aircraft', title: `${a.ident} engine hours`, detail: 'Engine hours not entered', badge: 'Not entered', fn: () => openHours() });
   });
   S.maintenance.forEach(m => {
@@ -1362,12 +1434,21 @@ function attentionItems() {
     const c = checkState(p), r = renewState(p);
     if (c.s !== 'ok') push({ sev: c.s, src: 'check', basis: 'date', k: c.d ?? 0, title: `${p.name}: S&P check`, detail: c.s === 'missing' ? 'Last S&P check not entered' : `S&P check due ${fmtDate(c.due)}`, badge: c.txt, fn });
     if (r.s !== 'ok') push({ sev: r.s, src: 'renewal', basis: 'date', k: r.d ?? 0, title: `${p.name}: ${renewalName(p)}`, detail: !p.grade ? 'Instructor grade not set' : r.s === 'missing' ? `Last ${renewalName(p)} not entered` : `${renewalName(p)} due ${fmtDate(r.due)}`, badge: r.txt, fn });
-    (p.quals || []).forEach(q => {
-      if (!q.expiry) return;
-      const s = dateStatus(q.expiry), d = daysUntil(q.expiry);
-      if (s === 'overdue' || s === 'soon') push({ sev: s, src: 'qual', basis: 'date', k: d, title: `${p.name}: ${q.label || 'Qualification'}`, detail: `Qualification ${d < 0 ? 'expired' : 'expires'} ${fmtDate(q.expiry)}`, badge: d < 0 ? 'Expired' : 'Expires soon', fn });
+    instExpiries(p).forEach(({ label, mand, st }) => {
+      if (st.s === 'ok') return;
+      push({ sev: st.s, src: 'qual', basis: 'date', k: st.d ?? 0, title: `${p.name}: ${label}`, fn,
+        detail: st.s === 'missing' ? `${label} expiry not entered${mand ? ' (mandatory)' : ''}` : `${label} ${st.d < 0 ? 'expired' : 'expires'} ${fmtDate(st.due)}`,
+        badge: st.s === 'missing' ? 'Not entered' : st.d < 0 ? 'Expired' : 'Expires soon' });
     });
     if (p.paperwork) push({ sev: 'info', src: 'paperwork', title: `${p.name}: paperwork`, detail: trunc(p.paperwork, 90), badge: 'Outstanding', fn });
+  });
+  S.documents.forEach(d => {
+    if (d.archived) return;
+    const st = docState(d);
+    if (st.s === 'ok') return;
+    push({ sev: st.s, src: 'doc', basis: 'date', k: st.d ?? 0, title: d.title, fn: () => openEditor('doc', d.id),
+      detail: `${lab(DOC_CATS, d.category)}${st.due ? `, ${d.kind === 'expiry' ? 'expires' : 'review due'} ${fmtDate(st.due)}` : ''}`,
+      badge: st.s === 'missing' ? 'Not entered' : d.kind === 'expiry' ? (st.d < 0 ? 'Expired' : 'Expires soon') : (st.d < 0 ? 'Review overdue' : 'Review soon') });
   });
   return out.sort((a, b) => (PRI[a.sev] - PRI[b.sev]) || (a.k - b.k));
 }
@@ -1387,11 +1468,13 @@ function upcoming(days) {
     if (o.archived || ['delivered', 'cancelled', 'draft'].includes(o.status)) return;
     add(o.confirmedDate || o.requestedDate, `Fuel delivery, ${fmtL(o.litres)}`, o.confirmedDate ? `Confirmed with ${o.supplier || 'supplier'}` : 'Requested, not yet confirmed', () => openEditor('order', o.id));
   });
+  S.aircraft.forEach(a => acExpiries(a).forEach(x => add(x.st.due, `${a.ident} ${x.label.toLowerCase()}`, 'Expires', () => openEditor('aircraft', a.id))));
+  S.documents.forEach(d => { if (!d.archived) add(d.date, d.title, d.kind === 'expiry' ? 'Document expires' : 'Document review due', () => openEditor('doc', d.id)); });
   S.instructors.forEach(p => {
     if (p.archived) return;
     add(spDue(p), `${p.name}: S&P check`, 'S&P check due', () => openInstructor(p.id));
     add(renewDue(p), `${p.name}: ${renewalName(p)}`, `${renewalName(p)} due`, () => openInstructor(p.id));
-    (p.quals || []).forEach(q => add(q.expiry, `${p.name}: ${q.label || 'Expiry'}`, 'Expires', () => openInstructor(p.id)));
+    instExpiries(p).forEach(x => add(x.st.due, `${p.name}: ${x.label}`, 'Expires', () => openInstructor(p.id)));
   });
   return ev.sort((a, b) => a.d - b.d);
 }
@@ -1454,6 +1537,8 @@ const SCHEMAS = {
       { k: 'responsible', l: 'Responsible person', t: 'text' },
       { k: 'engineHours', l: 'Engine hours', t: 'hours' },
       { k: 'airTime', l: 'Air time (where applicable)', t: 'hours', hint: 'Leave blank if this aircraft doesn’t track air time.' },
+      { k: 'regoExpiry', l: 'Registration expiry', t: 'date' },
+      { k: 'insuranceExpiry', l: 'Insurance expiry', t: 'date' },
       { k: 'restrictions', l: 'Restrictions', t: 'textarea', wide: true },
       { k: 'notes', l: 'Maintenance notes', t: 'textarea', wide: true }
     ]
@@ -1527,9 +1612,27 @@ const SCHEMAS = {
       { k: 'lastCheck', l: 'Last S&P check (junior instructors)', t: 'date', hint: 'Next due 90 days after this. Not needed for senior grades.' },
       { k: 'lastRenewal', l: 'Last renewal or SI flight review', t: 'date', hint: 'Junior: renewal every 24 months. Senior and supervising senior: SI flight review every 12 months. DCFI and CFI: every 24 months.' },
       { k: 'renewalExpiry', l: 'Expiry on certificate (optional)', t: 'date', hint: 'If entered, this date is used instead of the calculated one.' },
-      { k: 'quals', l: 'Other expiries (medical, ASIC and so on)', t: 'rows', wide: true },
+      { k: 'raausExpiry', l: 'RAAus membership expiry', t: 'date', hint: 'Mandatory.' },
+      { k: 'medicalExpiry', l: 'CASA medical expiry', t: 'date', hint: 'Mandatory.' },
+      { k: 'firstAidExpiry', l: 'First aid expiry', t: 'date', hint: 'Optional.' },
+      { k: 'cprExpiry', l: 'CPR expiry', t: 'date', hint: 'Optional.' },
+      { k: 'quals', l: 'Other expiries (ASIC and so on)', t: 'rows', wide: true },
       { k: 'restrictions', l: 'Restrictions', t: 'textarea' },
       { k: 'paperwork', l: 'Outstanding paperwork', t: 'textarea' },
+      { k: 'notes', l: 'Notes', t: 'textarea', wide: true }
+    ]
+  },
+  doc: { title: 'Document', coll: 'documents', archivable: true,
+    defaults: () => ({ category: 'manual', kind: 'review', responsible: S.settings.userName }),
+    fields: [
+      { k: 'title', l: 'Document or form', t: 'text', req: true, wide: true, ph: 'e.g. Operations Manual' },
+      { k: 'category', l: 'Type', t: 'select', o: DOC_CATS },
+      { k: 'kind', l: 'Track', t: 'select', o: DOC_KINDS },
+      { k: 'date', l: 'Expiry or next review date', t: 'date', hint: 'From the document or your review schedule.' },
+      { k: 'reviewMonths', l: 'Review every (optional)', t: 'number', suffix: 'months', hint: 'If set, Mark reviewed sets the next review date for you.' },
+      { k: 'lastReviewed', l: 'Last reviewed or renewed', t: 'date' },
+      { k: 'responsible', l: 'Responsible', t: 'text' },
+      { k: 'reference', l: 'Version or reference', t: 'text', ph: 'e.g. Version 4.2, Form F-01' },
       { k: 'notes', l: 'Notes', t: 'textarea', wide: true }
     ]
   },
@@ -1547,6 +1650,8 @@ const SCHEMAS = {
       { k: 'dueSoonDays', l: 'Due soon window (calendar dates)', t: 'number', suffix: 'days', req: true, hint: 'Also the warning window for S&P checks.' },
       { k: 'spDays', l: 'S&P check interval (junior instructors)', t: 'number', suffix: 'days', req: true },
       { k: 'renewWarnDays', l: 'Renewal warning window', t: 'number', suffix: 'days', req: true },
+      { k: 'expiryWarnDays', l: 'Expiry warning window (instructor and aircraft expiries)', t: 'number', suffix: 'days', req: true },
+      { k: 'docWarnDays', l: 'Document warning window (expiries and reviews)', t: 'number', suffix: 'days', req: true },
       { k: 'renewJuniorMonths', l: 'Instructor renewal interval (junior)', t: 'number', suffix: 'months', req: true },
       { k: 'renewSeniorMonths', l: 'SI flight review interval (senior, supervising senior)', t: 'number', suffix: 'months', req: true },
       { k: 'renewChiefMonths', l: 'SI flight review interval (DCFI, CFI)', t: 'number', suffix: 'months', req: true },
@@ -1767,7 +1872,7 @@ function openWarnings() {
 
 function openAddMenu() {
   const opts = [['maint', 'wrench', 'Maintenance item', 'Hours or calendar based'], ['defect', 'alert', 'Defect', 'Report an aircraft defect'], ['order', 'receipt', 'Fuel order', 'Starts from your standard order'],
-    ['issue', 'drop', 'Bowser or pump issue', 'Fuel equipment problem'], ['instructor', 'user', 'Instructor', 'Check dates and expiries'], ['task', 'list', 'Task', 'Something to do or chase']];
+    ['issue', 'drop', 'Bowser or pump issue', 'Fuel equipment problem'], ['instructor', 'user', 'Instructor', 'Check dates and expiries'], ['doc', 'doc', 'Document', 'Expiry or review date'], ['task', 'list', 'Task', 'Something to do or chase']];
   openDlg('Add', `<div class="addmenu">${opts.map(([k, ic, t, d]) => `<button type="button" data-add="${k}">${ICO(ic)}<span><span class="t">${esc(t)}</span><span class="d muted">${esc(d)}</span></span></button>`).join('')}</div>`, [cancelBtn]);
   $$('#dlgBody [data-add]').forEach(b => { b.onclick = () => { const k = b.dataset.add; if (k === 'order') orderFromTemplate(); else openEditor(k); }; });
 }
@@ -1794,8 +1899,9 @@ function openInstructor(id) {
     <div class="ip-grid">${instStatusCard(p, 'sp')}${instStatusCard(p, 'renewal')}</div>
     ${p.restrictions ? `<div class="callout" style="margin-top:12px"><strong>Restrictions:</strong> ${esc(p.restrictions)}</div>` : ''}
     ${p.paperwork ? `<div class="callout dark" style="margin-top:8px"><strong>Outstanding paperwork:</strong> ${esc(p.paperwork)}</div>` : ''}
-    <h3 class="dlg-sec">Other expiries</h3>
-    ${quals.length ? quals.map(q => `<div class="rowline"><span class="k">${esc(q.label || 'Unnamed')}</span><span>${q.expiry ? `${fmtDate(q.expiry)} ${daysUntil(q.expiry) < 0 ? badge('overdue', 'Expired') : dueBadge(q.expiry)}` : badge('missing', 'No expiry')}</span></div>`).join('') : '<p class="empty">None recorded. Add medical, ASIC and similar under Edit details.</p>'}
+    <h3 class="dlg-sec">Membership, medical and first aid</h3>
+    ${EXPIRIES.map(([k, label, mand]) => { const st = expState(p[k], mand); return `<div class="rowline"><span class="k">${esc(label)} <span class="req">${mand ? 'mandatory' : 'optional'}</span></span><span>${st.due ? fmtDate(st.due) + ' ' : ''}${st.na ? '<span class="muted">Not entered</span>' : st.s === 'ok' ? `<span class="ist ist-ok">${esc(st.txt)}</span>` : badge(st.s, st.txt)}</span></div>`; }).join('')}
+    ${quals.length ? `<h3 class="dlg-sec">Other expiries</h3>${quals.map(q => { const st = expState(q.expiry, false); return `<div class="rowline"><span class="k">${esc(q.label || 'Unnamed')}</span><span>${q.expiry ? `${fmtDate(q.expiry)} ${st.s === 'ok' ? '' : badge(st.s, st.txt)}` : '<span class="muted">No expiry</span>'}</span></div>`; }).join('')}` : ''}
     <h3 class="dlg-sec">Check history</h3>
     ${hist.length ? `<div class="scroll-x"><table class="hist"><thead><tr><th>Date</th><th>Check</th><th>Conducted by</th><th></th></tr></thead><tbody>${hist.map(c => `<tr><td>${fmtDate(c.date)}</td><td>${c.type === 'sp' ? 'S&P check' : esc(c.label || 'Renewal')}${c.notes ? `<span class="d">${esc(c.notes)}</span>` : ''}</td><td>${esc(c.by || '')}</td><td class="num"><button type="button" class="icon-btn" data-delcheck="${esc(c.id)}" aria-label="Remove this entry">×</button></td></tr>`).join('')}</tbody></table></div>` : '<p class="empty">No checks logged yet.</p>'}
     ${p.notes ? `<p class="n muted" style="margin-top:12px">${esc(p.notes)}</p>` : ''}
@@ -1911,8 +2017,9 @@ function openSettings() {
       : Store.ok ? `Saved in this browser only (not connected to the shared database)${S.meta.savedAt ? `, last at ${fmtStamp(S.meta.savedAt)}` : ''}. Export a backup regularly.` : 'This browser isn’t saving changes. Export a backup before you close the page.';
   const groups = [
     ['Maintenance', ['hoursAmber', 'hoursRed', 'dueSoonDays']],
-    ['Instructor checks', ['spDays', 'renewJuniorMonths', 'renewSeniorMonths', 'renewChiefMonths', 'renewWarnDays']],
+    ['Instructor checks', ['spDays', 'renewJuniorMonths', 'renewSeniorMonths', 'renewChiefMonths', 'renewWarnDays', 'expiryWarnDays']],
     ['IOR fuel tank', ['fuelThreshold', 'tankCapacity']],
+    ['Documents and expiries', ['docWarnDays']],
     ['YCDR runways and wind', ['rwy05Mag', 'rwy12Mag', 'magVar']],
     ['This device', ['theme']]
   ];
@@ -1980,12 +2087,13 @@ const ICONS = {
   calendar: '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/>',
   clock: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
   receipt: '<path d="M6 2h12v20l-3-2-3 2-3-2-3 2z"/><path d="M9 7h6M9 11h6M9 15h4"/>',
+  doc: '<path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/>',
   list: '<path d="M9 6h12M9 12h12M9 18h12"/><path d="M3 6l1.5 1.5L7 5M3 12l1.5 1.5L7 11M3 18l1.5 1.5L7 17"/>'
 };
 const svgI = n => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[n] || ''}</svg>`;
 const ICO = n => `<span class="ico">${svgI(n)}</span>`;
 
-const VIEWS = ['overview', 'aircraft', 'fuel', 'instructors', 'tasks'];
+const VIEWS = ['overview', 'aircraft', 'fuel', 'instructors', 'tasks', 'docs'];
 let view = 'overview';
 let R = [];
 const reg = fn => { R.push(fn); return R.length - 1; };
@@ -2417,7 +2525,7 @@ function renderOverview() {
   const k4 = kpi(ci.overdue ? 'overdue' : ci.soon ? 'soon' : ci.missing ? 'missing' : '', 'user', ci.overdue ? ['overdue', 'Action'] : ci.soon ? ['soon', 'Watch'] : ci.missing ? ['missing', 'Check'] : ['ok', 'In date'], 'Instructor checks', `${ci.overdue + ci.soon + ci.missing}<small>/ ${actI.length}</small>`, [
     sub([ci.overdue && `<span class="ist-overdue">${ci.overdue} overdue</span>`, ci.soon && `<span class="ist-soon">${ci.soon} due soon</span>`, ci.missing && `${ci.missing} ${ci.missing === 1 ? 'date' : 'dates'} missing`].filter(Boolean).join(' · ') || 'Everyone in date'),
     nextI ? sub(`Next: ${esc(nextI.p.name.split(' ')[0])}, ${esc(nextI.what)} ${nextI.x.d < 0 ? esc(nextI.x.txt) : nextI.x.d === 0 ? 'today' : `in ${plural(nextI.x.d, 'day')}`}`, true) : '',
-    qn ? sub(`${plural(qn, 'other expiry').replace('expirys', 'expiries')} soon`, true) : ''], 'data-act="go" data-view="instructors"');
+    qn ? sub(`${qn} membership, medical or expiry ${qn === 1 ? 'item' : 'items'} to check`, true) : ''], 'data-act="go" data-view="instructors"');
   // 5. Overdue
   const od = att.filter(a => a.sev === 'overdue');
   const k5 = kpi(od.length ? 'overdue' : '', 'alert', od.length ? ['overdue', 'Action'] : ['ok', 'Clear'], 'Overdue actions', String(od.length), [
@@ -2437,6 +2545,7 @@ function renderOverview() {
     return `<button class="strip st-${esc(ac.status)}" data-reg="${reg(() => goAircraft(ac.ident))}"><span class="band">${esc(AC_SHORT[ac.status] || ac.status)}</span><span class="in">
       <span class="hd"><span class="id">${esc(ac.ident)}</span>${ac.type ? `<span class="ty">${esc(ac.type)}</span>` : ''}</span>
       <span class="hrs"><span>Engine <b>${ac.engineHours != null ? fmtH(ac.engineHours) : 'Not entered'}</b></span>${ac.airTime != null ? `<span>Air <b>${fmtH(ac.airTime)}</b></span>` : ''}</span>
+      <span class="acx">${acExpiries(ac).map(x => `<span class="ex-r"><span class="dot dot-${x.st.s === 'ok' ? 'ok-g' : x.st.s}"></span><span class="ex-n">${x.k === 'regoExpiry' ? 'Rego' : 'Insurance'}</span><span class="ex-d ist-${x.st.s}">${x.st.due ? fmtDate(x.st.due) : 'Not entered'}</span></span>`).join('')}</span>
       ${ac.restrictions && ac.status !== 'serviceable' ? `<span class="restr">${esc(trunc(ac.restrictions, 80))}</span>` : ''}
       <span class="nx"><span class="k">Next maintenance</span>${nx ? `<span>${esc(nx.m.title)}</span><span>${nx.st.parts.map(p => badge(p.s, p.txt)).join(' ')}</span>` : '<span class="muted">None entered</span>'}</span>
       ${defects ? `<span class="ln">${plural(defects, 'open defect')}</span>` : ''}
@@ -2445,11 +2554,11 @@ function renderOverview() {
 
   const inst = S.instructors.filter(p => !p.archived).sort(sortInst).map(p => ({ p, c: checkState(p), r: renewState(p) }));
   const quals = [];
-  S.instructors.forEach(p => { if (!p.archived) (p.quals || []).forEach(q => { if (q.expiry && ['overdue', 'soon'].includes(dateStatus(q.expiry))) quals.push({ p, q, d: daysUntil(q.expiry) }); }); });
-  quals.sort((a, b) => a.d - b.d);
+  S.instructors.forEach(p => { if (!p.archived) instExpiries(p).forEach(x => { if (x.st.s !== 'ok') quals.push({ p, x }); }); });
+  quals.sort((a, b) => RANK[a.x.st.s] - RANK[b.x.st.s] || (a.x.st.d ?? 1e6) - (b.x.st.d ?? 1e6));
   const instHTML = inst.length ? `<ul class="list">${inst.map(({ p, c, r }) => `<li><button class="irow" data-reg="${reg(() => openInstructor(p.id))}"><span class="mk mk-${worstOf(c, r).s}"></span><span><span class="nm">${esc(p.name)} <span class="cchip">${esc(GRADE_SHORT[p.grade] || 'Grade?')}</span></span><span class="dt">${c.na ? '' : `S&amp;P ${c.due ? fmtDate(c.due) : 'not entered'} · `}${esc(renewShort(p))} ${r.due ? fmtDate(r.due) : 'not entered'}</span></span><span class="ist2">${c.na ? '' : `<span class="ist ist-${c.s}">S&amp;P: ${esc(c.txt.toLowerCase())}</span>`}<span class="ist ist-${r.s}">${esc(renewShort(p))}: ${esc(r.txt.toLowerCase())}</span></span></button></li>`).join('')}</ul>`
     : '<p class="empty">No instructors yet.</p><button class="btn btn-sm btn-secondary" data-act="add" data-kind="instructor">Add instructor</button>';
-  const qualHTML = `<div class="mc-cal"><h3 class="mini-h">Other expiries <span class="n2">(medical, ASIC, etc.)</span></h3>${quals.length ? `<ul class="list">${quals.map(({ p, q, d }) => `<li><button class="irow" data-reg="${reg(() => openInstructor(p.id))}"><span class="mk mk-${d < 0 ? 'overdue' : 'soon'}"></span><span><span class="nm">${esc(q.label || 'Qualification')}</span><span class="dt">${esc(p.name)}, expires ${fmtDate(q.expiry)}</span></span><span class="ist ist-${d < 0 ? 'overdue' : 'soon'}">${d < 0 ? `Expired ${plural(-d, 'day')} ago` : d === 0 ? 'Expires today' : `Expires in ${plural(d, 'day')}`}</span></button></li>`).join('')}</ul>` : `<p class="empty">None expiring in the next ${S.settings.dueSoonDays} days.</p>`}</div>`;
+  const qualHTML = `<div class="mc-cal"><h3 class="mini-h">Membership, medical and expiries</h3>${quals.length ? `<ul class="list">${quals.map(({ p, x }) => `<li><button class="irow" data-reg="${reg(() => openInstructor(p.id))}"><span class="mk mk-${x.st.s}"></span><span><span class="nm">${esc(x.label)}</span><span class="dt">${esc(p.name)}${x.st.due ? `, expires ${fmtDate(x.st.due)}` : x.mand ? ', mandatory' : ''}</span></span><span class="ist ist-${x.st.s}">${esc(x.st.txt)}</span></button></li>`).join('')}</ul>` : `<p class="empty">All memberships and medicals in date for the next ${Number(S.settings.expiryWarnDays ?? 30)} days.</p>`}</div>`;
 
   const up = upcoming(upWindow);
   const days = {};
@@ -2519,6 +2628,7 @@ function renderAircraft() {
           <span class="ac-next"><span class="k">Next maintenance:</span>${nx ? `<strong>${esc(nx.m.title)}</strong> ${nx.st.parts.map(p => badge(p.s, p.txt)).join(' ')}` : '<span class="muted">None entered</span>'}</span></div>
         <dl class="ctr"><div><dt>Engine hours</dt><dd>${ac.engineHours != null ? fmtH(ac.engineHours) : badge('missing', 'Not entered')}</dd></div><div><dt>Air time</dt><dd>${ac.airTime != null ? fmtH(ac.airTime) : '<span class="na muted">Not tracked</span>'}</dd></div></dl>
         <div class="ac-act"><button class="btn btn-sm btn-secondary" data-reg="${reg(() => openEditor('aircraft', ac.id))}">Update record</button></div>
+        <div class="ac-exp">${acExpiries(ac).map(x => `<span><span class="k">${esc(x.label)}</span> ${x.st.due ? fmtDate(x.st.due) + ' ' : ''}${x.st.s === 'ok' ? `<span class="ist ist-ok">${esc(x.st.txt)}</span>` : badge(x.st.s, x.st.txt)}</span>`).join('')}</div>
         <p class="ac-meta">Responsible: ${ac.responsible ? esc(ac.responsible) : badge('missing', 'Not set')}. Updated ${ac.updatedAt ? fmtStamp(ac.updatedAt) + (ac.updatedBy ? ' by ' + esc(ac.updatedBy) : '') : 'never'}.</p>
       </div>
       ${ac.notes ? `<div class="ac-notes"><strong>Maintenance notes:</strong> ${esc(ac.notes)}</div>` : ''}
@@ -2603,23 +2713,60 @@ function renderInstructors() {
   const cnt = (arr, s) => arr.filter(x => x.s === s).length;
   const tile = (k, n, cls) => `<div class="${n ? cls : ''}"><span class="k">${k}</span><b>${n}</b></div>`;
   const rows = list.map(p => {
-    const w = worstOf(checkState(p), renewState(p));
-    const soonQ = (p.quals || []).filter(q => q.expiry && ['overdue', 'soon'].includes(dateStatus(q.expiry)));
+    const ex = instExpiries(p), w = worstOf(checkState(p), renewState(p), ...ex.map(x => x.st));
     return `<div class="ins-row${p.archived ? ' is-arch' : ''}"><span class="mk mk-${w.s}"></span>
       <button type="button" class="ins-who" data-reg="${reg(() => openInstructor(p.id))}"><span class="nm">${esc(p.name)}${exChip(p)}</span>
         <span class="ins-meta"><span class="cchip">${esc(GRADE_SHORT[p.grade] || 'Grade not set')}</span>${p.raausNo ? `<span>RAAus ${esc(p.raausNo)}</span>` : ''}${p.archived ? '<span>Archived</span>' : ''}</span>
-        ${soonQ.length ? `<span class="ins-q">${soonQ.map(q => `${esc(q.label || 'Expiry')} ${daysUntil(q.expiry) < 0 ? 'expired' : 'expires'} ${fmtDate(q.expiry)}`).join(', ')}</span>` : ''}
         ${p.restrictions ? `<span class="ins-q">Restriction: ${esc(trunc(p.restrictions, 60))}</span>` : ''}</button>
       ${insCell(p, 'sp')}${insCell(p, 'renewal')}
+      <div class="ins-c ins-ex"><span class="ins-l">Membership and medical</span>${ex.filter(x => !x.st.na).map(x => `<span class="ex-r"><span class="dot dot-${x.st.s === 'ok' ? 'ok-g' : x.st.s}"></span><span class="ex-n">${esc(x.label === 'RAAus membership' ? 'RAAus' : x.label === 'CASA medical' ? 'Medical' : x.label)}</span><span class="ex-d ist-${x.st.s}">${x.st.due ? fmtDate(x.st.due) : 'Not entered'}</span></span>`).join('')}</div>
       <div class="ins-a">${needsSP(p) ? `<button class="btn btn-sm btn-secondary" data-reg="${reg(() => logCheck(p.id, 'sp'))}">+ S&amp;P check</button>` : ''}<button class="btn btn-sm btn-secondary" data-reg="${reg(() => logCheck(p.id, 'renewal'))}">+ ${esc(renewShort(p))}</button></div></div>`;
   }).join('');
   return `${banners()}<div class="view-h"><h1>Instructors</h1><div class="view-actions">
     <button class="btn btn-primary" data-act="add" data-kind="instructor">Add instructor</button>
     <label class="tog"><input type="checkbox" data-act="toggleInstArch"${showInstArch ? ' checked' : ''}> Show archived</label></div></div>
-    <div class="fstats ins-sum">${tile('S&P overdue', cnt(sps, 'overdue'), 'warn')}${tile(`S&P due within ${Number(S.settings.dueSoonDays) || 14} days`, cnt(sps, 'soon'), 'soonc')}${tile('Renewals / SI reviews overdue', cnt(rns, 'overdue'), 'warn')}${tile(`Renewals / SI reviews due within ${Number(S.settings.renewWarnDays ?? 30)} days`, cnt(rns, 'soon'), 'soonc')}</div>
-    ${list.length ? `<div class="ins"><div class="ins-row ins-hd" aria-hidden="true"><span></span><span>Instructor</span><span>S&amp;P check (juniors, every ${Number(S.settings.spDays) || 90} days)</span><span>Renewal or SI flight review</span><span></span></div>${rows}</div>`
+    <div class="fstats ins-sum">${tile('S&P overdue', cnt(sps, 'overdue'), 'warn')}${tile(`S&P due within ${Number(S.settings.dueSoonDays) || 14} days`, cnt(sps, 'soon'), 'soonc')}${tile('Renewals / SI reviews overdue', cnt(rns, 'overdue'), 'warn')}${tile(`Renewals / SI reviews due within ${Number(S.settings.renewWarnDays ?? 30)} days`, cnt(rns, 'soon'), 'soonc')}${tile('Membership, medical or expiry to check', act.reduce((n, p) => n + instExpiries(p).filter(x => x.st.s !== 'ok').length, 0), 'warn')}</div>
+    ${list.length ? `<div class="ins"><div class="ins-row ins-hd" aria-hidden="true"><span></span><span>Instructor</span><span>S&amp;P check (juniors, every ${Number(S.settings.spDays) || 90} days)</span><span>Renewal or SI flight review</span><span>Membership and medical</span><span></span></div>${rows}</div>`
       : '<div class="panel"><p class="empty">No instructors yet. Add each instructor with their grade and last check dates.</p></div>'}
     <p class="hint" style="margin-top:10px">Sorted with the most urgent first. Select a name to open the profile and check history.</p>`;
+}
+
+let docFilter = 'all';
+function docReviewed(d) {
+  if (d.kind === 'review' && Number(d.reviewMonths) > 0) {
+    withUndo('Marked reviewed', () => { d.lastReviewed = todayISO(); d.date = addMonths(todayISO(), Number(d.reviewMonths)); delete d.example; stamp(d); });
+  } else {
+    openEditor('doc', d.id, null);
+    toast(d.kind === 'expiry' ? 'Enter the new expiry date and save.' : 'Enter the next review date and save.');
+  }
+}
+function renderDocs() {
+  const all = S.documents.filter(d => !d.archived);
+  const sts = all.map(docState);
+  const n = s => sts.filter(x => x.s === s).length;
+  const tile = (k, v, cls) => `<div class="${v ? cls : ''}"><span class="k">${k}</span><b>${v}</b></div>`;
+  const list = all.filter(d => docFilter === 'all' || d.category === docFilter)
+    .sort((a, b) => { const x = docState(a), y = docState(b); return RANK[x.s] - RANK[y.s] || (x.d ?? 1e6) - (y.d ?? 1e6) || String(a.title).localeCompare(String(b.title)); });
+  const cats = DOC_CATS.filter(([k]) => all.some(d => d.category === k));
+  const rows = list.map(d => {
+    const st = docState(d);
+    return `<li class="doc-row"><span class="mk mk-${st.s}"></span>
+      <button type="button" class="doc-main" data-reg="${reg(() => openEditor('doc', d.id))}"><span class="t">${esc(d.title)}${exChip(d)}</span>
+        <span class="doc-meta"><span class="cchip">${esc(lab(DOC_CATS, d.category))}</span>${d.reference ? `<span>${esc(d.reference)}</span>` : ''}${d.responsible ? `<span>${esc(d.responsible)}</span>` : ''}</span>
+        ${d.notes ? `<span class="n muted">${esc(trunc(d.notes, 120))}</span>` : ''}</button>
+      <div class="doc-when"><span class="ins-l">${d.kind === 'expiry' ? 'Expires' : 'Next review'}</span><span class="ins-due">${st.due ? fmtDate(st.due) : '—'} ${st.s === 'ok' ? `<span class="ist ist-ok">${esc(st.txt)}</span>` : badge(st.s, st.txt)}</span>
+        <span class="ins-last">${d.lastReviewed ? `Last ${d.kind === 'expiry' ? 'renewed' : 'reviewed'} ${fmtDate(d.lastReviewed)}` : ''}${d.reviewMonths ? `${d.lastReviewed ? ' · ' : ''}every ${d.reviewMonths} months` : ''}</span></div>
+      <div class="ins-a"><button class="btn btn-sm btn-secondary" data-reg="${reg(() => docReviewed(d))}">${d.kind === 'expiry' ? 'Renewed' : 'Mark reviewed'}</button></div></li>`;
+  }).join('');
+  const acx = S.aircraft.flatMap(a => acExpiries(a).filter(x => x.st.s !== 'ok').map(x => ({ a, x })));
+  return `${banners()}<div class="view-h"><h1>Documents and compliance</h1><div class="view-actions">
+    <button class="btn btn-primary" data-act="add" data-kind="doc">Add document</button></div></div>
+    <div class="fstats ins-sum doc-sum">${tile('Expired or review overdue', n('overdue'), 'warn')}${tile(`Due within ${Number(S.settings.docWarnDays ?? 30)} days`, n('soon'), 'soonc')}${tile('Date not entered', n('missing'), 'soonc')}${tile('In date', n('ok'), '')}</div>
+    ${cats.length > 1 ? `<div class="toolbar"><span class="seg" role="group" aria-label="Type"><button type="button" data-act="docCat" data-c="all" aria-pressed="${docFilter === 'all'}">All (${all.length})</button>${cats.map(([k, l]) => `<button type="button" data-act="docCat" data-c="${k}" aria-pressed="${docFilter === k}">${esc(l)}</button>`).join('')}</span></div>` : ''}
+    ${list.length ? `<ul class="docs">${rows}</ul>` : `<div class="panel"><p class="empty">${all.length ? 'Nothing of this type.' : 'No documents yet. Add your manuals, procedures, forms, approvals and insurance with their expiry or review dates.'}</p></div>`}
+    ${acx.length ? `<section class="panel" style="margin-top:16px"><div class="panel-h"><h2>${ICO('plane')}Aircraft registration and insurance</h2><button class="btn-text" data-act="go" data-view="aircraft">Aircraft</button></div>
+      <ul class="list">${acx.map(({ a, x }) => `<li><button class="irow" data-reg="${reg(() => openEditor('aircraft', a.id))}"><span class="mk mk-${x.st.s}"></span><span><span class="nm">${esc(a.ident)} ${esc(x.label.toLowerCase())}</span><span class="dt">${x.st.due ? `Expires ${fmtDate(x.st.due)}` : 'Expiry not entered'}</span></span><span class="ist ist-${x.st.s}">${esc(x.st.txt)}</span></button></li>`).join('')}</ul></section>` : ''}
+    <p class="hint" style="margin-top:10px">Sorted with the most urgent first. Instructor memberships and medicals are on the Instructors page.</p>`;
 }
 
 function renderTasks() {
@@ -2631,7 +2778,7 @@ function renderTasks() {
   };
   const segs = [['open', 'Open'], ['waiting', 'Waiting'], ['done', 'Complete'], ['archived', 'Archived']]
     .map(([k, l]) => `<button type="button" data-act="taskStatus" data-s="${k}" aria-pressed="${taskFilter.status === k}">${l} (${counts[k]})</button>`).join('');
-  return `${banners()}<div class="view-h"><h1>Tasks and compliance</h1><div class="view-actions">
+  return `${banners()}<div class="view-h"><h1>Tasks</h1><div class="view-actions">
     <button class="btn btn-primary" data-act="add" data-kind="task">Add task</button>
     ${counts.done ? '<button class="btn btn-secondary" data-act="archiveDone">Archive completed</button>' : ''}</div></div>
     <div class="toolbar"><span class="seg" role="group" aria-label="Status">${segs}</span>
@@ -2668,7 +2815,7 @@ const main = $('#main');
 function render() {
   R = [];
   if (!Who) { main.innerHTML = ''; return; }
-  const fn = { overview: renderOverview, aircraft: renderAircraft, fuel: renderFuel, instructors: renderInstructors, tasks: renderTasks }[view];
+  const fn = { overview: renderOverview, aircraft: renderAircraft, fuel: renderFuel, instructors: renderInstructors, tasks: renderTasks, docs: renderDocs }[view];
   main.innerHTML = fn();
   if (view === 'tasks') renderTaskList();
   drawCharts();
@@ -2678,7 +2825,7 @@ function render() {
 function updateTabs() {
   $$('.tabs a').forEach(a => { if (a.dataset.view === view) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
   // Same source as the overview cards, so the numbers always agree.
-  const c = { overview: 0, aircraft: 0, fuel: 0, instructors: 0, tasks: 0 };
+  const c = { overview: 0, aircraft: 0, fuel: 0, instructors: 0, tasks: 0, docs: 0 };
   attentionItems().forEach(a => { if (a.sev === 'overdue') c.overview++; if (['overdue', 'due', 'alert', 'low'].includes(a.sev)) c[a.area]++; });
   $$('.tabs .count').forEach(el => { const k = el.dataset.count, v = c[k]; el.textContent = v ? String(v) : ''; el.setAttribute('aria-label', v ? (k === 'overview' ? `${v} overdue` : `${v} need action`) : ''); });
 }
@@ -2704,6 +2851,7 @@ const ACT = {
   clearEx: async () => { if (await askConfirm(`Remove all records marked Example?${syncMeta().synced ? ' This removes them for everyone.' : ''} Your own records stay.`, 'Clear example data')) withUndo('Example data cleared', clearExamples); },
   toggleAtt: () => { showAllAtt = !showAllAtt; render(); },
   addMenu: openAddMenu,
+  docCat: d => { docFilter = d.c; render(); },
   lock: () => lockApp(),
   syncNow: () => { syncTick().then(() => toast(Sync.state === 'ok' ? 'Synced with everyone' : Sync.state === 'local' ? 'Not connected to the shared database. Saved on this device.' : 'Offline. Changes are saved here and will sync later.')); },
   refill: () => refill(),

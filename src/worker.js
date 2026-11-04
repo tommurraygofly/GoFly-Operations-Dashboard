@@ -29,7 +29,7 @@ export default {
    One row per record: (coll, id) -> JSON data. Deletes are kept as tombstones (deleted = 1)
    so other devices learn about them. updated_at is server time in ms; clients ask for
    everything changed since their last sync. Last write wins per record. */
-const COLLS = new Set(['aircraft', 'maintenance', 'defects', 'fuelReadings', 'fuelOrders', 'fuelIssues', 'instructors', 'tasks', 'settings']);
+const COLLS = new Set(['aircraft', 'maintenance', 'defects', 'fuelReadings', 'fuelOrders', 'fuelIssues', 'instructors', 'tasks', 'documents', 'settings']);
 const MAX_CHANGES = 500, MAX_RECORD = 200000;
 let schemaReady = false;
 
