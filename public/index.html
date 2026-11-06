@@ -585,6 +585,13 @@ main{max-width:1320px;margin:0 auto;padding:var(--mainpad) var(--mainpad) 48px}
 .burn-c b{font-size:.95rem}
 .burn-c span{font-size:.7rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 
+.b-req{background:var(--chip);color:#fff;font-size:.66rem;letter-spacing:.06em;text-transform:uppercase;padding:0 7px;margin-left:6px}
+.ac-hrs{padding:12px 18px 10px 30px;border-bottom:1px solid var(--line)}
+.ac-hrs .mc-who{gap:8px;align-items:center}
+.ac-hrs-t{font-weight:600}
+.ac-hrs .hint{margin-top:2px}
+@media (max-width:760px){.ac-hrs{padding-left:24px}}
+
 /* ===== Defect photos + severity ===== */
 .ph-grid{display:flex;flex-wrap:wrap;gap:8px}
 .ph-grid:empty{display:none}
@@ -901,6 +908,7 @@ function normalise(d) {
   // Maintenance levels are now the same for every aircraft (amber 50 hrs, red 20 hrs).
   o.aircraft.forEach(a => { delete a.hoursWarn; });
   delete o.settings.hoursWarn;
+  ensure100(o);
   // Hours history for the maintenance forecast (one entry per day an hours figure changed).
   o.aircraft.forEach(a => {
     if (!Array.isArray(a.hoursLog)) {
@@ -912,6 +920,31 @@ function normalise(d) {
   return o;
 }
 
+/* The 100-hourly inspection is permanent on every aircraft (fixed: '100hr'). An existing open
+   item named "100-hourly…" is adopted; otherwise a placeholder (id m100-<ident>) is added with no
+   due hours, so it shows as "Not entered" until Tom fills it in. It can't be deleted or completed;
+   "Log 100-hourly done" rolls it forward. Duplicates are tidied (keeps the one with due hours). */
+function ensure100(st) {
+  st.aircraft.forEach(a => {
+    const mine = st.maintenance.filter(m => m.aircraftId === a.id && !m.archived);
+    let f = mine.filter(m => m.fixed === '100hr');
+    if (!f.length) {
+      const cand = mine.filter(m => m.status !== 'done' && /100\s*-?\s*(hourly|hrly|hour|hrs?)\b/i.test(m.title || ''))
+        .sort((x, y) => (x.dueHours ?? 1e9) - (y.dueHours ?? 1e9))[0];
+      if (cand) { cand.fixed = '100hr'; f = [cand]; }
+    }
+    if (!f.length) {
+      const now = nowStamp();
+      st.maintenance.push({ id: 'm100-' + a.ident, aircraftId: a.id, title: '100-hourly inspection', fixed: '100hr', counter: 'engine', dueHours: null, dueDate: null, bookingDate: null, status: 'open', notes: '', history: [], createdAt: now, updatedAt: now, updatedBy: '', archived: false });
+      return;
+    }
+    if (f.length > 1) {
+      const keep = f.find(m => m.dueHours != null && !String(m.id).startsWith('m100-')) || f.find(m => m.dueHours != null) || f[0];
+      f.forEach(m => { if (m === keep) return; if (String(m.id).startsWith('m100-') && m.dueHours == null) st.maintenance = st.maintenance.filter(x => x !== m); else delete m.fixed; });
+    }
+    st.maintenance.forEach(m => { if (m.aircraftId === a.id && m.fixed === '100hr') { if (m.status === 'done') m.status = 'open'; if (m.counter === 'none') m.counter = 'engine'; } });
+  });
+}
 function applyExamples() {
   const t = todayISO(), D = n => addDays(t, n), now = nowStamp();
   const E = o => ({ id: uid(), example: true, createdAt: now, updatedAt: now, updatedBy: 'Example data', archived: false, ...o });
@@ -974,6 +1007,7 @@ function applyExamples() {
     E({ title: 'Replace inspection tag on bowser fire extinguisher', category: 'Safety', owner: 'Ops Manager', due: D(10), priority: 'high', status: 'progress', waitingOn: '', notes: '' }),
     E({ title: 'Block out 8582 in the booking system', category: 'General operations', owner: 'Ops Manager', due: D(-2), priority: 'normal', status: 'done', waitingOn: '', notes: '', completedAt: now })
   );
+  ensure100(S);
 }
 function hasExamples() {
   return S.aircraft.some(a => a.example) || LISTS.some(k => S[k].some(r => r.example));
@@ -981,6 +1015,7 @@ function hasExamples() {
 function clearExamples() {
   LISTS.forEach(k => { S[k] = S[k].filter(r => !r.example); });
   S.aircraft = S.aircraft.map(a => a.example ? blankAircraft(a.ident) : a);
+  ensure100(S);
 }
 
 function persist() { S.meta.savedAt = nowStamp(); Store.ok = Store.adapter.save(S); trackChanges(); }
@@ -1261,7 +1296,8 @@ async function startSync() {
   const known = new Set(r.records.map(x => x.coll + '/' + x.id));
   S = normalise(fresh);
   DEVICE_SETTINGS.forEach(k => { S.settings[k] = local.settings[k]; });
-  LISTS.forEach(c => (local[c] || []).forEach(rec => { if (rec && !rec.example && !known.has(c + '/' + rec.id)) S[c].push(rec); }));
+  LISTS.forEach(c => (local[c] || []).forEach(rec => { if (rec && !rec.example && !String(rec.id).startsWith('m100-') && !known.has(c + '/' + rec.id)) S[c].push(rec); }));
+  ensure100(S);
   M.since = r.now; M.synced = true; saveSyncMeta();
   persist();                              // queues anything new (carried-over records, migrations)
   applyTheme(); Sync.lastOk = Date.now(); setSync(Object.keys(M.pending).length ? 'syncing' : 'ok');
@@ -1700,6 +1736,8 @@ function hourItemFor(ac) {
   const known = items.filter(x => x.rem != null).sort((a, b) => a.rem - b.rem);
   if (known.length) return { ...known[0], others: items.length - 1 };
   if (items.length) return { m: items[0].m, cur: null, rem: null, others: items.length - 1, why: `${lab(COUNTERS, items[0].m.counter)} reading not entered` };
+  const fx = S.maintenance.find(m => m.aircraftId === ac.id && m.fixed === '100hr' && !m.archived);
+  if (fx) return { m: fx, cur: null, rem: null, others: 0, why: '100-hourly due hours not entered' };
   return { m: null, cur: null, rem: null, others: 0, why: 'No hour-based item entered' };
 }
 
@@ -1733,6 +1771,17 @@ const SCHEMAS = {
       { k: 'insuranceExpiry', l: 'Insurance expiry', t: 'date', hint: 'Not needed when insurance is N/A.' },
       { k: 'restrictions', l: 'Restrictions', t: 'textarea', wide: true },
       { k: 'notes', l: 'Maintenance notes', t: 'textarea', wide: true }
+    ]
+  },
+  maint100: { title: '100-hourly inspection', coll: 'maintenance', archivable: false, deletable: false,
+    fields: [
+      { k: 'aircraftId', l: 'Aircraft', t: 'acro' },
+      { k: 'counter', l: 'Counts against', t: 'select', o: COUNTERS.filter(([k]) => k !== 'none'), hint: 'Engine hours or air time.' },
+      { k: 'dueHours', l: 'Next due at (hours)', t: 'hours', hint: 'From the maintenance release. After each inspection use “Log 100-hourly done”.' },
+      { k: 'dueDate', l: 'Due date (optional)', t: 'date', hint: 'If the maintenance release also gives a date. Whichever comes first shows.' },
+      { k: 'bookingDate', l: 'Booking date', t: 'date' },
+      { k: 'status', l: 'Status', t: 'select', o: MAINT_ST.filter(([k]) => k !== 'done') },
+      { k: 'notes', l: 'Notes', t: 'textarea', wide: true }
     ]
   },
   maint: { title: 'Maintenance item', coll: 'maintenance', archivable: true,
@@ -2010,6 +2059,7 @@ function fieldHTML(f, r) {
     case 'select': input = `<select id="${id}">${f.o.map(([val, l]) => `<option value="${esc(val)}"${val === v ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select>`; break;
     case 'aircraft': input = `<select id="${id}">${S.aircraft.map(a => `<option value="${esc(a.id)}"${a.id === v ? ' selected' : ''}>${esc(a.ident)}${a.type ? ' (' + esc(a.type) + ')' : ''}</option>`).join('')}</select>`; break;
     case 'readonly': input = `<div class="ro">${esc(v)}</div>`; break;
+    case 'acro': input = `<div class="ro">${esc((acById(v) || {}).ident || '')}</div>`; break;
     case 'photos': {
       const ids = Array.isArray(v) ? v : [];
       return `<div class="field wide"><span class="lbl">${esc(f.l)}</span><div class="ph-grid" id="${id}" data-ids="${esc(JSON.stringify(ids))}">${ids.map(phThumb).join('')}</div>
@@ -2018,7 +2068,7 @@ function fieldHTML(f, r) {
     case 'rows':
       return `<div class="field wide"><span class="lbl">${esc(f.l)}</span><div class="rows" id="${id}">${(v || []).map(rowHTML).join('')}</div><div><button type="button" class="btn btn-sm btn-secondary" data-addrow="${id}">Add qualification or expiry</button></div></div>`;
   }
-  const labelTag = f.t === 'readonly' ? `<span class="lbl">${esc(f.l)}</span>` : `<label for="${id}">${esc(f.l)}${req}</label>`;
+  const labelTag = f.t === 'readonly' || f.t === 'acro' ? `<span class="lbl">${esc(f.l)}</span>` : `<label for="${id}">${esc(f.l)}${req}</label>`;
   return `<div class="field${f.wide ? ' wide' : ''}">${labelTag}${input}${f.hint ? `<p class="hint">${esc(f.hint)}</p>` : ''}</div>`;
 }
 function collect(fields) {
@@ -2053,6 +2103,7 @@ function collect(fields) {
 function showErr(msg) { const e = $('#formErr'); if (e) { e.textContent = msg; e.hidden = false; } }
 
 function openEditor(kind, id, defaults) {
+  if (kind === 'maint' && id && (S.maintenance.find(x => x.id === id) || {}).fixed === '100hr') kind = 'maint100';
   const sc = SCHEMAS[kind];
   const list = S[sc.coll];
   const existing = id ? list.find(x => x.id === id) : null;
@@ -2073,6 +2124,7 @@ function openEditor(kind, id, defaults) {
     closeDlg();
     withUndo(existing.archived ? 'Restored' : 'Archived', () => { existing.archived = !existing.archived; stamp(existing); });
   } });
+  if (kind === 'maint100' && existing) btns.push({ label: 'Log 100-hourly done', cls: 'btn-text', left: true, on: () => openLog100(existing.id) });
   btns.push(cancelBtn);
   btns.push({ label: existing ? 'Save changes' : `Add ${name}`, cls: 'btn btn-primary', on: () => {
     const { vals, err } = collect(sc.fields);
@@ -2137,6 +2189,37 @@ function openThreshold() {
       S.settings.fuelThreshold = vals.fuelThreshold;
       closeDlg(); commit(); toast('Reorder level saved');
     } }]);
+}
+
+function openLog100(id) {
+  const m = S.maintenance.find(x => x.id === id); if (!m) return;
+  const ac = acById(m.aircraftId), cur = ac ? counterVal(ac, m.counter) : null, cn = lab(COUNTERS, m.counter);
+  const F = [
+    { k: 'date', l: 'Date completed', t: 'date', req: true },
+    { k: 'at', l: `${cn} at completion`, t: 'hours', req: true, hint: 'Filled in from the aircraft’s current reading. Check it against the maintenance release.' },
+    { k: 'next', l: 'Next 100-hourly due at', t: 'hours', req: true, hint: 'Suggested as 100 hours after completion. Change it if the maintenance release says otherwise.' },
+    { k: 'nextDate', l: 'Next due date (optional)', t: 'date', hint: 'Only if the maintenance release also gives a date.' },
+    { k: 'by', l: 'Completed by', t: 'text', ph: 'e.g. maintenance provider' },
+    { k: 'notes', l: 'Notes', t: 'textarea', wide: true }];
+  const v0 = { date: todayISO(), at: cur, next: cur != null ? Math.round((cur + 100) * 10) / 10 : null };
+  openDlg(`${ac ? ac.ident + ' ' : ''}100-hourly done`, `<p class="hint" style="margin-bottom:12px">Rolls ${ac ? ac.ident + '’s' : 'the'} 100-hourly inspection forward to its next due hours (${esc(cn.toLowerCase())}).</p><div class="form">${F.map(f => fieldHTML(f, v0)).join('')}</div>
+    ${(m.history || []).length ? `<h3 class="dlg-sec">Previous 100-hourlies</h3>${[...m.history].reverse().slice(0, 6).map(h => `<div class="rowline"><span class="k">${fmtDate(h.date)}</span><span>at ${fmtH(h.at)} hrs${h.by ? ' · ' + esc(h.by) : ''}</span></div>`).join('')}` : ''}
+    <p class="form-err" id="formErr" hidden></p>`,
+    [cancelBtn, { label: 'Save 100-hourly', cls: 'btn btn-primary', on: () => {
+      const { vals, err } = collect(F);
+      if (err) { showErr(err); return; }
+      if (vals.date > todayISO()) { showErr('The date completed can’t be in the future.'); return; }
+      if (vals.next <= vals.at) { showErr('Next due must be more hours than at completion.'); return; }
+      closeDlg();
+      withUndo('100-hourly logged', () => {
+        m.history = (m.history || []).concat([{ date: vals.date, at: vals.at, by: vals.by, notes: vals.notes, counter: m.counter, loggedBy: S.settings.userName || '' }]);
+        m.lastDone = { date: vals.date, at: vals.at };
+        m.dueHours = vals.next; m.dueDate = vals.nextDate || null; m.status = 'open'; m.bookingDate = null; delete m.example; stamp(m);
+      });
+    } }]);
+  let touched = false;
+  $('#f_next').addEventListener('input', () => { touched = true; });
+  $('#f_at').addEventListener('input', () => { const v = Number($('#f_at').value); if (!touched && $('#f_at').value !== '' && !isNaN(v)) $('#f_next').value = (Math.round((v + 100) * 10) / 10).toFixed(1); });
 }
 
 function openWarnings() {
@@ -2974,15 +3057,33 @@ function renderOverview() {
   </div>`;
 }
 
+function acHoursBar(ac) {
+  const L = hrsLevels();
+  const vals = S.aircraft.map(a => hourItemFor(a).rem).filter(v => v != null);
+  const sc = niceScale(Math.min(0, ...vals), Math.max(10, ...vals, L.amber * 1.2), 4);   // same scale as the overview chart
+  const P = v => (v - sc.lo) / (sc.hi - sc.lo) * 100;
+  const h = hourItemFor(ac), st = h.rem == null ? 'missing' : hoursState(h.rem);
+  let bar;
+  if (h.rem == null) bar = '<span class="mc-na"></span>';
+  else { const a = P(Math.min(0, h.rem)), b = P(Math.max(0, h.rem)); bar = `<span class="mc-bar ${st}${h.rem < 0 ? ' neg' : ''}" style="left:${a.toFixed(2)}%;width:${(b - a).toFixed(2)}%"></span>`; }
+  const zero = sc.lo < 0 ? `<span class="mc-zero" style="left:${P(0).toFixed(2)}%"></span>` : '';
+  const ticks = h.rem == null ? '' : [['a', L.amber], ['r', L.red]].filter(([, v]) => v <= sc.hi && v >= sc.lo).map(([c, v]) => `<span class="mc-warn ${c}" style="left:${P(v).toFixed(2)}%"></span>`).join('');
+  const val = h.rem == null ? 'Not entered' : h.rem < 0 ? `${fmtH(-h.rem)} hrs overdue` : `${fmtH(h.rem)} hrs left`;
+  return `<div class="ac-hrs"><div class="mc-top"><span class="mc-who"><span class="ac-hrs-t">${h.m ? esc(h.m.title) : 'Next hour-based item'}</span>${h.m ? `<span class="cchip">${esc(lab(COUNTERS, h.m.counter))}</span>` : ''}</span>
+      <span class="mc-val${h.rem == null ? ' na' : ''}">${HRS_LABEL[st] ? badge(st, HRS_LABEL[st]) + ' ' : ''}${val}</span></div>
+    <span class="mc-track" aria-hidden="true">${zero}${bar}${ticks}</span>
+    <div class="mc-axis" aria-hidden="true">${sc.ticks.map((t, i) => `<span style="left:${P(t).toFixed(2)}%">${fmtTick(t)}${i === sc.ticks.length - 1 ? ' hrs' : ''}</span>`).join('')}</div>
+    ${h.m && h.rem != null ? `<p class="hint">Due at ${fmtH(h.m.dueHours)}, now ${fmtH(h.cur)}. Marks at ${+L.amber} and ${+L.red} hrs.</p>` : h.why ? `<p class="hint">${esc(h.why)}</p>` : ''}</div>`;
+}
 function recMaint(m) {
-  const st = maintStatus(m);
+  const st = maintStatus(m), fixed = m.fixed === '100hr';
   const counter = m.counter === 'none' ? 'Calendar' : lab(COUNTERS, m.counter);
   const due = [m.counter !== 'none' && m.dueHours != null ? `due at ${fmtH(m.dueHours)} hrs` : '', m.dueDate ? `due ${fmtDate(m.dueDate)}` : ''].filter(Boolean).join(' or ');
   return `<div class="rec${m.archived ? ' is-arch' : ''}">
-    <button class="rec-main" data-reg="${reg(() => openEditor('maint', m.id))}"><span class="t">${esc(m.title)}${exChip(m)}${m.archived ? ' <span class="b b-ok">Archived</span>' : ''}</span>
-      <span class="d">${esc(counter)}${due ? ', ' + esc(due) : ''}. ${esc(lab(MAINT_ST, m.status))}${m.bookingDate ? `, booking ${fmtDate(m.bookingDate)}` : ''}.</span>
+    <button class="rec-main" data-reg="${reg(() => openEditor('maint', m.id))}"><span class="t">${esc(m.title)}${fixed ? ' <span class="b b-req">Required</span>' : ''}${exChip(m)}${m.archived ? ' <span class="b b-ok">Archived</span>' : ''}</span>
+      <span class="d">${esc(counter)}${due ? ', ' + esc(due) : fixed ? ', due hours not entered' : ''}. ${esc(lab(MAINT_ST, m.status))}${m.bookingDate ? `, booking ${fmtDate(m.bookingDate)}` : ''}.${fixed && m.lastDone ? ` Last done ${fmtDate(m.lastDone.date)} at ${fmtH(m.lastDone.at)} hrs.` : ''}</span>
       ${m.notes ? `<span class="n">${esc(m.notes)}</span>` : ''}</button>
-    <span class="rec-side">${st.parts.map(p => badge(p.s, p.txt)).join(' ')}${m.status !== 'done' && !m.archived ? `<button class="btn btn-sm btn-secondary" data-reg="${reg(() => withUndo('Marked complete', () => { m.status = 'done'; m.completedAt = nowStamp(); delete m.example; stamp(m); }))}">Mark complete</button>` : ''}</span>
+    <span class="rec-side">${st.parts.map(p => badge(p.s, p.txt)).join(' ')}${fixed ? `<button class="btn btn-sm btn-primary" data-reg="${reg(() => openLog100(m.id))}">Log 100-hourly done</button>` : m.status !== 'done' && !m.archived ? `<button class="btn btn-sm btn-secondary" data-reg="${reg(() => withUndo('Marked complete', () => { m.status = 'done'; m.completedAt = nowStamp(); delete m.example; stamp(m); }))}">Mark complete</button>` : ''}</span>
   </div>`;
 }
 function recDefect(d) {
@@ -2999,7 +3100,7 @@ function recDefect(d) {
 function renderAircraft() {
   const secs = S.aircraft.map(ac => {
     const all = S.maintenance.filter(m => m.aircraftId === ac.id);
-    const maint = all.filter(m => showAcDone || (!m.archived && m.status !== 'done')).sort(maintSort);
+    const maint = all.filter(m => showAcDone || (!m.archived && m.status !== 'done')).sort((a, b) => ((b.fixed ? 1 : 0) - (a.fixed ? 1 : 0)) || maintSort(a, b));
     const allD = S.defects.filter(d => d.aircraftId === ac.id);
     const defs = allD.filter(d => showAcDone || (!d.archived && d.status !== 'closed')).sort((a, b) => String(b.raised || '').localeCompare(String(a.raised || '')));
     const nx = acSummary(ac).next;
@@ -3014,6 +3115,7 @@ function renderAircraft() {
         <div class="ac-exp">${acExpiries(ac).map(x => `<span><span class="k">${esc(x.label)}</span> ${x.st.due ? fmtDate(x.st.due) + ' ' : ''}${x.st.s === 'ok' ? `<span class="ist ist-ok">${esc(x.st.txt)}</span>` : badge(x.st.s, x.st.txt)}</span>`).join('')}</div>
         <p class="ac-meta">Responsible: ${ac.responsible ? esc(ac.responsible) : badge('missing', 'Not set')}. Updated ${ac.updatedAt ? fmtStamp(ac.updatedAt) + (ac.updatedBy ? ' by ' + esc(ac.updatedBy) : '') : 'never'}.</p>
       </div>
+      ${acHoursBar(ac)}
       ${ac.notes ? `<div class="ac-notes"><strong>Maintenance notes:</strong> ${esc(ac.notes)}</div>` : ''}
       <div class="ac-body">
         <div class="sub"><div class="sub-h"><h3>Maintenance due</h3><button class="btn-text" data-act="add" data-kind="maint" data-ac="${esc(ac.id)}">Add item</button></div>

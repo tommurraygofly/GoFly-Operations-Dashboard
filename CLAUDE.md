@@ -56,6 +56,16 @@ Instructor. It is separate from the public GoFly website.
   Warning window `docWarnDays` (30). The Worker's `COLLS` must include every synced collection.
 - Engine hours and air time are separate counters. Each maintenance item chooses which one it
   counts against (or calendar date only).
+- 100-hourly inspection is permanent on every aircraft (`fixed: '100hr'`, `ensure100()`, run in
+  `normalise`, `applyExamples`, `clearExamples`, `startSync`). An existing open item named
+  "100 hourly/hrly/hr…" is adopted with all its dates kept; otherwise a placeholder `m100-<ident>`
+  (no due hours, flagged "Not entered") is added. Duplicates: keep the one with due hours, unflag
+  the rest (never delete Tom's data). It can't be deleted, archived or marked complete; edit via
+  `SCHEMAS.maint100` (engine hours or air time). "Log 100-hourly done" (`openLog100`) records
+  date, hours at completion, who, notes into `history`/`lastDone`, sets the next due hours
+  (suggested +100, Tom confirms), optional next due date, status open, booking cleared.
+- Aircraft tab shows the hours bar (`acHoursBar`) under each aircraft, same scale and colours as
+  the overview chart.
 - Hour-based maintenance levels, the same for every aircraft (`hoursState`, `hrsLevels`):
   green "Good" above 50 hrs left, amber "Book soon" at 50 or fewer (`settings.hoursAmber`),
   red "Verify booking" at 20 or fewer (`settings.hoursRed`), red "Overdue" once passed.
