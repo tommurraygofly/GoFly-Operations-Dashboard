@@ -396,13 +396,11 @@ main{max-width:1320px;margin:0 auto;padding:var(--mainpad) var(--mainpad) 48px}
 .wx-list dt{color:var(--muted);font-size:.8rem}
 .wx-list dd{margin:0;font-weight:600;overflow-wrap:anywhere}
 .wx-raw{margin:0;font:500 .76rem/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:#0E0E0E;color:#EDEDED;padding:7px 10px;border-radius:8px;overflow-wrap:anywhere}
-.tl{display:grid;grid-template-columns:132px minmax(0,1fr);gap:1px 10px;padding:5px 2px;border-top:1px solid var(--line)}
+.tl{display:block;padding:5px 2px;border-top:1px solid var(--line)}
 .tl:first-child{border-top:0;padding-top:0}
-.tl-l{font-size:.78rem;font-weight:700}
-.tl-t{font:500 .78rem/1.45 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;overflow-wrap:anywhere}
+.tl-t{font:500 .82rem/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;overflow-wrap:anywhere}
 .tl.tempo{background:var(--soon-bg);border-radius:7px;border-top-color:transparent;padding:5px 8px;margin:3px 0}
-.tl.tempo .tl-l{color:var(--soon-ink)}
-.tl.rmk .tl-l,.tl.rmk .tl-t{color:var(--muted)}
+.tl.rmk .tl-t{color:var(--muted)}
 @media (max-width:560px){.tl{grid-template-columns:1fr}}
 .wx-foot{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:4px 12px;margin-top:12px;padding-top:8px;border-top:1px solid var(--line);font-size:.74rem;color:var(--muted)}
 .wx-foot .btn-text{font-size:.8rem;padding:2px 4px}
@@ -2802,20 +2800,13 @@ function decodeMetar(raw) {
   if (/\bFG\b/.test(body)) hz.push('Fog');
   return { f, hz };
 }
-function tafLines(raw, ref) {
-  const [main, rmk] = raw.replace(/^TAF\s+(AMD\s+|COR\s+)?/, '').trim().split(/\s+RMK\s+/);
-  const span = p => { const g = p.match(/\b(\d{2})(\d{2})\/(\d{2})(\d{2})\b/); if (!g) return ''; const a = ddhh(g[1], g[2], 0, ref), b = ddhh(g[3], g[4], 0, ref); return `${lwk(a)} ${hm24(a, TZ)}–${hm24(b, TZ)}`; };
-  const out = main.split(/\s+(?=(?:FM\d{6}|BECMG|TEMPO|INTER|PROB\d{2})\b)/).map((p, i) => {
-    let m;
-    if (i === 0) return { label: 'Main forecast', cls: 'base', text: p };
-    if ((m = p.match(/^FM(\d{2})(\d{2})(\d{2})/))) { const d = ddhh(m[1], m[2], m[3], ref); return { label: `From ${lwk(d)} ${hm24(d, TZ)}`, cls: 'fm', text: p }; }
-    if (/^BECMG/.test(p)) return { label: `Becoming ${span(p)}`, cls: 'fm', text: p };
-    if (/^TEMPO/.test(p)) return { label: `Temporarily ${span(p)}`, cls: 'tempo', text: p };
-    if (/^INTER/.test(p)) return { label: `Intermittently ${span(p)}`, cls: 'tempo', text: p };
-    if ((m = p.match(/^PROB(\d{2})/))) return { label: `${m[1]}% chance ${span(p)}`, cls: 'tempo', text: p };
-    return { label: '', cls: 'fm', text: p };
-  });
-  if (rmk) out.push({ label: 'Remarks', cls: 'rmk', text: 'RMK ' + rmk });
+/* TAF shown as written, not decoded: one line per change group (FM, BECMG, TEMPO, INTER, PROB)
+   so it is easier to read. Tom asked for this because decoded INTER/TEMPO periods could mislead. */
+function tafLines(raw) {
+  const [main, rmk] = raw.split(/\s+(?=RMK\b)/);
+  const out = main.split(/\s+(?=(?:FM\d{6}|BECMG|TEMPO|INTER|PROB\d{2})\b)/)
+    .map(p => ({ cls: /^(TEMPO|INTER|PROB)/.test(p) ? 'tempo' : 'base', text: p }));
+  if (rmk) out.push({ cls: 'rmk', text: rmk });
   return out;
 }
 /* YCDR runway wind diagram, built from the YBSU METAR wind (degrees true).
@@ -2924,11 +2915,10 @@ function wxBody() {
   if (t && (t.rawTAF || t.rawText)) {
     const raw = String(t.rawTAF || t.rawText).trim().replace(/\s+/g, ' ');
     const it = toDate(t.issueTime), vf = toDate(t.validTimeFrom), vt = toDate(t.validTimeTo);
-    const lines = tafLines(raw, vf || it || new Date());
-    const tzHz = [/\bTS|CB\b/.test(raw) && 'Thunderstorm or CB', /\bFG\b/.test(raw) && 'Fog', /\bTCU\b/.test(raw) && 'Towering cumulus'].filter(Boolean);
+    const lines = tafLines(raw);
     th = `<div class="wx-col wx-taf"><div class="wx-h"><span class="wx-tag">TAF${/^TAF\s+AMD/.test(raw) ? ' AMD' : ''}</span><span class="wx-when">${vf && vt ? `Valid ${lday(vf)} ${hm24(vf, TZ)} to ${lday(vt)} ${hm24(vt, TZ)}` : ''}${it ? ` · issued ${hm24(it, TZ)}` : ''}</span></div>
-      ${tzHz.length ? `<div class="wx-hz">${tzHz.map(h => badge('hz', 'Forecast: ' + h)).join('')}</div>` : ''}
-      <div>${lines.map(l => `<div class="tl ${l.cls}"><span class="tl-l">${esc(l.label)}</span><span class="tl-t">${esc(l.text)}</span></div>`).join('')}</div></div>`;
+      <div class="taf-raw">${lines.map(l => `<div class="tl ${l.cls}"><span class="tl-t">${esc(l.text)}</span></div>`).join('')}</div>
+      <p class="hint" style="margin-top:6px">Shown as issued, not decoded. Times in the report are UTC.</p></div>`;
   } else th = `<div class="wx-col wx-taf"><div class="wx-h"><span class="wx-tag">TAF</span></div><p class="empty">No current TAF for ${WX_ID}.</p></div>`;
   return `<div class="wx">${wind}${mh}${th}</div>
     <div class="wx-foot"><span>${WX.status === 'error' ? 'Latest update failed, showing the last report. ' : ''}From aviationweather.gov, checked ${hm24(new Date(WX.at), TZ)}. Not an official briefing: check NAIPS before flight.</span><button class="btn-text" data-act="wxRetry">Refresh</button></div>`;

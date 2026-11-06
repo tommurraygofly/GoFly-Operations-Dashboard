@@ -84,7 +84,8 @@ Instructor. It is separate from the public GoFly website.
   UTC beside it (24-hour); on phones local time sits over UTC. No separate clock card on the overview.
 - YBSU METAR and TAF widget near the top. Always labelled as not an official briefing (check
   NAIPS). Decode only what the report says; never invent or forecast weather. YCDR has no
-  METAR/TAF, so YBSU is the source.
+  METAR/TAF, so YBSU is the source. The TAF is shown as issued, not decoded (`tafLines` only splits
+  it into one line per FM/BECMG/TEMPO/INTER/PROB group): Tom found decoded INTER/TEMPO unreliable.
 - YCDR runway wind diagram (`windDiagram()`): runways 05/23 and 12/30, both 735 m, drawn to scale
   north-up from settings `rwy05Mag`/`rwy12Mag` (magnetic, default 050/120) plus `magVar`
   (default 11° E), since METAR wind is true. Shows head/crosswind per runway and highlights the
