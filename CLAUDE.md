@@ -62,8 +62,8 @@ Instructor. It is separate from the public GoFly website.
   (no due hours, flagged "Not entered") is added. Duplicates: keep the one with due hours, unflag
   the rest (never delete Tom's data). It can't be deleted, archived or marked complete; edit via
   `SCHEMAS.maint100` (engine hours or air time). "Log 100-hourly done" (`openLog100`) records
-  date, hours at completion, who, notes into `history`/`lastDone`, sets the next due hours
-  (suggested +100, Tom confirms), optional next due date, status open, booking cleared.
+  date, who, notes into `history`/`lastDone` (no hours at completion, Tom asked), sets the next due hours
+  (suggested current reading +100, must be above it; Tom confirms), optional next due date, status open, booking cleared.
 - Aircraft tab shows the hours bar (`acHoursBar`) under each aircraft, same scale and colours as
   the overview chart.
 - Hour-based maintenance levels, the same for every aircraft (`hoursState`, `hrsLevels`):

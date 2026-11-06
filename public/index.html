@@ -2196,30 +2196,26 @@ function openLog100(id) {
   const ac = acById(m.aircraftId), cur = ac ? counterVal(ac, m.counter) : null, cn = lab(COUNTERS, m.counter);
   const F = [
     { k: 'date', l: 'Date completed', t: 'date', req: true },
-    { k: 'at', l: `${cn} at completion`, t: 'hours', req: true, hint: 'Filled in from the aircraft’s current reading. Check it against the maintenance release.' },
-    { k: 'next', l: 'Next 100-hourly due at', t: 'hours', req: true, hint: 'Suggested as 100 hours after completion. Change it if the maintenance release says otherwise.' },
+    { k: 'next', l: `Next 100-hourly due at (${cn.toLowerCase()})`, t: 'hours', req: true, hint: cur != null ? `Suggested as current reading (${fmtH(cur)}) + 100. Use the figure on the maintenance release.` : 'Use the figure on the maintenance release.' },
     { k: 'nextDate', l: 'Next due date (optional)', t: 'date', hint: 'Only if the maintenance release also gives a date.' },
     { k: 'by', l: 'Completed by', t: 'text', ph: 'e.g. maintenance provider' },
     { k: 'notes', l: 'Notes', t: 'textarea', wide: true }];
-  const v0 = { date: todayISO(), at: cur, next: cur != null ? Math.round((cur + 100) * 10) / 10 : null };
+  const v0 = { date: todayISO(), next: cur != null ? Math.round((cur + 100) * 10) / 10 : null };
   openDlg(`${ac ? ac.ident + ' ' : ''}100-hourly done`, `<p class="hint" style="margin-bottom:12px">Rolls ${ac ? ac.ident + '’s' : 'the'} 100-hourly inspection forward to its next due hours (${esc(cn.toLowerCase())}).</p><div class="form">${F.map(f => fieldHTML(f, v0)).join('')}</div>
-    ${(m.history || []).length ? `<h3 class="dlg-sec">Previous 100-hourlies</h3>${[...m.history].reverse().slice(0, 6).map(h => `<div class="rowline"><span class="k">${fmtDate(h.date)}</span><span>at ${fmtH(h.at)} hrs${h.by ? ' · ' + esc(h.by) : ''}</span></div>`).join('')}` : ''}
+    ${(m.history || []).length ? `<h3 class="dlg-sec">Previous 100-hourlies</h3>${[...m.history].reverse().slice(0, 6).map(h => `<div class="rowline"><span class="k">${fmtDate(h.date)}</span><span>${h.nextDue != null ? `next due ${fmtH(h.nextDue)} hrs` : h.at != null ? `at ${fmtH(h.at)} hrs` : ''}${h.by ? ' · ' + esc(h.by) : ''}</span></div>`).join('')}` : ''}
     <p class="form-err" id="formErr" hidden></p>`,
     [cancelBtn, { label: 'Save 100-hourly', cls: 'btn btn-primary', on: () => {
       const { vals, err } = collect(F);
       if (err) { showErr(err); return; }
       if (vals.date > todayISO()) { showErr('The date completed can’t be in the future.'); return; }
-      if (vals.next <= vals.at) { showErr('Next due must be more hours than at completion.'); return; }
+      if (cur != null && vals.next <= cur) { showErr(`Next due must be more than the current reading (${fmtH(cur)} hrs).`); return; }
       closeDlg();
       withUndo('100-hourly logged', () => {
-        m.history = (m.history || []).concat([{ date: vals.date, at: vals.at, by: vals.by, notes: vals.notes, counter: m.counter, loggedBy: S.settings.userName || '' }]);
-        m.lastDone = { date: vals.date, at: vals.at };
+        m.history = (m.history || []).concat([{ date: vals.date, nextDue: vals.next, by: vals.by, notes: vals.notes, counter: m.counter, loggedBy: S.settings.userName || '' }]);
+        m.lastDone = { date: vals.date };
         m.dueHours = vals.next; m.dueDate = vals.nextDate || null; m.status = 'open'; m.bookingDate = null; delete m.example; stamp(m);
       });
     } }]);
-  let touched = false;
-  $('#f_next').addEventListener('input', () => { touched = true; });
-  $('#f_at').addEventListener('input', () => { const v = Number($('#f_at').value); if (!touched && $('#f_at').value !== '' && !isNaN(v)) $('#f_next').value = (Math.round((v + 100) * 10) / 10).toFixed(1); });
 }
 
 function openWarnings() {
@@ -3081,7 +3077,7 @@ function recMaint(m) {
   const due = [m.counter !== 'none' && m.dueHours != null ? `due at ${fmtH(m.dueHours)} hrs` : '', m.dueDate ? `due ${fmtDate(m.dueDate)}` : ''].filter(Boolean).join(' or ');
   return `<div class="rec${m.archived ? ' is-arch' : ''}">
     <button class="rec-main" data-reg="${reg(() => openEditor('maint', m.id))}"><span class="t">${esc(m.title)}${fixed ? ' <span class="b b-req">Required</span>' : ''}${exChip(m)}${m.archived ? ' <span class="b b-ok">Archived</span>' : ''}</span>
-      <span class="d">${esc(counter)}${due ? ', ' + esc(due) : fixed ? ', due hours not entered' : ''}. ${esc(lab(MAINT_ST, m.status))}${m.bookingDate ? `, booking ${fmtDate(m.bookingDate)}` : ''}.${fixed && m.lastDone ? ` Last done ${fmtDate(m.lastDone.date)} at ${fmtH(m.lastDone.at)} hrs.` : ''}</span>
+      <span class="d">${esc(counter)}${due ? ', ' + esc(due) : fixed ? ', due hours not entered' : ''}. ${esc(lab(MAINT_ST, m.status))}${m.bookingDate ? `, booking ${fmtDate(m.bookingDate)}` : ''}.${fixed && m.lastDone ? ` Last done ${fmtDate(m.lastDone.date)}.` : ''}</span>
       ${m.notes ? `<span class="n">${esc(m.notes)}</span>` : ''}</button>
     <span class="rec-side">${st.parts.map(p => badge(p.s, p.txt)).join(' ')}${fixed ? `<button class="btn btn-sm btn-primary" data-reg="${reg(() => openLog100(m.id))}">Log 100-hourly done</button>` : m.status !== 'done' && !m.archived ? `<button class="btn btn-sm btn-secondary" data-reg="${reg(() => withUndo('Marked complete', () => { m.status = 'done'; m.completedAt = nowStamp(); delete m.example; stamp(m); }))}">Mark complete</button>` : ''}</span>
   </div>`;
