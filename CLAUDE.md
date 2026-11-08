@@ -130,8 +130,14 @@ The script is split into numbered sections:
    (key `coll/id`, settings as `settings/main`; `userName` and `theme` stay per device).
    `persist()` calls `trackChanges()`, which queues differences from the last known server copy
    (`gofly-ops:sync` in localStorage: base, pending, since). Only runs once signed in. `pushNow()` sends, `pullNow()`
-   fetches every 20 s and on focus/online. Unsent local edits aren't overwritten; last write wins
-   per record. Remote changes update objects in place and re-render via `scheduleRender()`, which
+   fetches every 20 s and on focus/online. Unsent local edits aren't overwritten. Merging is per
+   field, not per record: each change sends `base` (the copy the device last saw) and the Worker
+   (`mergeRecord`) writes only the fields that device changed onto the current record, returning
+   the merged copy (`mergeIn` applies it locally). Protocol `SYNC_V` = 2; pages without it get 409
+   "reload". Edit forms save only fields the person changed, onto the latest record. Undo
+   restores only the records the action changed. Signing in reloads the saved copy and takes the
+   shared copy of every record without an unsent edit; only one tab per browser stays signed in
+   (`TAB_KEY`). (Fixes Tom's report of edits reverting hours later.) Remote changes update objects in place and re-render via `scheduleRender()`, which
    waits while a form is open or someone is typing. First connection on a device (`startSync`):
    empty database is seeded from the device; otherwise the device takes the shared data and adds
    its own non-example records the database lacks (old copy kept in `gofly-ops:v1:pre-sync`).

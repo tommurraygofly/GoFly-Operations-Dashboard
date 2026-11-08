@@ -30,7 +30,23 @@ export default {
 /* ---------- Shared records (D1) ----------
    One row per record: (coll, id) -> JSON data. Deletes are kept as tombstones (deleted = 1)
    so other devices learn about them. updated_at is server time in ms; clients ask for
-   everything changed since their last sync. Last write wins per record. */
+   everything changed since their last sync.
+   Changes are merged field by field: each change carries the copy the device last saw (base),
+   and only the fields the device actually changed are written over the current record. So a
+   device with an old copy can't put back old values for fields someone else has since changed.
+   Pages that don't send base (older versions still open somewhere) are asked to reload. */
+const SYNC_V = 2;
+const same = (a, b) => JSON.stringify(a === undefined ? null : a) === JSON.stringify(b === undefined ? null : b);
+function mergeRecord(cur, base, data) {
+  if (data == null) return null;                                   // delete
+  if (!cur || !base || typeof cur !== 'object' || typeof base !== 'object') return data;
+  const out = { ...cur };
+  new Set([...Object.keys(base), ...Object.keys(data)]).forEach(k => {
+    if (same(base[k], data[k])) return;                            // this device didn't change it
+    if (k in data) out[k] = data[k]; else delete out[k];
+  });
+  return out;
+}
 const COLLS = new Set(['aircraft', 'maintenance', 'defects', 'fuelReadings', 'fuelOrders', 'fuelIssues', 'instructors', 'tasks', 'documents', 'settings']);
 const MAX_CHANGES = 500, MAX_RECORD = 200000;
 let schemaReady = false;
@@ -152,20 +168,33 @@ async function sync(request, env, url) {
   if (request.method === 'POST') {
     let body;
     try { body = await request.json(); } catch (e) { return json({ error: 'Bad JSON' }, 400); }
-    const changes = Array.isArray(body && body.changes) ? body.changes : null;
+    if (!body || body.v !== SYNC_V) return json({ error: 'This page is out of date. Reload it to keep syncing.', reload: true }, 409);
+    const changes = Array.isArray(body.changes) ? body.changes : null;
     if (!changes || changes.length > MAX_CHANGES) return json({ error: 'Send 1 to 500 changes' }, 400);
-    const now = Date.now(), stmts = [];
     for (const c of changes) {
       if (!c || !COLLS.has(c.coll) || typeof c.id !== 'string' || !c.id || c.id.length > 100) return json({ error: 'Bad change' }, 400);
-      const data = c.data == null ? null : JSON.stringify(c.data);
+    }
+    // Current copies of the records being changed
+    const cur = new Map();
+    const sel = changes.map(c => env.DB.prepare('SELECT coll, id, data, deleted FROM records WHERE coll = ?1 AND id = ?2').bind(c.coll, c.id));
+    for (let i = 0; i < sel.length; i += 50) {
+      (await env.DB.batch(sel.slice(i, i + 50))).forEach(r => (r.results || []).forEach(row => {
+        if (!row.deleted && row.data) { try { cur.set(row.coll + '/' + row.id, JSON.parse(row.data)); } catch (e) {} }
+      }));
+    }
+    const now = Date.now(), stmts = [], merged = [];
+    for (const c of changes) {
+      const m = mergeRecord(cur.get(c.coll + '/' + c.id), c.base, c.data);
+      const data = m == null ? null : JSON.stringify(m);
       if (data && data.length > MAX_RECORD) return json({ error: 'Record too large' }, 413);
+      merged.push({ coll: c.coll, id: c.id, data });
       stmts.push(env.DB.prepare(
         'INSERT INTO records (coll, id, data, updated_at, updated_by, deleted) VALUES (?1, ?2, ?3, ?4, ?5, ?6) ' +
         'ON CONFLICT (coll, id) DO UPDATE SET data = excluded.data, updated_at = excluded.updated_at, updated_by = excluded.updated_by, deleted = excluded.deleted'
       ).bind(c.coll, c.id, data, now, user, data == null ? 1 : 0));
     }
     for (let i = 0; i < stmts.length; i += 50) await env.DB.batch(stmts.slice(i, i + 50));
-    return json({ now, user, applied: stmts.length });
+    return json({ now, user, applied: stmts.length, merged });
   }
   return json({ error: 'Method not allowed' }, 405);
 }

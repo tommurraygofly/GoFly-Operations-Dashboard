@@ -1020,9 +1020,16 @@ function persist() { S.meta.savedAt = nowStamp(); Store.ok = Store.adapter.save(
 function commit() { persist(); render(); }
 function stamp(r) { r.updatedAt = nowStamp(); r.updatedBy = S.settings.userName || ''; }
 function withUndo(msg, mutate) {
-  const snap = JSON.stringify(S);
+  const before = snapshot();
   mutate(); commit();
-  toast(msg, () => { S = normalise(JSON.parse(snap)); commit(); });
+  const after = snapshot(), keys = Object.keys({ ...before, ...after }).filter(k => before[k] !== after[k]);
+  toast(msg, () => {
+    keys.forEach(k => {
+      const j = k.indexOf('/'), coll = k.slice(0, j), id = k.slice(j + 1);
+      if (k in before) upsertLocal(coll, id, JSON.parse(before[k])); else removeLocal(coll, id);
+    });
+    commit();
+  });
 }
 
 /* ---------- 3a. Sign-in ----------
@@ -1088,8 +1095,15 @@ async function lgSubmit() {
   LG.fails = 0;
   signIn(name, j.token);
 }
+const TAB_KEY = 'gofly-ops:tab', TAB_ID = Math.random().toString(36).slice(2);
+window.addEventListener('storage', e => {
+  if (e.key === TAB_KEY && Who && e.newValue && !e.newValue.startsWith(TAB_ID + ' ')) lockApp('The dashboard was opened in another tab or window. Sign in again to use it here.');
+});
 function signIn(name, token) {
   Who = { name, token };
+  try { localStorage.setItem(TAB_KEY, TAB_ID + ' ' + Date.now()); } catch (e) {}
+  const saved = Store.adapter.load(); if (saved) S = normalise(saved);
+  Sync.meta = null;
   S.settings.userName = name;
   try { Store.adapter.save(S); } catch (e) {}
   $('#login').classList.remove('show'); $('#login').innerHTML = '';
@@ -1127,6 +1141,7 @@ document.addEventListener('keydown', e => {
    Each device keeps a full copy, so it still works offline and catches up later.
    Name and appearance stay per device. */
 const SYNC_KEY = 'gofly-ops:sync';
+const SYNC_V = 2;   // sync protocol: field-level merge on the server
 const SYNC_COLLS = ['aircraft', ...LISTS];
 const DEVICE_SETTINGS = ['userName', 'theme'];
 const Sync = { state: 'local', user: '', lastOk: 0, busy: false, meta: null, pushT: null };
@@ -1168,6 +1183,7 @@ async function syncApi(method, body, qs = '') {
     throw Object.assign(new Error('auth'), { auth: true });
   }
   if (r.status === 404 || r.status === 405 || r.status === 503) throw Object.assign(new Error('missing'), { missing: true });
+  if (r.status === 409) { if (!Sync.reloadAsked) { Sync.reloadAsked = true; toast('The dashboard has been updated. Reload the page to keep syncing.'); } throw Object.assign(new Error('reload'), { offline: true }); }
   if (!(r.headers.get('content-type') || '').includes('json')) throw Object.assign(new Error('not json'), { offline: true });
   const j = await r.json();
   if (!r.ok) throw new Error(j.error || 'HTTP ' + r.status);
@@ -1217,22 +1233,42 @@ function applyRemote(recs) {
   });
   return changed;
 }
+// The server kept someone else's newer value for some fields: copy those into the local record,
+// unless this device has changed that field again since sending.
+function mergeIn(k, sent, mg) {
+  const j = k.indexOf('/'), coll = k.slice(0, j), id = k.slice(j + 1);
+  const cur = coll === 'settings' ? S.settings : (S[coll] || []).find(r => r.id === id);
+  if (!cur) return false;
+  let changed = false;
+  new Set([...Object.keys(sent), ...Object.keys(mg)]).forEach(f => {
+    if (coll === 'settings' && DEVICE_SETTINGS.includes(f)) return;
+    if (JSON.stringify(sent[f]) === JSON.stringify(mg[f]) || JSON.stringify(cur[f]) !== JSON.stringify(sent[f])) return;
+    if (f in mg) cur[f] = mg[f]; else delete cur[f];
+    changed = true;
+  });
+  return changed;
+}
 async function pushNow() {
   const M = syncMeta();
   const keys = Object.keys(M.pending);
+  let gotMerged = false;
   if (!M.synced || !keys.length || Sync.busy) return;
   Sync.busy = true; setSync('syncing');
   try {
     for (let i = 0; i < keys.length; i += 200) {
       const chunk = keys.slice(i, i + 200), sent = {};
-      const changes = chunk.map(k => { sent[k] = M.pending[k]; const j = k.indexOf('/'); return { coll: k.slice(0, j), id: k.slice(j + 1), data: sent[k] == null ? null : JSON.parse(sent[k]) }; });
-      await syncApi('POST', { changes });
+      const changes = chunk.map(k => { sent[k] = M.pending[k]; const j = k.indexOf('/'); return { coll: k.slice(0, j), id: k.slice(j + 1), data: sent[k] == null ? null : JSON.parse(sent[k]), base: k in M.base ? JSON.parse(M.base[k]) : null }; });
+      const res = await syncApi('POST', { v: SYNC_V, changes });
+      const merged = {}; (res.merged || []).forEach(x => { merged[x.coll + '/' + x.id] = x.data; });
       chunk.forEach(k => {
-        if (sent[k] == null) delete M.base[k]; else M.base[k] = sent[k];
+        const mg = k in merged ? merged[k] : sent[k];
+        if (mg == null) delete M.base[k]; else M.base[k] = mg;
+        if (mg != null && sent[k] != null && mg !== sent[k] && mergeIn(k, JSON.parse(sent[k]), JSON.parse(mg))) gotMerged = true;
         if (M.pending[k] === sent[k]) delete M.pending[k];
       });
       saveSyncMeta();
     }
+    if (gotMerged) { Store.ok = Store.adapter.save(S); trackChanges(); scheduleRender(); }
     Sync.lastOk = Date.now(); Sync.busy = false; setSync('ok');
   } catch (e) { Sync.busy = false; setSync(e.auth || e.missing ? 'local' : 'offline'); }
 }
@@ -1266,8 +1302,18 @@ async function startSync() {
   catch (e) { setSync(e.auth || e.missing ? 'local' : 'offline'); return; }
   Sync.user = r.user || '';
   if (M.synced) {
-    // Already linked: catch up and send anything waiting.
-    applyRemote(r.records); M.since = r.now; saveSyncMeta();
+    // Already linked: take the shared copy of every record without an unsent edit here,
+    // then send anything waiting.
+    const local = snapshot();
+    r.records.forEach(x => {
+      const k = x.coll + '/' + x.id;
+      if (k in M.pending) return;
+      const val = x.deleted ? null : x.data;
+      if (val == null) { delete M.base[k]; removeLocal(x.coll, x.id); return; }
+      M.base[k] = val;
+      if (local[k] !== val) { try { upsertLocal(x.coll, x.id, JSON.parse(val)); } catch (e) {} }
+    });
+    M.since = r.now; saveSyncMeta();
     S.meta.savedAt = nowStamp(); Store.ok = Store.adapter.save(S); trackChanges();
     Sync.lastOk = Date.now(); setSync('ok'); scheduleRender();
     return;
@@ -2106,7 +2152,7 @@ function openEditor(kind, id, defaults) {
   const list = S[sc.coll];
   const existing = id ? list.find(x => x.id === id) : null;
   if (id && !existing) { toast('That record no longer exists.'); return; }
-  const r = existing ? { ...existing } : { ...(sc.defaults ? sc.defaults() : {}), ...(defaults || {}) };
+  let r = existing ? JSON.parse(JSON.stringify(existing)) : { ...(sc.defaults ? sc.defaults() : {}), ...(defaults || {}) };
   const name = sc.title.charAt(0).toLowerCase() + sc.title.slice(1);
   const body = `${existing && existing.example ? '<p class="note-ex">This is example data. When you save changes it becomes your own record.</p>' : ''}
     <div class="form">${sc.fields.map(f => fieldHTML(f, r)).join('')}</div>
@@ -2129,7 +2175,12 @@ function openEditor(kind, id, defaults) {
     if (err) { showErr(err); return; }
     const verr = sc.validate ? sc.validate(vals) : '';
     if (verr) { showErr(verr); return; }
-    Object.assign(r, vals);
+    if (existing) {
+      const live = list.find(x => x.id === id) || existing, opened = r;
+      r = { ...live };
+      const nv = v => JSON.stringify(v === '' || v === undefined ? null : v);
+      Object.keys(vals).forEach(k => { if (nv(vals[k]) !== nv(opened[k])) r[k] = vals[k]; });
+    } else Object.assign(r, vals);
     delete r.example;
     if (sc.beforeSave) sc.beforeSave(r, existing);
     stamp(r);
@@ -3379,7 +3430,7 @@ function tick() {
   const raw = Store.adapter.load();
   if (raw) S = normalise(raw);
   else { S = emptyState(); applyExamples(); }
-  persist();
+  S.meta.savedAt = nowStamp(); Store.ok = Store.adapter.save(S);
   applyTheme();
   tick(); setInterval(tick, 1000);
   route();
