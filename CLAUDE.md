@@ -36,14 +36,17 @@ Instructor. It is separate from the public GoFly website.
 - Never invent compliance rules or calculate due dates. Tom enters all dates and requirements.
   The one exception is the instructor check intervals Tom gave (RAAus), which are editable in
   settings:
-  - Junior: S&P (Standards and Proficiency) check every 90 days (`spDays`) and instructor
-    renewal every 24 months (`renewJuniorMonths`).
-  - Senior and Supervising Senior: SI flight review every 12 months (`renewSeniorMonths`).
-  - DCFI and CFI: SI flight review every 24 months (`renewChiefMonths`).
-  - S&P checks are juniors only (`needsSP`); senior grades show "Not required".
+  GoFly's procedure from November 2026 (Tom). Currency checks (stored as `lastCheck`, check
+  type `sp`; older history entries keep their "S&P check" label):
+  - Junior: currency check every 90 days (RAAus, `spDays`) and instructor renewal every
+    24 months (`renewJuniorMonths`).
+  - Senior and Supervising Senior: currency check every 6 months (`cxSeniorMonths`) and SI
+    flight review every 12 months (`renewSeniorMonths`).
+  - DCFI and CFI: no currency check ("Not required", `needsSP` false); SI flight review every
+    24 months (`renewChiefMonths`).
   Next due = last completed + interval (`spDue`, `renewDue`); an expiry typed from the
   certificate (`renewalExpiry`) overrides the calculated date. Warning windows: `dueSoonDays`
-  for S&P, `renewWarnDays` (30) for renewals and SI flight reviews.
+  for currency checks, `renewWarnDays` (30) for renewals and SI flight reviews.
 - Instructor expiries (`EXPIRIES`, `expState`): RAAus membership and CASA medical are mandatory
   (missing = flagged); first aid and CPR are optional (tracked once entered). Plus free-form
   "other expiries" (`quals`). Warning window `expiryWarnDays` (30).
@@ -155,7 +158,7 @@ The script is split into numbered sections:
    has `sev` (overdue, alert, low, soon, missing, info), `src`, `basis` ('date' or 'hours') and
    `area` (tab).
    Instructor profiles: `grade` (junior, senior, supervising, dcfi, cfi), `raausNo`, `lastCheck`
-   (last S&P), `lastRenewal` (renewal or SI flight review), `renewalExpiry`, `checks` history (logged with `logCheck`, shown in
+   (last currency check), `lastRenewal` (renewal or SI flight review), `renewalExpiry`, `checks` history (logged with `logCheck`, shown in
    `openInstructor`). Old free-text `role` values are mapped to a grade in `normalise()`.
 5. **Schemas**: field lists in `SCHEMAS` generate every add/edit form via `openEditor(kind, id)`.
    To add a field, add it to the schema; the form, saving and validation follow.
