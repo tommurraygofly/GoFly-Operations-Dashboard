@@ -590,6 +590,8 @@ main{max-width:1320px;margin:0 auto;padding:var(--mainpad) var(--mainpad) 48px}
 .ac-hrs .hint{margin-top:2px}
 @media (max-width:760px){.ac-hrs{padding-left:24px}}
 
+.brief-frame{width:100%;height:65vh;border:1px solid var(--line);border-radius:10px;background:#f4f4f4}
+
 /* ===== Defect photos + severity ===== */
 .ph-grid{display:flex;flex-wrap:wrap;gap:8px}
 .ph-grid:empty{display:none}
@@ -867,7 +869,7 @@ function emptyState() {
   return {
     schema: SCHEMA,
     settings: {
-      userName: '', theme: 'auto', dueSoonDays: 14, hoursAmber: 50, hoursRed: 20, cautionHrs: 30, sparingHrs: 15, fuelThreshold: 1500, tankCapacity: 5000, fuelOrderAt: 1000, rwy05Mag: 50, rwy12Mag: 120, magVar: 11, spDays: 90, cxSeniorMonths: 6, renewJuniorMonths: 24, renewSeniorMonths: 12, renewChiefMonths: 24, expiryWarnDays: 30, docWarnDays: 30, renewWarnDays: 30,
+      userName: '', theme: 'auto', dueSoonDays: 14, hoursAmber: 50, hoursRed: 20, cautionHrs: 30, sparingHrs: 15, fuelThreshold: 1500, tankCapacity: 5000, fuelOrderAt: 1000, rwy05Mag: 50, rwy12Mag: 120, magVar: 11, spDays: 90, cxSeniorMonths: 6, renewJuniorMonths: 24, renewSeniorMonths: 12, renewChiefMonths: 24, expiryWarnDays: 30, docWarnDays: 30, renewWarnDays: 30, weeklyEmailOn: 'yes', weeklyEmailDay: '1', weeklyEmailTo: '',
       orderTemplate: { product: 'Premium Unleaded 98', litres: 3500, supplier: 'IOR', notes: '' }
     },
     aircraft: AIRCRAFT_IDS.map(blankAircraft),
@@ -1961,7 +1963,10 @@ const SCHEMAS = {
       { k: 'rwy12Mag', l: 'YCDR runway 12 heading (magnetic)', t: 'number', suffix: '°', hint: 'Runway 30 is the reciprocal.' },
       { k: 'magVar', l: 'Magnetic variation (east)', t: 'number', suffix: '°', hint: 'METAR wind is in degrees true. About 11° E at Caloundra; check current charts.' },
       { k: 'fuelOrderAt', l: 'Forecast: order when the tank reaches', t: 'litres', req: true, hint: 'The fuel forecast suggests ordering around this level (a safe buffer).' },
-      { k: 'tankCapacity', l: 'IOR tank max safe fill', t: 'litres', req: true, hint: 'Top of the tank gauge. Refills that would go above this are flagged.' }
+      { k: 'tankCapacity', l: 'IOR tank max safe fill', t: 'litres', req: true, hint: 'Top of the tank gauge. Refills that would go above this are flagged.' },
+      { k: 'weeklyEmailOn', l: 'Weekly email', t: 'select', o: [['yes', 'On'], ['no', 'Off']] },
+      { k: 'weeklyEmailDay', l: 'Send on', t: 'select', o: [['1', 'Monday'], ['2', 'Tuesday'], ['3', 'Wednesday'], ['4', 'Thursday'], ['5', 'Friday'], ['6', 'Saturday'], ['0', 'Sunday']], hint: 'Arrives between 6 and 7 am Brisbane time.' },
+      { k: 'weeklyEmailTo', l: 'Send to', t: 'textarea', wide: true, ph: 'name@example.com, another@example.com', hint: 'Email addresses, separated by commas or new lines.' }
     ]
   }
 };
@@ -2483,8 +2488,21 @@ $('#importFile').addEventListener('change', async e => {
   S = normalise(data); applyTheme(); closeDlg(); commit(); toast('Backup imported');
 });
 
+/* Weekly email preview: the same email the Google script sends (built by the Worker at
+   /api/weekly-brief from the shared records), shown in a sandboxed frame. */
+async function previewBrief() {
+  let j = null;
+  try {
+    const r = await fetch('/api/weekly-brief', { cache: 'no-store', headers: { Authorization: 'Bearer ' + (Who && Who.token) } });
+    if ((r.headers.get('content-type') || '').includes('json')) j = await r.json();
+    if (!r.ok) throw new Error(j && j.error || 'HTTP ' + r.status);
+  } catch (e) { toast('Couldn’t load the preview. ' + (e.message === 'Failed to fetch' ? 'Check your connection.' : e.message)); return; }
+  openDlg('Weekly email preview', `<p class="hint" style="margin-bottom:10px">${j.to.length ? `Goes to ${esc(j.to.join(', '))}` : 'No one to send to yet: add email addresses in Data & settings'} · ${esc(j.reason)}. Built from saved, shared data; unsaved settings changes aren’t included.</p>
+    <iframe class="brief-frame" sandbox title="Weekly email preview"></iframe>`, [{ label: 'Back to settings', cls: 'btn btn-secondary', on: openSettings }, { label: 'Close', cls: 'btn btn-primary', on: closeDlg }]);
+  $('#dlgBody .brief-frame').srcdoc = j.html;
+}
 function openSettings() {
-  const s = S.settings;
+  const s = S.settings, opened = JSON.parse(JSON.stringify(S.settings));
   const pend = Object.keys(syncMeta().pending).length;
   const status = Sync.state === 'ok' || (Sync.state === 'syncing' && syncMeta().synced)
     ? `Shared: everyone who signs in sees the same records. Last synced ${fmtStamp(Sync.lastOk)}. Your name and appearance are kept per device.`
@@ -2497,10 +2515,13 @@ function openSettings() {
     ['IOR fuel tank', ['fuelThreshold', 'tankCapacity', 'fuelOrderAt']],
     ['Documents and expiries', ['docWarnDays']],
     ['YCDR runways and wind', ['rwy05Mag', 'rwy12Mag', 'magVar']],
+    ['Weekly email', ['weeklyEmailOn', 'weeklyEmailDay', 'weeklyEmailTo']],
     ['This device', ['theme']]
   ];
   const fby = k => SCHEMAS.settings.fields.find(f => f.k === k);
-  const body = `${groups.map(([t, ks], i) => `<h3 class="dlg-sec"${i ? '' : ' style="margin-top:0"'}>${esc(t)}</h3><div class="form">${ks.map(fby).filter(Boolean).map(f => fieldHTML(f, s)).join('')}</div>`).join('')}<p class="form-err" id="formErr" hidden></p>
+  const body = `${groups.map(([t, ks], i) => `<h3 class="dlg-sec"${i ? '' : ' style="margin-top:0"'}>${esc(t)}</h3><div class="form">${ks.map(fby).filter(Boolean).map(f => fieldHTML(f, s)).join('')}</div>${t === 'Weekly email' ? `
+    <p class="hint" style="margin-top:8px">A briefing on fuel level and use, each aircraft’s hours, average hours a week and the maintenance forecast, sent from GoFly’s Gmail. Needs a one-off setup: see tools/weekly-email.gs in the GitHub repo.</p>
+    <div class="btn-row"><button type="button" class="btn btn-secondary" id="xBrief">Preview email</button><button type="button" class="btn-text" id="xKey">Make a key</button></div><p class="hint" id="keyOut" hidden></p>` : ''}`).join('')}<p class="form-err" id="formErr" hidden></p>
     <h3 class="dlg-sec">Your data</h3>
     <p class="hint">${esc(status)}</p>
     <p class="hint" style="margin-top:6px">Signed in as <strong>${esc(Who ? Who.name : '')}</strong>. Changes are recorded under this name. <button type="button" class="btn-text" id="xLock" style="padding:0 4px;min-height:0">Switch person</button></p>
@@ -2516,11 +2537,25 @@ function openSettings() {
     if (err) { showErr(err); return; }
     if (vals.hoursRed >= vals.hoursAmber) { showErr('The maintenance red level must be fewer hours than the amber level.'); return; }
     if (vals.sparingHrs >= vals.cautionHrs) { showErr('“Use sparingly” must be fewer hours than “Use caution”.'); return; }
-    Object.assign(s, vals);
+    const mails = String(vals.weeklyEmailTo || '').split(/[\s,;]+/).filter(Boolean);
+    const badMail = mails.find(x => !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(x));
+    if (badMail) { showErr(`“${badMail}” doesn’t look like an email address.`); return; }
+    if (mails.length > 30) { showErr('The weekly email can go to up to 30 people.'); return; }
+    vals.weeklyEmailTo = mails.join(', ');
+    // Only the settings changed here are saved, so someone else's change made meanwhile is kept.
+    const nv = v => JSON.stringify(v === '' || v === undefined ? null : v);
+    Object.keys(vals).forEach(k => { if (nv(vals[k]) !== nv(opened[k])) s[k] = vals[k]; });
     applyTheme(); closeDlg(); commit(); toast('Settings saved');
   } }]);
   $('#xExport').onclick = exportData;
   $('#xLock').onclick = () => lockApp();
+  $('#xBrief').onclick = previewBrief;
+  $('#xKey').onclick = () => {
+    const k = [...crypto.getRandomValues(new Uint8Array(24))].map(x => x.toString(16).padStart(2, '0')).join('');
+    const o = $('#keyOut'); o.hidden = false;
+    o.innerHTML = `New key: <code style="user-select:all;word-break:break-all">${k}</code><br>Paste it in two places: the Cloudflare secret BRIEF_KEY and the Google script property BRIEF_KEY. It isn’t saved here.`;
+    if (navigator.clipboard) navigator.clipboard.writeText(k).then(() => toast('Key copied')).catch(() => {});
+  };
   if ($('#xSync')) $('#xSync').onclick = () => { closeDlg(); syncTick().then(() => toast(Sync.state === 'ok' ? 'Synced' : 'Couldn’t reach the shared database')); };
   $('#xImport').onclick = () => $('#importFile').click();
   if ($('#xClear')) $('#xClear').onclick = async () => {

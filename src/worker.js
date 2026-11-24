@@ -5,6 +5,8 @@
 //   POST /api/logout       ends that session.
 //   GET/POST /api/sync     shared records in the D1 database (binding DB). Needs a session token.
 //   POST /api/files        store a photo (defects); GET/DELETE /api/files/<id>. Needs a session token.
+//   GET  /api/weekly-brief the weekly email (fuel, aircraft hours, forecasts). Needs the BRIEF_KEY
+//                          header (Google Apps Script in tools/weekly-email.gs) or a session token.
 // The PIN is the only lock (no Cloudflare Access), so:
 //   - the PIN is never in this code: it's the Cloudflare secret GOFLY_PIN. If it isn't set, nobody
 //     can sign in;
@@ -23,6 +25,7 @@ export default {
     if (url.pathname === '/api/logout') return logout(request, env);
     if (url.pathname === '/api/sync') return sync(request, env, url);
     if (url.pathname === '/api/files' || url.pathname.startsWith('/api/files/')) return files(request, env, url);
+    if (url.pathname === '/api/weekly-brief') return weeklyBrief(request, env, url);
     return env.ASSETS.fetch(request);
   }
 };
@@ -271,4 +274,224 @@ async function weather(ctx) {
   });
   if (status === 200) ctx.waitUntil(cache.put(key, new Response(JSON.stringify(body), { headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': `max-age=${WX_TTL}` } })));
   return res;
+}
+
+/* ---------- Weekly email brief ----------
+   GET /api/weekly-brief builds the weekly email from the shared records: the IOR fuel tank
+   (level, average daily burn, order forecast) and each aircraft's hours, average hours a week
+   and maintenance forecast. Two ways in:
+   - The Google Apps Script in tools/weekly-email.gs (Tom's Gmail sends it). It sends the header
+     X-Brief-Key, which must match the Cloudflare secret BRIEF_KEY (at least 24 characters).
+     It asks every morning; "send" is true only on the day chosen in Data & settings, or with
+     ?force=1 (the script's test).
+   - A signed-in session (Bearer token): the preview in Data & settings.
+   Example records are left out. The forecasts copy the dashboard's own (learnRate, fuelBurn,
+   fuelForecast, hourItemFor and maintForecast in public/index.html): keep them in step. */
+const TZ = 'Australia/Brisbane', DAY_MS = 864e5;
+const AIRCRAFT_IDS = ['7788', '1675', '8582', '8515', '8514'];
+const AC_AVAIL = { serviceable: 'Available', restricted: 'Available with restrictions', maintenance: 'In maintenance', unserviceable: 'Unserviceable' };
+const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const bneToday = () => new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+const dayT = iso => Date.parse(iso + 'T00:00:00Z');
+const addDays = (iso, n) => new Date(dayT(iso) + n * DAY_MS).toISOString().slice(0, 10);
+const fmtDate = iso => { if (!iso) return '—'; const [y, m, d] = iso.split('-'); return `${d}/${m}/${y}`; };
+const fmtWk = iso => `${new Intl.DateTimeFormat('en-AU', { timeZone: 'UTC', weekday: 'short' }).format(new Date(iso + 'T00:00:00Z'))} ${fmtDate(iso)}`;
+const fmtL = n => n == null || isNaN(n) ? '—' : Math.round(Number(n)).toLocaleString('en-AU') + ' L';
+const fmtH = n => n == null || isNaN(n) ? '—' : Number(n).toLocaleString('en-AU', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const plural = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
+const escH = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const parseEmails = t => String(t || '').split(/[\s,;]+/).map(x => x.trim()).filter(x => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(x)).slice(0, 30);
+
+function learnRate(points, dir) {
+  let wSum = 0, rSum = 0, n = 0, span = 0;
+  const now = Date.now();
+  for (let i = 1; i < points.length; i++) {
+    const a = points[i - 1], b = points[i], days = (b.t - a.t) / DAY_MS;
+    if (days <= 0) continue;
+    const dv = (b.v - a.v) * dir;
+    if (dv < 0) continue;
+    const w = Math.pow(0.5, Math.max(0, now - b.t) / DAY_MS / 30) * Math.min(days, 14);
+    rSum += w * dv / days; wSum += w; n++; span += days;
+  }
+  if (!n || !wSum) return null;
+  return { rate: rSum / wSum, n, span, conf: n >= 3 && span >= 7 ? 'good' : 'early' };
+}
+
+async function loadShared(env) {
+  const S = { settings: {}, aircraft: [], maintenance: [], fuelReadings: [], fuelOrders: [] };
+  const rows = await env.DB.prepare("SELECT coll, data FROM records WHERE deleted = 0 AND coll IN ('settings', 'aircraft', 'maintenance', 'fuelReadings', 'fuelOrders')").all();
+  (rows.results || []).forEach(r => {
+    let d; try { d = JSON.parse(r.data); } catch (e) { return; }
+    if (!d || d.example) return;
+    if (r.coll === 'settings') S.settings = d; else S[r.coll].push(d);
+  });
+  S.settings = { hoursAmber: 50, fuelOrderAt: 1000, tankCapacity: 5000, fuelThreshold: 1500, weeklyEmailOn: 'yes', weeklyEmailDay: '1', weeklyEmailTo: '', ...S.settings };
+  return S;
+}
+
+function briefData(S, today) {
+  const st = S.settings, daysTo = iso => Math.round((dayT(iso) - dayT(today)) / DAY_MS);
+  // Fuel
+  const readings = S.fuelReadings.filter(r => !r.archived && r.date && r.litres != null)
+    .sort((a, b) => String(a.date).localeCompare(String(b.date)) || String(a.createdAt).localeCompare(String(b.createdAt)));
+  const latest = readings[readings.length - 1] || null;
+  const byDay = new Map(); readings.forEach(r => byDay.set(r.date, Number(r.litres)));
+  const pts = [...byDay].map(([d, v]) => ({ t: dayT(d), v }));
+  const segs = [];
+  for (let i = 1; i < pts.length; i++) {
+    const a = pts[i - 1], b = pts[i], days = (b.t - a.t) / DAY_MS;
+    if (days > 0 && b.v <= a.v) segs.push({ t0: a.t, t1: b.t, days, used: a.v - b.v });
+  }
+  const avg = from => {
+    let used = 0, days = 0;
+    segs.forEach(sg => { if (sg.t1 <= from) return; const f = (sg.t1 - Math.max(sg.t0, from)) / (sg.t1 - sg.t0); used += sg.used * f; days += sg.days * f; });
+    return days >= 1 ? used / days : null;
+  };
+  const L = learnRate(pts, -1);
+  let burn = null;
+  if (segs.length) {
+    const total = segs.reduce((x, s) => x + s.used, 0), totalDays = segs.reduce((x, s) => x + s.days, 0);
+    burn = { learned: L ? L.rate : total / totalDays, early: !L || L.conf === 'early', d7: avg(dayT(today) - 7 * DAY_MS), d30: avg(dayT(today) - 30 * DAY_MS) };
+  }
+  let fc = null;
+  if (latest && L && L.rate >= 1) {
+    const target = Number(st.fuelOrderAt ?? 1000), since = Math.max(0, -daysTo(latest.date));
+    const estNow = Math.max(0, latest.litres - L.rate * since);
+    const orderDate = addDays(latest.date, Math.floor(Math.max(0, latest.litres - target) / L.rate));
+    fc = { rate: L.rate, estNow, target, orderDate, dLeft: Math.max(0, daysTo(orderDate)), past: estNow <= target, daysOfFuel: Math.floor(estNow / L.rate) };
+  }
+  const order = S.fuelOrders.filter(o => !o.archived && !['delivered', 'cancelled', 'draft'].includes(o.status))
+    .sort((a, b) => String(a.confirmedDate || a.requestedDate || '9').localeCompare(String(b.confirmedDate || b.requestedDate || '9')))[0] || null;
+  const fuel = { latest, burn, fc, order, max: Number(st.tankCapacity) || 5000, reorder: Number(st.fuelThreshold) || 1500,
+    low: !!(latest && latest.litres < Number(st.fuelThreshold)), readings: pts.length };
+
+  // Aircraft
+  const amber = Number(st.hoursAmber ?? 50);
+  const ord = a => { const i = AIRCRAFT_IDS.indexOf(a.ident); return i < 0 ? 99 : i; };
+  const aircraft = S.aircraft.filter(a => !a.archived).sort((a, b) => ord(a) - ord(b) || String(a.ident).localeCompare(String(b.ident))).map(ac => {
+    const cv = c => c === 'air' ? ac.airTime : c === 'engine' ? ac.engineHours : null;
+    const items = S.maintenance.filter(m => m.aircraftId === ac.id && !m.archived && m.status !== 'done' && m.counter !== 'none' && m.dueHours != null)
+      .map(m => { const cur = cv(m.counter); return { m, rem: cur == null ? null : Math.round((m.dueHours - cur) * 10) / 10 }; })
+      .filter(x => x.rem != null).sort((a, b) => a.rem - b.rem);
+    const next = items[0] || null;
+    const fixedNoHours = !next && S.maintenance.some(m => m.aircraftId === ac.id && m.fixed === '100hr' && !m.archived);
+    const key = next && next.m.counter === 'air' ? 'a' : 'e';
+    const log = (Array.isArray(ac.hoursLog) ? ac.hoursLog : []).filter(x => x && x.d && x[key] != null).sort((a, b) => a.d.localeCompare(b.d));
+    const R = learnRate(log.map(x => ({ t: dayT(x.d), v: Number(x[key]) })), 1);
+    const perWeek = R && R.rate >= 0.01 ? R.rate * 7 : null;
+    let f = null;
+    if (next && perWeek) {
+      const since = log.length ? Math.max(0, -daysTo(log[log.length - 1].d)) : 0;
+      const remNow = next.rem - R.rate * since;
+      f = { remNow, dueDate: addDays(today, Math.max(0, Math.round(remNow / R.rate))), bookDate: addDays(today, Math.max(0, Math.round((remNow - amber) / R.rate))), bookNow: remNow <= amber };
+    }
+    return { ident: ac.ident, type: ac.type || '', status: AC_AVAIL[ac.status] || '', engine: ac.engineHours ?? null, air: ac.airTime ?? null,
+      updated: log.length ? log[log.length - 1].d : null, fixedNoHours, perWeek, perWeekKey: key, early: !R || R.conf === 'early', next, f,
+      booked: !!(next && ['booked', 'progress'].includes(next.m.status)), bookingDate: next ? next.m.bookingDate || null : null };
+  });
+  return { today, fuel, aircraft, amber, red: Number(st.hoursRed ?? 20) };
+}
+
+function briefEmail(B) {
+  const O = '#F15A26', INK = '#111111', MUT = '#666666', LINE = '#e4e4e4';
+  const pill = (txt, bg, fg) => `<span style="display:inline-block;padding:2px 8px;border-radius:999px;background:${bg};color:${fg};font-size:12px;font-weight:700">${escH(txt)}</span>`;
+  const red = t => pill(t, '#fde8e8', '#b42318'), amb = t => pill(t, '#fdeee6', '#b54708'), grn = t => pill(t, '#e7f6ec', '#1b7a3d'), gry = t => pill(t, '#f0f0f0', '#555555');
+  const h2 = t => `<h2 style="margin:26px 0 10px;font:800 italic 18px/1.2 Arial,Helvetica,sans-serif;text-transform:uppercase;letter-spacing:.02em;color:${INK};border-bottom:2px solid ${O};padding-bottom:6px">${escH(t)}</h2>`;
+  const row = (k, v) => `<tr><td style="padding:6px 12px 6px 0;color:${MUT};font-size:14px;vertical-align:top;white-space:nowrap">${escH(k)}</td><td style="padding:6px 0;font-size:14px;color:${INK}">${v}</td></tr>`;
+  const T = [], F = B.fuel;
+  const title = `GoFly weekly brief · ${fmtWk(B.today)}`;
+  T.push(title, '');
+
+  // Fuel
+  let fuelH = h2('IOR fuel tank');
+  T.push('IOR FUEL TANK');
+  if (!F.latest) { fuelH += `<p style="color:${MUT};font-size:14px">No fuel readings logged yet.</p>`; T.push('No fuel readings logged yet.'); }
+  else {
+    const pct = Math.round(F.latest.litres / F.max * 100);
+    fuelH += `<p style="margin:0 0 4px;font:700 34px/1.1 Arial,Helvetica,sans-serif;color:${INK}">${escH(fmtL(F.latest.litres))} <span style="font-size:14px;font-weight:400;color:${MUT}">${pct}% of ${escH(fmtL(F.max))} max</span></p>
+      <p style="margin:0 0 10px;font-size:13px;color:${MUT}">Last reading ${escH(fmtWk(F.latest.date))}${F.latest.updatedBy ? ' by ' + escH(F.latest.updatedBy) : ''} ${F.low ? red('Low stock') : grn('Above reorder level')}</p>`;
+    T.push(`Level: ${fmtL(F.latest.litres)} (${pct}% of ${fmtL(F.max)}), read ${fmtWk(F.latest.date)}${F.low ? ' · LOW STOCK' : ''}`);
+    const rows = [];
+    if (F.burn) {
+      rows.push(row('Average daily use', `<b>~${escH(fmtL(F.burn.learned))} a day</b> (last 7 days ${escH(F.burn.d7 == null ? '—' : fmtL(F.burn.d7))}, last 30 days ${escH(F.burn.d30 == null ? '—' : fmtL(F.burn.d30))})${F.burn.early ? ' <span style="color:#666">early estimate</span>' : ''}`));
+      T.push(`Average daily use: ~${fmtL(F.burn.learned)} a day (7 days ${F.burn.d7 == null ? '—' : fmtL(F.burn.d7)}, 30 days ${F.burn.d30 == null ? '—' : fmtL(F.burn.d30)})`);
+    } else { rows.push(row('Average daily use', 'Needs at least two readings a few days apart')); T.push('Average daily use: needs at least two readings a few days apart'); }
+    if (F.fc) {
+      rows.push(row('Estimated now', `~${escH(fmtL(F.fc.estNow))}, about ${escH(plural(F.fc.daysOfFuel, 'day'))} of fuel at this rate`));
+      const w = F.order && (F.order.confirmedDate || F.order.requestedDate);
+      const atArr = w ? F.fc.estNow - F.fc.rate * Math.max(0, Math.round((dayT(w) - dayT(B.today)) / DAY_MS)) : null;
+      const o = F.order ? (w ? (atArr > 0 ? `Already ordered: about ${fmtL(atArr)} left when it arrives ${fmtWk(w)}` : `Already ordered, but the tank may run low before it arrives ${fmtWk(w)}`) : 'Already ordered')
+        : F.fc.past ? `Now: already at or below ${fmtL(F.fc.target)}` : `Around ${fmtWk(F.fc.orderDate)} (in ${plural(F.fc.dLeft, 'day')}), when it reaches about ${fmtL(F.fc.target)}`;
+      rows.push(row('Order fuel', escH(o)));
+      T.push(`Estimated now: ~${fmtL(F.fc.estNow)}, about ${plural(F.fc.daysOfFuel, 'day')} of fuel`, `Order fuel: ${o}`);
+    }
+    if (F.order) {
+      const w = F.order.confirmedDate || F.order.requestedDate;
+      const txt = `${fmtL(F.order.litres)} ${F.order.status === 'confirmed' || F.order.confirmedDate ? 'confirmed' : 'ordered'}${w ? ' for ' + fmtWk(w) : ''}`;
+      rows.push(row('Open order', escH(txt))); T.push('Open order: ' + txt);
+    }
+    fuelH += `<table role="presentation" cellpadding="0" cellspacing="0" style="border-collapse:collapse">${rows.join('')}</table>`;
+  }
+  T.push('');
+
+  // Aircraft
+  let acH = h2('Aircraft hours and maintenance');
+  T.push('AIRCRAFT HOURS AND MAINTENANCE');
+  const fleetWk = B.aircraft.reduce((s, a) => s + (a.perWeekKey === 'e' && a.perWeek ? a.perWeek : 0), 0);
+  B.aircraft.forEach(a => {
+    const cnt = a.next ? (a.next.m.counter === 'air' ? 'air time' : 'engine hours') : 'engine hours';
+    let st = '', stT = '';
+    if (!a.next) { stT = a.fixedNoHours ? '100-hourly due hours not entered' : 'No hour-based item entered'; st = gry(stT); }
+    else {
+      const r1 = a.next.rem;      // from the last hours entered, same as the dashboard
+      st = r1 < 0 ? red(`${fmtH(-r1)} hrs overdue`) : r1 <= B.red ? red(`${fmtH(r1)} hrs left`) : r1 <= B.amber ? amb(`${fmtH(r1)} hrs left`) : grn(`${fmtH(r1)} hrs left`);
+      stT = r1 < 0 ? `${fmtH(-r1)} hrs overdue` : `${fmtH(r1)} hrs left`;
+    }
+    const est = a.f && Math.abs(a.f.remNow - a.next.rem) >= 0.1 ? `About ${a.f.remNow < 0 ? fmtH(-a.f.remNow) + ' hrs over' : fmtH(a.f.remNow) + ' hrs left'} by now (estimate). ` : '';
+    const dueTxt = a.f && a.f.remNow <= 0 ? 'Past its due hours' : a.f ? `Due around ${fmtWk(a.f.dueDate)}` : '';
+    const fcTxt = !a.next ? '' : !a.f ? 'Forecast: needs more hours updates' : est + (a.booked ? `${dueTxt} · already ${a.next.m.status === 'progress' ? 'in progress' : 'booked'}${a.bookingDate ? ' (' + fmtDate(a.bookingDate) + ')' : ''}`
+      : a.f.bookNow ? `${dueTxt} · book now` : `${dueTxt} · book by ${fmtWk(a.f.bookDate)}`);
+    acH += `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;border:1px solid ${LINE};border-left:4px solid ${O};border-radius:8px;margin:0 0 10px">
+      <tr><td style="padding:10px 12px">
+        <div style="font:800 italic 20px/1.1 Arial,Helvetica,sans-serif;color:${INK}">${escH(a.ident)} <span style="font:400 13px Arial,Helvetica,sans-serif;color:${MUT}">${escH([a.type, a.status].filter(Boolean).join(' · '))}</span></div>
+        <div style="font-size:14px;color:${INK};margin-top:6px">Engine hours <b>${escH(fmtH(a.engine))}</b> · Air time <b>${escH(fmtH(a.air))}</b>${a.updated ? ` <span style="color:${MUT}">(updated ${escH(fmtDate(a.updated))})</span>` : ''}</div>
+        <div style="font-size:14px;color:${INK};margin-top:4px">Average <b>${a.perWeek ? '~' + escH(fmtH(a.perWeek)) + ' hrs a week' : '—'}</b> <span style="color:${MUT}">${a.perWeek ? escH(a.perWeekKey === 'a' ? 'air time' : 'engine hours') + (a.early ? ', early estimate' : '') : 'needs more hours updates'}</span></div>
+        <div style="font-size:14px;color:${INK};margin-top:4px">${a.next ? `${escH(a.next.m.title || 'Maintenance')} <span style="color:${MUT}">(${escH(cnt)}, due at ${escH(fmtH(a.next.m.dueHours))})</span> ` : ''}${st}</div>
+        ${fcTxt ? `<div style="font-size:13px;color:${MUT};margin-top:4px">${escH(fcTxt)}</div>` : ''}
+      </td></tr></table>`;
+    T.push(`${a.ident}${a.status ? ' (' + a.status + ')' : ''}: engine ${fmtH(a.engine)}, air time ${fmtH(a.air)}${a.updated ? ', updated ' + fmtDate(a.updated) : ''}`,
+      `  Average: ${a.perWeek ? '~' + fmtH(a.perWeek) + ' hrs a week' : 'needs more hours updates'}`,
+      a.next ? `  ${a.next.m.title || 'Maintenance'} (${cnt}, due at ${fmtH(a.next.m.dueHours)}): ${stT}` : `  ${stT}`);
+    if (fcTxt) T.push('  ' + fcTxt);
+  });
+  if (fleetWk) { acH += `<p style="font-size:13px;color:${MUT};margin:4px 0 0">Fleet total ~${escH(fmtH(fleetWk))} engine hours a week.</p>`; T.push(`Fleet total ~${fmtH(fleetWk)} engine hours a week.`); }
+  const foot = `Forecasts are a guide only, learned from the fuel readings and hours updates logged in the dashboard. They are not a maintenance release or a requirement. Hours left are from the last hours update; the estimate allows for average use since then. Built from the GoFly Operations Dashboard on ${fmtDate(B.today)}.`;
+  T.push('', foot);
+  const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escH(title)}</title></head>
+<body style="margin:0;padding:0;background:#f4f4f4;font-family:Arial,Helvetica,sans-serif;color:${INK}">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f4"><tr><td align="center" style="padding:16px 8px">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:640px;background:#ffffff;border-radius:10px;overflow:hidden">
+<tr><td style="background:#000000;padding:16px 20px"><span style="font:800 italic 22px/1 Arial,Helvetica,sans-serif;color:${O}">GOFLY</span> <span style="font:700 italic 14px/1 Arial,Helvetica,sans-serif;color:#ffffff;letter-spacing:.12em;text-transform:uppercase;margin-left:6px">Operations · Weekly brief</span>
+<div style="color:#bbbbbb;font-size:13px;margin-top:6px">${escH(fmtWk(B.today))}</div></td></tr>
+<tr><td style="padding:4px 20px 20px">${fuelH}${acH}<p style="font-size:12px;line-height:1.5;color:${MUT};margin:22px 0 0;border-top:1px solid ${LINE};padding-top:10px">${escH(foot)}</p></td></tr>
+</table></td></tr></table></body></html>`;
+  return { subject: title, html, text: T.join('\n') };
+}
+
+async function weeklyBrief(request, env, url) {
+  if (!env.DB) return json({ error: 'Shared database not connected' }, 503);
+  await ensureSchema(env.DB);
+  const key = request.headers.get('X-Brief-Key');
+  if (key != null) {
+    if (!env.BRIEF_KEY || String(env.BRIEF_KEY).length < 24) return json({ error: 'Weekly email isn’t set up: add the Cloudflare secret BRIEF_KEY (at least 24 characters).' }, 503);
+    if (!sameText(key, String(env.BRIEF_KEY))) { await pause(800); return json({ error: 'Wrong key' }, 401); }
+  } else if (!(await sessionUser(request, env))) return json({ error: 'Signed out. Sign in again.', expired: true }, 401);
+  const S = await loadShared(env), today = bneToday();
+  const to = parseEmails(S.settings.weeklyEmailTo), day = Number(S.settings.weeklyEmailDay ?? 1);
+  const isDay = new Date(today + 'T00:00:00Z').getUTCDay() === day, on = S.settings.weeklyEmailOn !== 'no';
+  const force = url.searchParams.get('force') === '1';
+  const send = to.length > 0 && (force || (on && isDay));
+  const reason = !to.length ? 'No email addresses entered in Data & settings' : !on ? 'Weekly email is turned off in Data & settings'
+    : !isDay ? `Sends on ${DAY_NAMES[day] || 'the chosen day'}` : 'Sending today';
+  return json({ ok: true, date: today, send, reason, to, day: DAY_NAMES[day] || '', ...briefEmail(briefData(S, today)) });
 }

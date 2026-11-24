@@ -9,7 +9,8 @@ Instructor. It is separate from the public GoFly website.
 - `public/index.html`: the entire app (HTML, CSS and JavaScript in one file, no build step).
 - `wrangler.jsonc`: Cloudflare Workers config, Worker name `gofly-ops`, serves `./public` as static
   assets (binding `ASSETS`) with `src/worker.js` as the Worker.
-- `src/worker.js`: API routes (also `/api/login`, `/api/logout`, `/api/files` for defect photos). `GET /api/wx?ids=YBSU` fetches the latest METAR and TAF from
+- `src/worker.js`: API routes (also `/api/login`, `/api/logout`, `/api/files` for defect photos,
+  `/api/weekly-brief` for the weekly email). `GET /api/wx?ids=YBSU` fetches the latest METAR and TAF from
   aviationweather.gov (public, no key), cached 2 minutes. `GET/POST /api/sync` reads and writes
   shared records in the D1 database `gofly-ops` (binding `DB`, Oceania, id in `wrangler.jsonc`).
   The `records` table is created on first use. Everything else is served from `./public`. Check
@@ -113,6 +114,17 @@ Instructor. It is separate from the public GoFly website.
 - Daily brief (`openBrief`, overview button): aircraft, fuel, weather, action needed, next 7 days;
   print, copy or share. Built only from dashboard data. The tank gauge and graph share the
   same 0 to max-safe-fill scale so their reorder and max lines line up.
+- Weekly email (Tom asked): `GET /api/weekly-brief` in the Worker builds the email (subject,
+  html, text) from the shared D1 records, leaving out example records: IOR fuel level, average
+  daily use, order forecast and open order; per aircraft engine hours and air time, average hours
+  a week, next hour-based item (hours left from the last update, plus an estimate for now) and
+  due/book-by forecast. Its forecast code copies `learnRate`, `fuelBurn`, `fuelForecast`,
+  `hourItemFor` and `maintForecast` from the page: keep them in step. Sent free from GoFly's Gmail
+  by the Google Apps Script `tools/weekly-email.gs` (daily 6 am Brisbane trigger; the Worker says
+  `send` only on the chosen day). The script sends header `X-Brief-Key` = Cloudflare secret
+  `BRIEF_KEY` (24+ characters, never in the repo); the page's preview uses the session token.
+  Recipients, day and on/off are settings `weeklyEmailTo`, `weeklyEmailDay`, `weeklyEmailOn`
+  (Data & settings > Weekly email, with Preview email and Make a key).
 - Example data must stay clearly labelled (`example: true`, shown as an "Example" chip) and be
   removable with "Clear example data". Editing an example record makes it a real record.
 - Works on desktop, tablet and phone (bottom tab bar under 760px), light and dark mode.
@@ -206,7 +218,7 @@ for headings and aircraft idents, echoing the logo. Status shown by colour plus 
 (red action/overdue, orange watch/due soon/low stock, green OK, dashed grey not entered). The
 GoFly website is for information only; don't copy its theme. Touch targets about 44px.
 Data & settings is grouped (Maintenance, Instructor checks, IOR fuel tank, Documents and expiries,
-YCDR runways and wind, This device); add new settings to the right group in `openSettings`.
+YCDR runways and wind, Weekly email, This device); add new settings to the right group in `openSettings`.
 
 ## Before pushing
 
