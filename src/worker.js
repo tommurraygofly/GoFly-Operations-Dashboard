@@ -364,6 +364,37 @@ function dueList(S, today, ahead) {
   S.documents.filter(d => !d.archived).forEach(d => add(d.date, `${d.title || 'Document'}${d.kind === 'expiry' ? ' expires' : ' review'}`, 'Document'));
   return out.sort((a, b) => a.d - b.d || a.what.localeCompare(b.what));
 }
+/* Not entered yet: information the dashboard flags as missing, grouped by instructor, aircraft
+   or document, so gaps get filled. Same rules as the page (missing = mandatory and blank). */
+function missingList(S) {
+  const out = [], push = (who, items) => { if (items.length) out.push({ who, items }); };
+  const senior = g => ['senior', 'supervising', 'dcfi', 'cfi'].includes(g);
+  S.instructors.filter(p => !p.archived).sort((a, b) => String(a.name).localeCompare(String(b.name))).forEach(p => {
+    const m = [];
+    if (!p.grade) m.push('instructor grade');
+    if (!p.raausExpiry) m.push('RAAus membership expiry');
+    if (!p.medicalExpiry) m.push('CASA medical expiry');
+    if (!['dcfi', 'cfi'].includes(p.grade) && !p.lastCheck && !p.nextCheck) m.push('last currency check');
+    if (p.grade && !p.renewalExpiry && !p.lastRenewal) m.push(senior(p.grade) ? 'last SI flight review' : 'last instructor renewal');
+    push(p.name || 'Instructor', m);
+  });
+  const ord = a => { const i = AIRCRAFT_IDS.indexOf(a.ident); return i < 0 ? 99 : i; };
+  S.aircraft.filter(a => !a.archived).sort((a, b) => ord(a) - ord(b)).forEach(a => {
+    const m = [];
+    if (!a.regoExpiry) m.push('registration expiry');
+    if (a.insuranceNA !== 'yes' && !a.insuranceExpiry) m.push('insurance expiry');
+    const open = S.maintenance.filter(x => x.aircraftId === a.id && !x.archived && x.status !== 'done');
+    if (open.some(x => x.fixed === '100hr' && x.dueHours == null)) m.push('100-hourly due hours');
+    const needs = new Set(open.filter(x => x.dueHours != null && ['engine', 'air'].includes(x.counter)).map(x => x.counter));
+    if (needs.has('engine') && a.engineHours == null) m.push('engine hours');
+    if (needs.has('air') && a.airTime == null) m.push('air time');
+    push(a.ident, m);
+  });
+  S.documents.filter(d => !d.archived && !d.date).forEach(d => push(d.title || 'Document', [d.kind === 'expiry' ? 'expiry date' : 'next review date']));
+  return out;
+}
+const STALE_DAYS = 7;   // flying aircraft whose hours haven't been updated for longer get a note
+
 const SEV_NAME = { grounding: 'grounding', urgent: 'urgent', semi: 'semi-urgent', nil: 'nil effect' };
 
 function briefData(S, today) {
@@ -422,13 +453,18 @@ function briefData(S, today) {
       const remNow = next.rem - R.rate * since;
       f = { remNow, dueDate: addDays(today, Math.max(0, Math.round(remNow / R.rate))), bookDate: addDays(today, Math.max(0, Math.round((remNow - amber) / R.rate))), bookNow: remNow <= amber };
     }
+    const allLog = (Array.isArray(ac.hoursLog) ? ac.hoursLog : []).filter(x => x && x.d && (x.e != null || x.a != null)).map(x => x.d).sort();
+    const lastAny = allLog.length ? allLog[allLog.length - 1] : null;
+    const flying = !ac.status || ['serviceable', 'restricted'].includes(ac.status);
+    const stale = flying && (ac.engineHours != null || ac.airTime != null || next) ? (lastAny ? Math.max(0, -daysTo(lastAny)) : -1) : 0;
     return { ident: ac.ident, type: ac.type || '', status: AC_AVAIL[ac.status] || '', engine: ac.engineHours ?? null, air: ac.airTime ?? null,
+      staleDays: stale === -1 || stale > STALE_DAYS ? stale : 0, lastAny,
       updated: log.length ? log[log.length - 1].d : null, fixedNoHours, perWeek, perWeekKey: key, early: !R || R.conf === 'early', next, f,
       booked: !!(next && ['booked', 'progress'].includes(next.m.status)), bookingDate: next ? next.m.bookingDate || null : null,
       defects: S.defects.filter(d => d.aircraftId === ac.id && !d.archived && d.status !== 'closed') };
   });
   const ahead = Math.max(1, Math.min(60, Number(st.weeklyEmailAhead) || 14));
-  return { today, fuel, aircraft, amber, red: Number(st.hoursRed ?? 20), ahead, due: dueList(S, today, ahead) };
+  return { today, fuel, aircraft, amber, red: Number(st.hoursRed ?? 20), ahead, due: dueList(S, today, ahead), missing: missingList(S) };
 }
 
 function briefEmail(B) {
@@ -509,6 +545,7 @@ function briefEmail(B) {
       <tr><td style="padding:10px 12px">
         <div style="font:800 italic 20px/1.1 Arial,Helvetica,sans-serif;color:${INK}">${escH(a.ident)} <span style="font:400 13px Arial,Helvetica,sans-serif;color:${MUT}">${escH([a.type, a.status].filter(Boolean).join(' · '))}</span></div>
         <div style="font-size:14px;color:${INK};margin-top:6px">Engine hours <b>${escH(fmtH(a.engine))}</b> · Air time <b>${escH(fmtH(a.air))}</b>${a.updated ? ` <span style="color:${MUT}">(updated ${escH(fmtDate(a.updated))})</span>` : ''}</div>
+        ${a.staleDays ? `<div style="margin-top:6px">${amb(a.staleDays < 0 ? 'Hours not updated in the dashboard yet' : `Hours not updated for ${plural(a.staleDays, 'day')}`)} <span style="font-size:13px;color:${MUT}">Update them so the forecast stays accurate.</span></div>` : ''}
         <div style="font-size:14px;color:${INK};margin-top:4px">Average <b>${a.perWeek ? '~' + escH(fmtH(a.perWeek)) + ' hrs a week' : '—'}</b> <span style="color:${MUT}">${a.perWeek ? escH(a.perWeekKey === 'a' ? 'air time' : 'engine hours') + (a.early ? ', early estimate' : '') : 'needs more hours updates'}</span></div>
         <div style="font-size:14px;color:${INK};margin-top:4px">${a.next ? `${escH(a.next.m.title || 'Maintenance')} <span style="color:${MUT}">(${escH(cnt)}, due at ${escH(fmtH(a.next.m.dueHours))})</span> ` : ''}${st}</div>
         ${fcTxt ? `<div style="font-size:13px;color:${MUT};margin-top:4px">${escH(fcTxt)}</div>` : ''}
@@ -518,9 +555,18 @@ function briefEmail(B) {
       `  Average: ${a.perWeek ? '~' + fmtH(a.perWeek) + ' hrs a week' : 'needs more hours updates'}`,
       a.next ? `  ${a.next.m.title || 'Maintenance'} (${cnt}, due at ${fmtH(a.next.m.dueHours)}): ${stT}` : `  ${stT}`);
     if (fcTxt) T.push('  ' + fcTxt);
+    if (a.staleDays) T.push(`  ${a.staleDays < 0 ? 'Hours not updated in the dashboard yet' : 'Hours not updated for ' + plural(a.staleDays, 'day')}: update them so the forecast stays accurate.`);
     a.defects.forEach(d => T.push(`  Open defect (${SEV_NAME[d.severity] || 'severity not set'}): ${String(d.description || '').slice(0, 80)}`));
   });
   if (fleetWk) { acH += `<p style="font-size:13px;color:${MUT};margin:4px 0 0">Fleet total ~${escH(fmtH(fleetWk))} engine hours a week.</p>`; T.push(`Fleet total ~${fmtH(fleetWk)} engine hours a week.`); }
+  let misH = '';
+  if (B.missing.length) {
+    misH = h2('Not entered yet');
+    misH += `<p style="font-size:13px;color:${MUT};margin:0 0 8px">Add these in the dashboard so nothing is missed.</p><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse">${B.missing.map(x =>
+      `<tr><td style="padding:6px 10px 6px 0;border-bottom:1px dashed ${LINE};font-size:14px;font-weight:700;vertical-align:top;white-space:nowrap;color:${INK}">${escH(x.who)}</td><td style="padding:6px 0;border-bottom:1px dashed ${LINE};font-size:14px;color:${INK}">${escH(x.items.join(', '))}</td></tr>`).join('')}</table>`;
+    T.push('', 'NOT ENTERED YET');
+    B.missing.forEach(x => T.push(`${x.who}: ${x.items.join(', ')}`));
+  }
   const foot = `Forecasts are a guide only, learned from the fuel readings and hours updates logged in the dashboard. They are not a maintenance release or a requirement. Hours left are from the last hours update; the estimate allows for average use since then. Built from the GoFly Operations Dashboard on ${fmtDate(B.today)}.`;
   T.push('', foot);
   const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escH(title)}</title></head>
@@ -529,7 +575,7 @@ function briefEmail(B) {
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:640px;background:#ffffff;border-radius:10px;overflow:hidden">
 <tr><td style="background:#000000;padding:16px 20px"><span style="font:800 italic 22px/1 Arial,Helvetica,sans-serif;color:${O}">GOFLY</span> <span style="font:700 italic 14px/1 Arial,Helvetica,sans-serif;color:#ffffff;letter-spacing:.12em;text-transform:uppercase;margin-left:6px">Operations · Weekly brief</span>
 <div style="color:#bbbbbb;font-size:13px;margin-top:6px">${escH(fmtWk(B.today))}</div></td></tr>
-<tr><td style="padding:4px 20px 20px">${dueH}${fuelH}${acH}<p style="font-size:12px;line-height:1.5;color:${MUT};margin:22px 0 0;border-top:1px solid ${LINE};padding-top:10px">${escH(foot)}</p></td></tr>
+<tr><td style="padding:4px 20px 20px">${dueH}${fuelH}${acH}${misH}<p style="font-size:12px;line-height:1.5;color:${MUT};margin:22px 0 0;border-top:1px solid ${LINE};padding-top:10px">${escH(foot)}</p></td></tr>
 </table></td></tr></table></body></html>`;
   return { subject: title, html, text: T.join('\n') };
 }

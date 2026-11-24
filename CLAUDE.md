@@ -121,7 +121,10 @@ Instructor. It is separate from the public GoFly website.
   maintenance, using the page's rules. Then IOR fuel level, average
   daily use, order forecast and open order; per aircraft engine hours and air time, average hours
   a week, next hour-based item (hours left from the last update, plus an estimate for now) and
-  due/book-by forecast, plus open defects with severity. Its forecast and due-date code copies `learnRate`, `fuelBurn`, `fuelForecast`,
+  due/book-by forecast, plus open defects with severity, and a note on flying aircraft whose hours
+  haven't been updated for over 7 days (`STALE_DAYS`). Last, "Not entered yet" (`missingList`):
+  missing instructor grade, RAAus/medical expiry, last currency check or renewal; aircraft rego or
+  insurance expiry, 100-hourly due hours, hours readings; document dates. Its forecast and due-date code copies `learnRate`, `fuelBurn`, `fuelForecast`,
   `hourItemFor` and `maintForecast` from the page: keep them in step. Sent free from GoFly's Gmail
   by the Google Apps Script `tools/weekly-email.gs` (daily 6 am Brisbane trigger; the Worker says
   `send` only on the chosen day). The script sends header `X-Brief-Key` = Cloudflare secret
