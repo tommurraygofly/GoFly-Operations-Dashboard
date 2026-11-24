@@ -115,15 +115,19 @@ Instructor. It is separate from the public GoFly website.
   print, copy or share. Built only from dashboard data. The tank gauge and graph share the
   same 0 to max-safe-fill scale so their reorder and max lines line up.
 - Weekly email (Tom asked): `GET /api/weekly-brief` in the Worker builds the email (subject,
-  html, text) from the shared D1 records, leaving out example records: IOR fuel level, average
+  html, text) from the shared D1 records, leaving out example records. First "Overdue and due in
+  the next 14 days" (`dueList`, look-ahead setting `weeklyEmailAhead`): instructor currency checks,
+  renewals/SI reviews, instructor expiries, aircraft rego/insurance (not N/A), documents and dated
+  maintenance, using the page's rules. Then IOR fuel level, average
   daily use, order forecast and open order; per aircraft engine hours and air time, average hours
   a week, next hour-based item (hours left from the last update, plus an estimate for now) and
-  due/book-by forecast. Its forecast code copies `learnRate`, `fuelBurn`, `fuelForecast`,
+  due/book-by forecast, plus open defects with severity. Its forecast and due-date code copies `learnRate`, `fuelBurn`, `fuelForecast`,
   `hourItemFor` and `maintForecast` from the page: keep them in step. Sent free from GoFly's Gmail
   by the Google Apps Script `tools/weekly-email.gs` (daily 6 am Brisbane trigger; the Worker says
   `send` only on the chosen day). The script sends header `X-Brief-Key` = Cloudflare secret
   `BRIEF_KEY` (24+ characters, never in the repo); the page's preview uses the session token.
-  Recipients, day and on/off are settings `weeklyEmailTo`, `weeklyEmailDay`, `weeklyEmailOn`
+  Recipients, day, look-ahead and on/off are settings `weeklyEmailTo`, `weeklyEmailDay`,
+  `weeklyEmailAhead`, `weeklyEmailOn`
   (Data & settings > Weekly email, with Preview email and Make a key).
 - Example data must stay clearly labelled (`example: true`, shown as an "Example" chip) and be
   removable with "Clear example data". Editing an example record makes it a real record.

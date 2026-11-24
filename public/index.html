@@ -869,7 +869,7 @@ function emptyState() {
   return {
     schema: SCHEMA,
     settings: {
-      userName: '', theme: 'auto', dueSoonDays: 14, hoursAmber: 50, hoursRed: 20, cautionHrs: 30, sparingHrs: 15, fuelThreshold: 1500, tankCapacity: 5000, fuelOrderAt: 1000, rwy05Mag: 50, rwy12Mag: 120, magVar: 11, spDays: 90, cxSeniorMonths: 6, renewJuniorMonths: 24, renewSeniorMonths: 12, renewChiefMonths: 24, expiryWarnDays: 30, docWarnDays: 30, renewWarnDays: 30, weeklyEmailOn: 'yes', weeklyEmailDay: '1', weeklyEmailTo: '',
+      userName: '', theme: 'auto', dueSoonDays: 14, hoursAmber: 50, hoursRed: 20, cautionHrs: 30, sparingHrs: 15, fuelThreshold: 1500, tankCapacity: 5000, fuelOrderAt: 1000, rwy05Mag: 50, rwy12Mag: 120, magVar: 11, spDays: 90, cxSeniorMonths: 6, renewJuniorMonths: 24, renewSeniorMonths: 12, renewChiefMonths: 24, expiryWarnDays: 30, docWarnDays: 30, renewWarnDays: 30, weeklyEmailOn: 'yes', weeklyEmailDay: '1', weeklyEmailTo: '', weeklyEmailAhead: 14,
       orderTemplate: { product: 'Premium Unleaded 98', litres: 3500, supplier: 'IOR', notes: '' }
     },
     aircraft: AIRCRAFT_IDS.map(blankAircraft),
@@ -1966,6 +1966,7 @@ const SCHEMAS = {
       { k: 'tankCapacity', l: 'IOR tank max safe fill', t: 'litres', req: true, hint: 'Top of the tank gauge. Refills that would go above this are flagged.' },
       { k: 'weeklyEmailOn', l: 'Weekly email', t: 'select', o: [['yes', 'On'], ['no', 'Off']] },
       { k: 'weeklyEmailDay', l: 'Send on', t: 'select', o: [['1', 'Monday'], ['2', 'Tuesday'], ['3', 'Wednesday'], ['4', 'Thursday'], ['5', 'Friday'], ['6', 'Saturday'], ['0', 'Sunday']], hint: 'Arrives between 6 and 7 am Brisbane time.' },
+      { k: 'weeklyEmailAhead', l: 'Show what’s due within', t: 'number', suffix: 'days', req: true, hint: 'Instructor checks, expiries, documents and dated maintenance, plus anything overdue.' },
       { k: 'weeklyEmailTo', l: 'Send to', t: 'textarea', wide: true, ph: 'name@example.com, another@example.com', hint: 'Email addresses, separated by commas or new lines.' }
     ]
   }
@@ -2515,12 +2516,12 @@ function openSettings() {
     ['IOR fuel tank', ['fuelThreshold', 'tankCapacity', 'fuelOrderAt']],
     ['Documents and expiries', ['docWarnDays']],
     ['YCDR runways and wind', ['rwy05Mag', 'rwy12Mag', 'magVar']],
-    ['Weekly email', ['weeklyEmailOn', 'weeklyEmailDay', 'weeklyEmailTo']],
+    ['Weekly email', ['weeklyEmailOn', 'weeklyEmailDay', 'weeklyEmailAhead', 'weeklyEmailTo']],
     ['This device', ['theme']]
   ];
   const fby = k => SCHEMAS.settings.fields.find(f => f.k === k);
   const body = `${groups.map(([t, ks], i) => `<h3 class="dlg-sec"${i ? '' : ' style="margin-top:0"'}>${esc(t)}</h3><div class="form">${ks.map(fby).filter(Boolean).map(f => fieldHTML(f, s)).join('')}</div>${t === 'Weekly email' ? `
-    <p class="hint" style="margin-top:8px">A briefing on fuel level and use, each aircraft’s hours, average hours a week and the maintenance forecast, sent from GoFly’s Gmail. Needs a one-off setup: see tools/weekly-email.gs in the GitHub repo.</p>
+    <p class="hint" style="margin-top:8px">A briefing on what’s due soon (and overdue), fuel level and use, each aircraft’s hours, average hours a week and the maintenance forecast, sent from GoFly’s Gmail. Needs a one-off setup: see tools/weekly-email.gs in the GitHub repo.</p>
     <div class="btn-row"><button type="button" class="btn btn-secondary" id="xBrief">Preview email</button><button type="button" class="btn-text" id="xKey">Make a key</button></div><p class="hint" id="keyOut" hidden></p>` : ''}`).join('')}<p class="form-err" id="formErr" hidden></p>
     <h3 class="dlg-sec">Your data</h3>
     <p class="hint">${esc(status)}</p>

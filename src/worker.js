@@ -318,16 +318,53 @@ function learnRate(points, dir) {
 }
 
 async function loadShared(env) {
-  const S = { settings: {}, aircraft: [], maintenance: [], fuelReadings: [], fuelOrders: [] };
-  const rows = await env.DB.prepare("SELECT coll, data FROM records WHERE deleted = 0 AND coll IN ('settings', 'aircraft', 'maintenance', 'fuelReadings', 'fuelOrders')").all();
+  const S = { settings: {}, aircraft: [], maintenance: [], fuelReadings: [], fuelOrders: [], instructors: [], documents: [], defects: [] };
+  const rows = await env.DB.prepare("SELECT coll, data FROM records WHERE deleted = 0 AND coll IN ('settings', 'aircraft', 'maintenance', 'fuelReadings', 'fuelOrders', 'instructors', 'documents', 'defects')").all();
   (rows.results || []).forEach(r => {
     let d; try { d = JSON.parse(r.data); } catch (e) { return; }
     if (!d || d.example) return;
     if (r.coll === 'settings') S.settings = d; else S[r.coll].push(d);
   });
-  S.settings = { hoursAmber: 50, fuelOrderAt: 1000, tankCapacity: 5000, fuelThreshold: 1500, weeklyEmailOn: 'yes', weeklyEmailDay: '1', weeklyEmailTo: '', ...S.settings };
+  S.settings = { hoursAmber: 50, fuelOrderAt: 1000, tankCapacity: 5000, fuelThreshold: 1500, weeklyEmailOn: 'yes', weeklyEmailDay: '1', weeklyEmailTo: '', weeklyEmailAhead: 14, ...S.settings };
   return S;
 }
+
+/* Due soon: instructor checks and expiries, aircraft registration and insurance, documents and
+   dated maintenance, due within the look-ahead (default 14 days) or already overdue. Same rules
+   as the page (spDue, renewDue, renewalName, instExpiries, acExpiries, documents, upcoming). */
+function addMonths(iso, n) {
+  const [y, m, d] = iso.split('-').map(Number);
+  const last = new Date(Date.UTC(y, m - 1 + n + 1, 0)).getUTCDate();
+  return new Date(Date.UTC(y, m - 1 + n, Math.min(d, last))).toISOString().slice(0, 10);
+}
+function dueList(S, today, ahead) {
+  const st = S.settings, out = [];
+  const daysTo = iso => Math.round((dayT(iso) - dayT(today)) / DAY_MS);
+  const add = (date, what, kind) => {
+    if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return;
+    const d = daysTo(date); if (d <= ahead) out.push({ date, d, what, kind });
+  };
+  const senior = g => ['senior', 'supervising', 'dcfi', 'cfi'].includes(g);
+  S.instructors.filter(p => !p.archived).forEach(p => {
+    if (!['dcfi', 'cfi'].includes(p.grade)) {
+      const sp = p.lastCheck ? (['senior', 'supervising'].includes(p.grade) ? addMonths(p.lastCheck, Number(st.cxSeniorMonths) || 6) : addDays(p.lastCheck, Number(st.spDays) || 90)) : (p.nextCheck || null);
+      add(sp, `${p.name}: currency check`, 'Instructor');
+    }
+    const months = ['dcfi', 'cfi'].includes(p.grade) ? (Number(st.renewChiefMonths) || 24) : senior(p.grade) ? (Number(st.renewSeniorMonths) || 12) : (Number(st.renewJuniorMonths) || 24);
+    add(p.renewalExpiry || (p.lastRenewal && p.grade ? addMonths(p.lastRenewal, months) : null), `${p.name}: ${senior(p.grade) ? 'SI flight review' : 'instructor renewal'}`, 'Instructor');
+    [['raausExpiry', 'RAAus membership'], ['medicalExpiry', 'CASA medical'], ['firstAidExpiry', 'first aid'], ['cprExpiry', 'CPR']].forEach(([k, l]) => add(p[k], `${p.name}: ${l}`, 'Instructor'));
+    (Array.isArray(p.quals) ? p.quals : []).forEach(q => add(q && q.expiry, `${p.name}: ${(q && q.label) || 'other expiry'}`, 'Instructor'));
+  });
+  S.aircraft.filter(a => !a.archived).forEach(a => {
+    add(a.regoExpiry, `${a.ident} registration`, 'Aircraft');
+    if (a.insuranceNA !== 'yes') add(a.insuranceExpiry, `${a.ident} insurance`, 'Aircraft');
+  });
+  const ident = id => (S.aircraft.find(a => a.id === id) || {}).ident || '';
+  S.maintenance.filter(m => !m.archived && m.status !== 'done').forEach(m => add(m.dueDate, `${ident(m.aircraftId)} ${m.title || 'maintenance'}`.trim(), 'Maintenance'));
+  S.documents.filter(d => !d.archived).forEach(d => add(d.date, `${d.title || 'Document'}${d.kind === 'expiry' ? ' expires' : ' review'}`, 'Document'));
+  return out.sort((a, b) => a.d - b.d || a.what.localeCompare(b.what));
+}
+const SEV_NAME = { grounding: 'grounding', urgent: 'urgent', semi: 'semi-urgent', nil: 'nil effect' };
 
 function briefData(S, today) {
   const st = S.settings, daysTo = iso => Math.round((dayT(iso) - dayT(today)) / DAY_MS);
@@ -387,9 +424,11 @@ function briefData(S, today) {
     }
     return { ident: ac.ident, type: ac.type || '', status: AC_AVAIL[ac.status] || '', engine: ac.engineHours ?? null, air: ac.airTime ?? null,
       updated: log.length ? log[log.length - 1].d : null, fixedNoHours, perWeek, perWeekKey: key, early: !R || R.conf === 'early', next, f,
-      booked: !!(next && ['booked', 'progress'].includes(next.m.status)), bookingDate: next ? next.m.bookingDate || null : null };
+      booked: !!(next && ['booked', 'progress'].includes(next.m.status)), bookingDate: next ? next.m.bookingDate || null : null,
+      defects: S.defects.filter(d => d.aircraftId === ac.id && !d.archived && d.status !== 'closed') };
   });
-  return { today, fuel, aircraft, amber, red: Number(st.hoursRed ?? 20) };
+  const ahead = Math.max(1, Math.min(60, Number(st.weeklyEmailAhead) || 14));
+  return { today, fuel, aircraft, amber, red: Number(st.hoursRed ?? 20), ahead, due: dueList(S, today, ahead) };
 }
 
 function briefEmail(B) {
@@ -401,6 +440,21 @@ function briefEmail(B) {
   const T = [], F = B.fuel;
   const title = `GoFly weekly brief · ${fmtWk(B.today)}`;
   T.push(title, '');
+
+  // Due soon (and overdue)
+  let dueH = h2(`Overdue and due in the next ${B.ahead} days`);
+  T.push(`OVERDUE AND DUE IN THE NEXT ${B.ahead} DAYS`);
+  if (!B.due.length) { dueH += `<p style="font-size:14px;color:${MUT};margin:0">Nothing due: no instructor checks, expiries, documents or dated maintenance in the next ${B.ahead} days.</p>`; T.push('Nothing due.'); }
+  else {
+    dueH += `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse">${B.due.map(x => {
+      const when = x.d < 0 ? red(`Overdue ${plural(-x.d, 'day')}`) : x.d === 0 ? red('Today') : x.d <= 7 ? amb(`In ${plural(x.d, 'day')}`) : gry(`In ${plural(x.d, 'day')}`);
+      return `<tr><td style="padding:7px 10px 7px 0;border-bottom:1px solid ${LINE};font-size:14px;white-space:nowrap;vertical-align:top;color:${INK}">${escH(fmtWk(x.date))}</td>
+        <td style="padding:7px 10px 7px 0;border-bottom:1px solid ${LINE};font-size:14px;vertical-align:top;color:${INK}">${escH(x.what)}<br><span style="font-size:12px;color:${MUT}">${escH(x.kind)}</span></td>
+        <td style="padding:7px 0;border-bottom:1px solid ${LINE};text-align:right;vertical-align:top;white-space:nowrap">${when}</td></tr>`;
+    }).join('')}</table>`;
+    B.due.forEach(x => T.push(`${fmtWk(x.date)}  ${x.what} (${x.kind}) · ${x.d < 0 ? 'OVERDUE ' + plural(-x.d, 'day') : x.d === 0 ? 'today' : 'in ' + plural(x.d, 'day')}`));
+  }
+  T.push('');
 
   // Fuel
   let fuelH = h2('IOR fuel tank');
@@ -458,11 +512,13 @@ function briefEmail(B) {
         <div style="font-size:14px;color:${INK};margin-top:4px">Average <b>${a.perWeek ? '~' + escH(fmtH(a.perWeek)) + ' hrs a week' : '—'}</b> <span style="color:${MUT}">${a.perWeek ? escH(a.perWeekKey === 'a' ? 'air time' : 'engine hours') + (a.early ? ', early estimate' : '') : 'needs more hours updates'}</span></div>
         <div style="font-size:14px;color:${INK};margin-top:4px">${a.next ? `${escH(a.next.m.title || 'Maintenance')} <span style="color:${MUT}">(${escH(cnt)}, due at ${escH(fmtH(a.next.m.dueHours))})</span> ` : ''}${st}</div>
         ${fcTxt ? `<div style="font-size:13px;color:${MUT};margin-top:4px">${escH(fcTxt)}</div>` : ''}
+        ${a.defects.length ? `<div style="font-size:14px;color:${INK};margin-top:6px">Open defects: ${a.defects.map(d => `${d.severity === 'grounding' || d.severity === 'urgent' ? red(SEV_NAME[d.severity]) : d.severity === 'semi' ? amb(SEV_NAME[d.severity]) : gry(SEV_NAME[d.severity] || 'severity not set')} ${escH(String(d.description || '').slice(0, 80))}`).join('<br>')}</div>` : ''}
       </td></tr></table>`;
     T.push(`${a.ident}${a.status ? ' (' + a.status + ')' : ''}: engine ${fmtH(a.engine)}, air time ${fmtH(a.air)}${a.updated ? ', updated ' + fmtDate(a.updated) : ''}`,
       `  Average: ${a.perWeek ? '~' + fmtH(a.perWeek) + ' hrs a week' : 'needs more hours updates'}`,
       a.next ? `  ${a.next.m.title || 'Maintenance'} (${cnt}, due at ${fmtH(a.next.m.dueHours)}): ${stT}` : `  ${stT}`);
     if (fcTxt) T.push('  ' + fcTxt);
+    a.defects.forEach(d => T.push(`  Open defect (${SEV_NAME[d.severity] || 'severity not set'}): ${String(d.description || '').slice(0, 80)}`));
   });
   if (fleetWk) { acH += `<p style="font-size:13px;color:${MUT};margin:4px 0 0">Fleet total ~${escH(fmtH(fleetWk))} engine hours a week.</p>`; T.push(`Fleet total ~${fmtH(fleetWk)} engine hours a week.`); }
   const foot = `Forecasts are a guide only, learned from the fuel readings and hours updates logged in the dashboard. They are not a maintenance release or a requirement. Hours left are from the last hours update; the estimate allows for average use since then. Built from the GoFly Operations Dashboard on ${fmtDate(B.today)}.`;
@@ -473,7 +529,7 @@ function briefEmail(B) {
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:640px;background:#ffffff;border-radius:10px;overflow:hidden">
 <tr><td style="background:#000000;padding:16px 20px"><span style="font:800 italic 22px/1 Arial,Helvetica,sans-serif;color:${O}">GOFLY</span> <span style="font:700 italic 14px/1 Arial,Helvetica,sans-serif;color:#ffffff;letter-spacing:.12em;text-transform:uppercase;margin-left:6px">Operations · Weekly brief</span>
 <div style="color:#bbbbbb;font-size:13px;margin-top:6px">${escH(fmtWk(B.today))}</div></td></tr>
-<tr><td style="padding:4px 20px 20px">${fuelH}${acH}<p style="font-size:12px;line-height:1.5;color:${MUT};margin:22px 0 0;border-top:1px solid ${LINE};padding-top:10px">${escH(foot)}</p></td></tr>
+<tr><td style="padding:4px 20px 20px">${dueH}${fuelH}${acH}<p style="font-size:12px;line-height:1.5;color:${MUT};margin:22px 0 0;border-top:1px solid ${LINE};padding-top:10px">${escH(foot)}</p></td></tr>
 </table></td></tr></table></body></html>`;
   return { subject: title, html, text: T.join('\n') };
 }
