@@ -10,7 +10,7 @@ Instructor. It is separate from the public GoFly website.
 - `wrangler.jsonc`: Cloudflare Workers config, Worker name `gofly-ops`, serves `./public` as static
   assets (binding `ASSETS`) with `src/worker.js` as the Worker.
 - `src/worker.js`: API routes (also `/api/login`, `/api/logout`, `/api/files` for defect photos,
-  `/api/weekly-brief` for the weekly email). `GET /api/wx?ids=YBSU` fetches the latest METAR and TAF from
+  `/api/weekly-brief` for the weekly email, `/api/station` for the Caloundra Ecowitt station). `GET /api/wx?ids=YBSU` fetches the latest METAR and TAF from
   aviationweather.gov (public, no key), cached 2 minutes. `GET/POST /api/sync` reads and writes
   shared records in the D1 database `gofly-ops` (binding `DB`, Oceania, id in `wrangler.jsonc`).
   The `records` table is created on first use. Everything else is served from `./public`. Check
@@ -90,7 +90,19 @@ Instructor. It is separate from the public GoFly website.
   NAIPS). Decode only what the report says; never invent or forecast weather. YCDR has no
   METAR/TAF, so YBSU is the source. The TAF is shown as issued, not decoded (`tafLines` only splits
   it into one line per FM/BECMG/TEMPO/INTER/PROB group): Tom found decoded INTER/TEMPO unreliable.
-- YCDR runway wind diagram (`windDiagram()`): runways 05/23 and 12/30, both 735 m, drawn to scale
+- Caloundra weather station (GoFly's own Ecowitt, private): Worker `GET /api/station` (session
+  required) reads Ecowitt's official API v3 real_time with Cloudflare secrets `ECOWITT_APP_KEY`,
+  `ECOWITT_API_KEY`, `ECOWITT_MAC` (never in the repo), converts to °C, knots, hPa, mm, cached
+  60 s; without the secrets it returns `{ setup: false }` and nothing shows. The page polls it every
+  60 s (`loadStation`, `STN`) and shows a "YCDR STATION" strip (`stnStrip`) at the top of the
+  weather panel: wind, temperature/dew point, humidity, pressure (labelled "station reading, not
+  QNH"), rain today. Always labelled private, not official. When a reading is under 30 minutes
+  old (`STN_OLD_MIN`) the runway diagram uses station wind (`stationWind`, setting
+  `stationForRunways`), converted to true if the vane is aligned to magnetic (`stationDirRef`);
+  otherwise it falls back to the YBSU METAR. Optional `stationLink` (the Ecowitt share page) is a
+  settings value shown as a "Live station page" button; keep it out of the code (public repo).
+  Also a line in the daily brief.
+- YCDR runway wind diagram (`windDiagram(raw or wind object, src)`): runways 05/23 and 12/30, both 735 m, drawn to scale
   north-up from settings `rwy05Mag`/`rwy12Mag` (magnetic, default 050/120) plus `magVar`
   (default 11° E), since METAR wind is true. Shows head/crosswind per runway and highlights the
   runway end with most headwind. Labelled as YBSU wind. No crosswind limits unless Tom gives them.
@@ -225,7 +237,7 @@ for headings and aircraft idents, echoing the logo. Status shown by colour plus 
 (red action/overdue, orange watch/due soon/low stock, green OK, dashed grey not entered). The
 GoFly website is for information only; don't copy its theme. Touch targets about 44px.
 Data & settings is grouped (Maintenance, Instructor checks, IOR fuel tank, Documents and expiries,
-YCDR runways and wind, Weekly email, This device); add new settings to the right group in `openSettings`.
+YCDR runways and wind, Caloundra weather station, Weekly email, This device); add new settings to the right group in `openSettings`.
 
 ## Before pushing
 

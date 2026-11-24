@@ -592,6 +592,18 @@ main{max-width:1320px;margin:0 auto;padding:var(--mainpad) var(--mainpad) 48px}
 
 .brief-frame{width:100%;height:65vh;border:1px solid var(--line);border-radius:10px;background:#f4f4f4}
 
+.stn{margin:0 0 16px;padding:0 0 14px;border-bottom:1px solid var(--line)}
+.stn .wx-h{flex-wrap:wrap}
+.stn-min{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;font-size:.85rem}
+.stn-link{margin-left:auto;font-size:.85rem}
+.stn-g{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-top:8px}
+.stn-t{display:grid;gap:2px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);min-width:0}
+.stn-t .k{font-size:.7rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.stn-t b{font-size:1.15rem;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.stn-t .s{font-size:.75rem;color:var(--muted)}
+@media (max-width:900px){.stn-g{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:520px){.stn-g{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
 /* ===== Defect photos + severity ===== */
 .ph-grid{display:flex;flex-wrap:wrap;gap:8px}
 .ph-grid:empty{display:none}
@@ -869,7 +881,7 @@ function emptyState() {
   return {
     schema: SCHEMA,
     settings: {
-      userName: '', theme: 'auto', dueSoonDays: 14, hoursAmber: 50, hoursRed: 20, cautionHrs: 30, sparingHrs: 15, fuelThreshold: 1500, tankCapacity: 5000, fuelOrderAt: 1000, rwy05Mag: 50, rwy12Mag: 120, magVar: 11, spDays: 90, cxSeniorMonths: 6, renewJuniorMonths: 24, renewSeniorMonths: 12, renewChiefMonths: 24, expiryWarnDays: 30, docWarnDays: 30, renewWarnDays: 30, weeklyEmailOn: 'yes', weeklyEmailDay: '1', weeklyEmailTo: '', weeklyEmailAhead: 14,
+      userName: '', theme: 'auto', dueSoonDays: 14, hoursAmber: 50, hoursRed: 20, cautionHrs: 30, sparingHrs: 15, fuelThreshold: 1500, tankCapacity: 5000, fuelOrderAt: 1000, rwy05Mag: 50, rwy12Mag: 120, magVar: 11, spDays: 90, cxSeniorMonths: 6, renewJuniorMonths: 24, renewSeniorMonths: 12, renewChiefMonths: 24, expiryWarnDays: 30, docWarnDays: 30, renewWarnDays: 30, weeklyEmailOn: 'yes', weeklyEmailDay: '1', weeklyEmailTo: '', weeklyEmailAhead: 14, stationDirRef: 'true', stationForRunways: 'yes', stationLink: '',
       orderTemplate: { product: 'Premium Unleaded 98', litres: 3500, supplier: 'IOR', notes: '' }
     },
     aircraft: AIRCRAFT_IDS.map(blankAircraft),
@@ -1114,7 +1126,7 @@ function signIn(name, token) {
   w.innerHTML = `<span class="av">${esc(name.slice(0, 1))}</span><span class="nm">${esc(name)}</span><span class="wsw">· Switch</span>`;
   w.title = `Signed in as ${name}. Select to switch person or lock.`; w.setAttribute('aria-label', w.title);
   render(); window.scrollTo(0, 0);
-  startSync();
+  startSync(); loadStation();
 }
 function lockApp(msg) {
   if (dlg.open) closeDlg();
@@ -1964,6 +1976,9 @@ const SCHEMAS = {
       { k: 'magVar', l: 'Magnetic variation (east)', t: 'number', suffix: '°', hint: 'METAR wind is in degrees true. About 11° E at Caloundra; check current charts.' },
       { k: 'fuelOrderAt', l: 'Forecast: order when the tank reaches', t: 'litres', req: true, hint: 'The fuel forecast suggests ordering around this level (a safe buffer).' },
       { k: 'tankCapacity', l: 'IOR tank max safe fill', t: 'litres', req: true, hint: 'Top of the tank gauge. Refills that would go above this are flagged.' },
+      { k: 'stationForRunways', l: 'Runway wind diagram uses', t: 'select', o: [['yes', 'Caloundra station wind (when it’s reporting)'], ['no', 'YBSU METAR wind']] },
+      { k: 'stationDirRef', l: 'Station wind direction is', t: 'select', o: [['true', 'True north'], ['magnetic', 'Magnetic north']], hint: 'How the wind vane was lined up when it was installed. Magnetic is converted with the variation above.' },
+      { k: 'stationLink', l: 'Link to the station’s live page (optional)', t: 'text', wide: true, ph: 'https://www.ecowitt.net/home/share?authorize=…', hint: 'Shown as a button in the weather panel. Kept in the shared database, not in the code.' },
       { k: 'weeklyEmailOn', l: 'Weekly email', t: 'select', o: [['yes', 'On'], ['no', 'Off']] },
       { k: 'weeklyEmailDay', l: 'Send on', t: 'select', o: [['1', 'Monday'], ['2', 'Tuesday'], ['3', 'Wednesday'], ['4', 'Thursday'], ['5', 'Friday'], ['6', 'Saturday'], ['0', 'Sunday']], hint: 'Arrives between 6 and 7 am Brisbane time.' },
       { k: 'weeklyEmailAhead', l: 'Show what’s due within', t: 'number', suffix: 'days', req: true, hint: 'Instructor checks, expiries, documents and dated maintenance, plus anything overdue.' },
@@ -2328,6 +2343,7 @@ function buildBrief() {
   const d = WX.data;
   if (d && (d.metar || d.taf)) {
     const wx = [];
+    if (stnFresh()) { const sd = STN.data; wx.push(it('Caloundra station', `${sd.windKt == null ? '' : Math.round(sd.windKt) === 0 ? 'Calm' : `${sd.windDir == null ? 'VRB' : String(Math.round(sd.windDir)).padStart(3, '0') + '°' + (S.settings.stationDirRef === 'magnetic' ? 'M' : 'T')} ${Math.round(sd.windKt)} kt${sd.gustKt != null && Math.round(sd.gustKt) > Math.round(sd.windKt) ? ` gusting ${Math.round(sd.gustKt)}` : ''}`}${sd.tempC != null ? `, ${sd.tempC.toFixed(1)}°C` : ''}${sd.pressureHpa != null ? `, ${sd.pressureHpa.toFixed(1)} hPa (station)` : ''} at ${hm24(new Date(sd.obsTime), TZ)}. Private station, not official.`)); }
     if (d.metar && d.metar.rawOb) { const ws = windSummary(d.metar.rawOb); if (ws) wx.push(it('Wind (YBSU)', ws)); wx.push(it('METAR', d.metar.rawOb)); }
     if (d.taf && d.taf.rawTAF) wx.push(it('TAF', String(d.taf.rawTAF).replace(/\s+/g, ' ')));
     wx.push(it('', 'Not an official briefing. Check NAIPS before flight.', 'mut'));
@@ -2516,6 +2532,7 @@ function openSettings() {
     ['IOR fuel tank', ['fuelThreshold', 'tankCapacity', 'fuelOrderAt']],
     ['Documents and expiries', ['docWarnDays']],
     ['YCDR runways and wind', ['rwy05Mag', 'rwy12Mag', 'magVar']],
+    ['Caloundra weather station', ['stationForRunways', 'stationDirRef', 'stationLink']],
     ['Weekly email', ['weeklyEmailOn', 'weeklyEmailDay', 'weeklyEmailAhead', 'weeklyEmailTo']],
     ['This device', ['theme']]
   ];
@@ -2542,6 +2559,8 @@ function openSettings() {
     const badMail = mails.find(x => !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(x));
     if (badMail) { showErr(`“${badMail}” doesn’t look like an email address.`); return; }
     if (mails.length > 30) { showErr('The weekly email can go to up to 30 people.'); return; }
+    vals.stationLink = String(vals.stationLink || '').trim();
+    if (vals.stationLink && !/^https:\/\/[^\s]+$/i.test(vals.stationLink)) { showErr('The station link must start with https://'); return; }
     vals.weeklyEmailTo = mails.join(', ');
     // Only the settings changed here are saved, so someone else's change made meanwhile is kept.
     const nv = v => JSON.stringify(v === '' || v === undefined ? null : v);
@@ -2856,6 +2875,55 @@ async function refill() {
 /* ---------- Weather: YBSU METAR and TAF from the Worker route /api/wx ---------- */
 const WX_ID = 'YBSU';
 const WX = { status: 'idle', data: null, at: 0 };
+/* GoFly's own Ecowitt weather station at Caloundra, through the Worker's /api/station (needs a
+   session and the ECOWITT_* secrets). Private station: always labelled as not official. */
+const STN = { status: 'idle', data: null, at: 0 };
+const STN_OLD_MIN = 30;   // readings older than this aren't used for the runway diagram
+async function loadStation() {
+  if (!Who || STN.status === 'loading') return;
+  STN.status = 'loading';
+  try {
+    const r = await fetch('/api/station', { cache: 'no-store', headers: { Authorization: 'Bearer ' + Who.token } });
+    const j = (r.headers.get('content-type') || '').includes('json') ? await r.json() : null;
+    if (!j) throw new Error('HTTP ' + r.status);
+    if (j.setup === false) { STN.data = { setup: false }; STN.status = 'ok'; }
+    else if (!r.ok || j.ok === false) { STN.status = 'error'; STN.err = j.error || 'HTTP ' + r.status; }
+    else { STN.data = j; STN.at = Date.now(); STN.status = 'ok'; }
+  } catch (e) { STN.status = 'error'; STN.err = e.message; }
+  paintWx();
+}
+const stnOk = () => !!(STN.data && STN.data.setup !== false && STN.data.ok !== false && STN.data.obsTime);
+const stnFresh = () => stnOk() && Date.now() - STN.data.obsTime < STN_OLD_MIN * 60000;
+// Station wind in degrees true (for the runway diagram), or null.
+function stationWind() {
+  if (!stnFresh() || S.settings.stationForRunways === 'no') return null;
+  const d = STN.data; if (d.windKt == null) return null;
+  const spd = Math.round(d.windKt), gust = d.gustKt != null && Math.round(d.gustKt) > spd ? Math.round(d.gustKt) : null;
+  if (spd === 0 || d.windDir == null) return { dir: spd === 0 ? 0 : null, spd, gust, vary: null };
+  const dir = (Math.round(d.windDir + (S.settings.stationDirRef === 'magnetic' ? (Number(S.settings.magVar ?? 11) || 0) : 0)) % 360 + 360) % 360;
+  return { dir, spd, gust, vary: null };
+}
+function stnStrip() {
+  const link = S.settings.stationLink ? `<a class="btn-text stn-link" href="${esc(S.settings.stationLink)}" target="_blank" rel="noopener noreferrer">Live station page ↗</a>` : '';
+  if (!STN.data && STN.status !== 'error') return '';
+  if (STN.data && STN.data.setup === false) return link ? `<div class="stn stn-min"><span class="wx-tag">YCDR STATION</span>${link}</div>` : '';
+  if (!stnOk()) return `<div class="stn stn-min"><span class="wx-tag">YCDR STATION</span><span class="muted">Caloundra station couldn’t be reached right now.</span>${link}</div>`;
+  const d = STN.data, ot = new Date(d.obsTime), old = !stnFresh();
+  const f1 = v => v == null ? '—' : (Math.round(v * 10) / 10).toFixed(1);
+  const ref = S.settings.stationDirRef === 'magnetic' ? 'M' : 'T';
+  const windV = d.windKt == null ? '—' : Math.round(d.windKt) === 0 ? 'Calm' : `${d.windDir == null ? 'VRB' : String(Math.round(d.windDir)).padStart(3, '0') + '°' + ref} ${Math.round(d.windKt)} kt`;
+  const tile = (k, v, sub) => `<div class="stn-t"><span class="k">${k}</span><b>${esc(v)}</b>${sub ? `<span class="s">${esc(sub)}</span>` : ''}</div>`;
+  return `<div class="stn">
+    <div class="wx-h"><span class="wx-tag">YCDR STATION</span><span class="wx-when${old ? ' old' : ''}">GoFly’s station at Caloundra · ${hm24(ot, TZ)} local · ${agoTxt(ot)}${old ? ' (old)' : ''}</span>${link}</div>
+    <div class="stn-g">
+      ${tile('Wind', windV, d.gustKt != null && d.windKt != null && Math.round(d.gustKt) > Math.round(d.windKt) ? `gusting ${Math.round(d.gustKt)} kt` : '')}
+      ${tile('Temperature', d.tempC == null ? '—' : f1(d.tempC) + '°C', d.dewC == null ? '' : `dew point ${f1(d.dewC)}°C`)}
+      ${tile('Humidity', d.humidity == null ? '—' : Math.round(d.humidity) + '%', '')}
+      ${tile('Pressure', d.pressureHpa == null ? '—' : f1(d.pressureHpa) + ' hPa', 'station reading, not QNH')}
+      ${tile('Rain today', d.rainTodayMm == null ? '—' : f1(d.rainTodayMm) + ' mm', d.rainRateMm ? `${f1(d.rainRateMm)} mm/hr now` : '')}
+    </div>
+    <p class="wnd-note">Private station, not an official source. Check NAIPS before flight.</p></div>`;
+}
 const hm24 = (d, tz) => new Intl.DateTimeFormat('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(d);
 const lday = d => new Intl.DateTimeFormat('en-AU', { timeZone: TZ, weekday: 'short', day: '2-digit', month: '2-digit' }).format(d);
 const lwk = d => new Intl.DateTimeFormat('en-AU', { timeZone: TZ, weekday: 'short' }).format(d);
@@ -2909,9 +2977,10 @@ function runwayWind(raw) {
   const v = raw.match(/KT\s+(\d{3})V(\d{3})\b/);
   return { dir: w[1] === 'VRB' ? null : +w[1], spd: +w[2], gust: w[3] ? +w[3] : null, vary: v ? [+v[1], +v[2]] : null };
 }
-function windDiagram(raw) {
-  const wd = runwayWind(raw);
+function windDiagram(raw, src) {
+  const wd = typeof raw === 'string' ? runwayWind(raw) : raw;
   if (!wd) return '';
+  src = src || { tag: 'YBSU wind on YCDR runways', note: 'Measured at Sunshine Coast, not Caloundra.' };
   const st = S.settings, vr = Number(st.magVar ?? 11) || 0;
   const m05 = Number(st.rwy05Mag ?? 50), m12 = Number(st.rwy12Mag ?? 120);
   const ends = [  // name, magnetic heading
@@ -2976,30 +3045,33 @@ function windDiagram(raw) {
   };
   const windTxt = calm ? 'Calm' : vrb ? `Variable ${wd.spd} kt` : `${String(wd.dir).padStart(3, '0')}° ${wd.spd} kt${wd.gust ? ` gusting ${wd.gust}` : ''}`;
   const aria = `Wind ${windTxt}${fav ? `, favours runway ${fav}` : ''}`;
-  return `<div class="wx-col wx-wind"><div class="wx-h"><span class="wx-tag">WIND</span><span class="wx-when">YBSU wind on YCDR runways</span></div>
+  return `<div class="wx-col wx-wind"><div class="wx-h"><span class="wx-tag">WIND</span><span class="wx-when">${esc(src.tag)}</span></div>
     <div class="wnd"><svg viewBox="0 0 150 150" role="img" aria-label="${esc(aria)}">${ring}${g}${arrow}</svg>
     <div><div class="wnd-w">${esc(windTxt)} <small>${calm || vrb ? '' : 'true'}${wd.vary ? `, varying ${String(wd.vary[0]).padStart(3, '0')}–${String(wd.vary[1]).padStart(3, '0')}°` : ''}</small></div>
       ${calm ? '<div class="wnd-r"><span>Calm: no headwind or crosswind.</span></div>' : vrb ? '<div class="wnd-r"><span>Direction variable, so components can’t be worked out.</span></div>' : best.sort((a, b) => b.head - a.head).map(row).join('')}</div></div>
-    <p class="wnd-note">Measured at Sunshine Coast, not Caloundra. Runways ${String(m05).padStart(3, '0')}°/${String(m12).padStart(3, '0')}° M, variation ${vr}° E.</p></div>`;
+    <p class="wnd-note">${esc(src.note)} Runways ${String(m05).padStart(3, '0')}°/${String(m12).padStart(3, '0')}° M, variation ${vr}° E.</p></div>`;
 }
 
 function wxBody() {
   const d = WX.data;
-  if (!d) return WX.status === 'error'
+  if (!d) return stnStrip() + (WX.status === 'error'
     ? `<div class="wx-empty"><p>${WX_ID} weather couldn’t be loaded right now. Check NAIPS.</p><button class="btn btn-sm btn-secondary" data-act="wxRetry">Try again</button></div>`
-    : `<div class="wx-empty"><p>Loading ${WX_ID} weather…</p></div>`;
+    : `<div class="wx-empty"><p>Loading ${WX_ID} weather…</p></div>`);
   const m = d.metar, t = d.taf;
   let mh, th, wind = '';
+  const sw = stationWind();
+  if (sw) wind = windDiagram(sw, { tag: 'Caloundra station wind on YCDR runways', note: `GoFly’s Caloundra station (private, not official)${S.settings.stationDirRef === 'magnetic' ? ', direction converted from magnetic' : ''}.` });
   if (m && (m.rawOb || m.rawText)) {
     const raw = String(m.rawOb || m.rawText).trim();
     const g = raw.match(/\b(\d{2})(\d{2})(\d{2})Z\b/);
     const ot = toDate(m.obsTime) || (g ? ddhh(g[1], g[2], g[3]) : null);
     const old = ot && Date.now() - ot > 90 * 60000;
     const { f, hz } = decodeMetar(' ' + raw + ' ');
-    wind = windDiagram(' ' + raw + ' ');
+    const metarWind = !sw;
+    if (metarWind) wind = windDiagram(' ' + raw + ' ');
     mh = `<div class="wx-col wx-metar"><div class="wx-h"><span class="wx-tag">${/^SPECI/.test(raw) ? 'SPECI' : 'METAR'}</span>${ot ? `<span class="wx-when${old ? ' old' : ''}">${hm24(ot, TZ)} local · ${hm24(ot, 'UTC')}Z · ${agoTxt(ot)}${old ? ' (old)' : ''}</span>` : ''}</div>
       ${hz.length ? `<div class="wx-hz">${hz.map(h => badge('hz', h)).join('')}</div>` : ''}
-      <dl class="wx-list">${f.filter(([k]) => !(wind && k === 'Wind')).map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl>
+      <dl class="wx-list">${f.filter(([k]) => !(wind && metarWind && k === 'Wind')).map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl>
       <p class="wx-raw">${esc(raw)}</p></div>`;
   } else mh = `<div class="wx-col wx-metar"><div class="wx-h"><span class="wx-tag">METAR</span></div><p class="empty">No current METAR for ${WX_ID}.</p></div>`;
   if (t && (t.rawTAF || t.rawText)) {
@@ -3010,10 +3082,15 @@ function wxBody() {
       <div class="taf-raw">${lines.map(l => `<div class="tl ${l.cls}"><span class="tl-t">${esc(l.text)}</span></div>`).join('')}</div>
       <p class="hint" style="margin-top:6px">Shown as issued, not decoded. Times in the report are UTC.</p></div>`;
   } else th = `<div class="wx-col wx-taf"><div class="wx-h"><span class="wx-tag">TAF</span></div><p class="empty">No current TAF for ${WX_ID}.</p></div>`;
-  return `<div class="wx">${wind}${mh}${th}</div>
+  return `${stnStrip()}<div class="wx">${wind}${mh}${th}</div>
     <div class="wx-foot"><span>${WX.status === 'error' ? 'Latest update failed, showing the last report. ' : ''}From aviationweather.gov, checked ${hm24(new Date(WX.at), TZ)}. Not an official briefing: check NAIPS before flight.</span><button class="btn-text" data-act="wxRetry">Refresh</button></div>`;
 }
-function paintWx() { const el = document.getElementById('wx-body'); if (el) el.innerHTML = wxBody(); }
+const wxTitle = () => stnOk() ? ['Weather', 'Caloundra station, plus Sunshine Coast (YBSU) METAR and TAF'] : ['YBSU weather', 'Sunshine Coast Airport, METAR and TAF'];
+function paintWx() {
+  const el = document.getElementById('wx-body'); if (el) el.innerHTML = wxBody();
+  const t = document.getElementById('wx-t'), sb = document.getElementById('wx-s');
+  if (t && sb) { const [a, b] = wxTitle(); t.textContent = a; sb.textContent = b; }
+}
 async function loadWx() {
   if (WX.status === 'loading') return;
   WX.status = 'loading'; if (!WX.data) paintWx();
@@ -3122,7 +3199,7 @@ function renderOverview() {
   <section class="kpis" aria-label="Summary">${k1}${k2}${k3}${k4}${k5}</section>
   ${banners()}
   <div class="grid">
-    <section class="panel span-12" id="p-wx"><div class="panel-h"><h2>${ICO('cloud')}YBSU weather</h2><span class="sub">Sunshine Coast Airport, METAR and TAF</span></div><div id="wx-body">${wxBody()}</div></section>
+    <section class="panel span-12" id="p-wx"><div class="panel-h"><h2>${ICO('cloud')}<span id="wx-t">${wxTitle()[0]}</span></h2><span class="sub" id="wx-s">${wxTitle()[1]}</span></div><div id="wx-body">${wxBody()}</div></section>
     <section class="panel span-7" id="p-maint"><div class="panel-h"><h2>${ICO('wrench')}Maintenance hours remaining</h2><span class="sub">Next hour-based item per aircraft</span></div>${maintChart()}</section>
     <section class="panel span-5"><div class="panel-h"><h2>${ICO('drop')}IOR fuel tank</h2><button class="btn-text" data-act="go" data-view="fuel">Fuel details</button></div>${fuelSummary(false)}</section>
     <section class="panel span-7" id="p-attention"><div class="panel-h"><h2>${ICO('flag')}Priority actions</h2><span class="sub">${esc(attSub)}</span></div>${attHTML}</section>
@@ -3474,6 +3551,7 @@ function tick() {
   tick(); setInterval(tick, 1000);
   route();
   loadWx(); setInterval(loadWx, 5 * 60 * 1000);
+  setInterval(() => { if (!document.hidden && Who) loadStation(); }, 60000);
   showLogin();
   setInterval(() => { if (!document.hidden) syncTick(); }, 20000);
   window.addEventListener('focus', () => syncTick());

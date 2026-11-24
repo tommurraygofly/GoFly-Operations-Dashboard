@@ -7,6 +7,8 @@
 //   POST /api/files        store a photo (defects); GET/DELETE /api/files/<id>. Needs a session token.
 //   GET  /api/weekly-brief the weekly email (fuel, aircraft hours, forecasts). Needs the BRIEF_KEY
 //                          header (Google Apps Script in tools/weekly-email.gs) or a session token.
+//   GET  /api/station      latest readings from GoFly's Ecowitt weather station at Caloundra
+//                          (secrets ECOWITT_APP_KEY, ECOWITT_API_KEY, ECOWITT_MAC). Needs a session token.
 // The PIN is the only lock (no Cloudflare Access), so:
 //   - the PIN is never in this code: it's the Cloudflare secret GOFLY_PIN. If it isn't set, nobody
 //     can sign in;
@@ -26,6 +28,7 @@ export default {
     if (url.pathname === '/api/sync') return sync(request, env, url);
     if (url.pathname === '/api/files' || url.pathname.startsWith('/api/files/')) return files(request, env, url);
     if (url.pathname === '/api/weekly-brief') return weeklyBrief(request, env, url);
+    if (url.pathname === '/api/station') return station(request, env);
     return env.ASSETS.fetch(request);
   }
 };
@@ -596,4 +599,58 @@ async function weeklyBrief(request, env, url) {
   const reason = !to.length ? 'No email addresses entered in Data & settings' : !on ? 'Weekly email is turned off in Data & settings'
     : !isDay ? `Sends on ${DAY_NAMES[day] || 'the chosen day'}` : 'Sending today';
   return json({ ok: true, date: today, send, reason, to, day: DAY_NAMES[day] || '', ...briefEmail(briefData(S, today)) });
+}
+
+/* ---------- Caloundra weather station (GoFly's own Ecowitt station) ----------
+   GET /api/station (session required) returns the latest readings from Ecowitt's official API
+   (api.ecowitt.net v3, real_time). Needs three Cloudflare secrets from the Ecowitt account:
+   ECOWITT_APP_KEY (Application Key), ECOWITT_API_KEY (API Key) and ECOWITT_MAC (the station's
+   MAC address). Without them it answers { setup: false }. Cached for 60 seconds. Units are
+   asked for in °C, knots, hPa and mm, and converted here if Ecowitt sends anything else.
+   It's a private station: the page always labels it as not an official source. */
+const STN_TTL = 60e3;
+let stnCache = { at: 0, body: null };
+const num = v => { const n = parseFloat(v); return isFinite(n) ? n : null; };
+function ecoVal(o, kind) {
+  if (!o || o.value == null || o.value === '' || o.value === '--') return null;
+  let v = num(o.value); if (v == null) return null;
+  const u = String(o.unit || '').toLowerCase();
+  if (kind === 'temp' && (u.includes('℉') || u.includes('°f') || u === 'f')) v = (v - 32) * 5 / 9;
+  if (kind === 'speed') v = u.includes('m/s') ? v * 1.943844 : u.includes('km/h') ? v * 0.539957 : u.includes('mph') ? v * 0.868976 : v;
+  if (kind === 'press') v = u.includes('inhg') ? v * 33.8639 : u.includes('mmhg') ? v * 1.33322 : v;
+  if (kind === 'rain') v = u === 'in' || u.includes('in/') ? v * 25.4 : v;
+  return v;
+}
+function ecoNormalise(j) {
+  const d = (j && j.data) || {};
+  const o = d.outdoor || {}, w = d.wind || {}, p = d.pressure || {}, r = d.rainfall || d.rainfall_piezo || {}, s = d.solar_and_uvi || {};
+  const times = [w.wind_speed, o.temperature, p.relative].map(x => x && num(x.time)).filter(Boolean);
+  return {
+    setup: true, ok: true, source: 'Ecowitt', fetchedAt: new Date().toISOString(),
+    obsTime: times.length ? Math.max(...times) * 1000 : null,
+    tempC: ecoVal(o.temperature, 'temp'), dewC: ecoVal(o.dew_point, 'temp'), feelsC: ecoVal(o.feels_like, 'temp'),
+    humidity: ecoVal(o.humidity), windDir: ecoVal(w.wind_direction), windKt: ecoVal(w.wind_speed, 'speed'),
+    gustKt: ecoVal(w.wind_gust, 'speed'), pressureHpa: ecoVal(p.relative, 'press'),
+    rainTodayMm: ecoVal(r.daily, 'rain'), rainRateMm: ecoVal(r.rain_rate, 'rain'), uvi: ecoVal(s.uvi)
+  };
+}
+async function station(request, env) {
+  if (!env.DB) return json({ error: 'Shared database not connected' }, 503);
+  await ensureSchema(env.DB);
+  if (!(await sessionUser(request, env))) return json({ error: 'Signed out. Sign in again.', expired: true }, 401);
+  if (!env.ECOWITT_APP_KEY || !env.ECOWITT_API_KEY || !env.ECOWITT_MAC) return json({ setup: false });
+  if (stnCache.body && Date.now() - stnCache.at < STN_TTL) return json(stnCache.body);
+  const q = new URLSearchParams({ application_key: env.ECOWITT_APP_KEY, api_key: env.ECOWITT_API_KEY, mac: env.ECOWITT_MAC,
+    call_back: 'all', temp_unitid: '1', pressure_unitid: '3', wind_speed_unitid: '8', rainfall_unitid: '12' });
+  try {
+    const r = await fetch('https://api.ecowitt.net/api/v3/device/real_time?' + q, { headers: { Accept: 'application/json' }, cf: { cacheTtl: 0 } });
+    const j = await r.json();
+    if (!r.ok || (j && j.code !== 0 && j.code !== '0')) throw new Error((j && j.msg) || 'HTTP ' + r.status);
+    const body = ecoNormalise(j);
+    stnCache = { at: Date.now(), body };
+    return json(body);
+  } catch (e) {
+    if (stnCache.body) return json({ ...stnCache.body, stale: true });
+    return json({ setup: true, ok: false, error: 'Couldn’t reach the Ecowitt station service: ' + String(e && e.message || e).slice(0, 120) }, 502);
+  }
 }
