@@ -193,9 +193,15 @@ The script is split into numbered sections:
    `openInstructor`). Old free-text `role` values are mapped to a grade in `normalise()`.
 5. **Schemas**: field lists in `SCHEMAS` generate every add/edit form via `openEditor(kind, id)`.
    To add a field, add it to the schema; the form, saving and validation follow.
-6. **Views**: overview = summary cards, `maintChart()` (HTML bars, one hours scale),
-   `fuelSummary()` (SVG line drawn at real width by `drawCharts()`, tap or arrow keys to read
-   values), Priority actions (top 5), instructor rows, aircraft cards, Waiting on, Coming up.
+6. **Views**: overview = summary cards, then `.dash`: weather full width, two independent
+   columns (left: Priority actions (top 5), `maintChart()` (HTML bars, one hours scale, booking
+   guide as one chip per aircraft, calendar-only section only when there are items), Waiting on;
+   right: `fuelSummary(false)` (SVG line drawn at real width by `drawCharts()`, tap or arrow keys
+   to read values; burn and forecast as the two-line `fuelMini`), Instructor checks (only
+   instructors with something due, overdue or missing, one row each with up to two issues, then
+   "N other instructors in date"), Coming up), then Aircraft cards full width. Columns never
+   stretch each other. Under 1080px it's one column in the order set by CSS `order`: Priority
+   actions first, then weather, maintenance, fuel, instructors, aircraft, coming up, waiting on.
    `renderOverview`, `renderAircraft`, `renderFuel`, `renderInstructors`,
    `renderTasks`, `renderDocs`. Hash routing (`#overview`, `#aircraft`, `#fuel`, `#instructors`, `#tasks`, `#docs`).
    Click handlers use `data-act` (the `ACT` map) or `data-reg` (functions registered per render).

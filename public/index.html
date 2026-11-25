@@ -134,7 +134,7 @@ main{max-width:1320px;margin:0 auto;padding:var(--mainpad) var(--mainpad) 48px}
 @media (max-width:380px){.lg-pad{grid-template-columns:repeat(3,64px)}.lg-pad button{width:64px;height:58px}}
 
 /* ===== Overview hero (full-bleed black band) ===== */
-.hero{position:relative;overflow:hidden;background:var(--head);color:#fff;margin:calc(-1 * var(--mainpad)) calc(50% - 50vw) 0;padding:26px calc(50vw - 50%) 78px}
+.hero{position:relative;overflow:hidden;background:var(--head);color:#fff;margin:calc(-1 * var(--mainpad)) calc(50% - 50vw) 0;padding:22px calc(50vw - 50%) 70px}
 .hero::after{content:"";position:absolute;right:-40px;top:0;bottom:0;width:min(46vw,560px);pointer-events:none;opacity:.9;
   background:linear-gradient(100deg,transparent 0 30%,var(--orange) 30% 44%,transparent 44% 52%,rgba(255,255,255,.08) 52% 58%,transparent 58% 64%,rgba(241,90,38,.35) 64% 68%,transparent 68%);
   -webkit-mask-image:linear-gradient(90deg,transparent,#000 40%),linear-gradient(180deg,#000 35%,transparent 85%);-webkit-mask-composite:source-in;mask-image:linear-gradient(90deg,transparent,#000 40%),linear-gradient(180deg,#000 35%,transparent 85%);mask-composite:intersect}
@@ -214,8 +214,38 @@ main{max-width:1320px;margin:0 auto;padding:var(--mainpad) var(--mainpad) 48px}
 @media (max-width:1080px){.span-4{grid-column:span 6}.span-8{grid-column:span 12}.span-7,.span-5{grid-column:span 12}}
 @media (max-width:760px){.grid>*{grid-column:1/-1 !important}}
 .fit{align-self:start}
+/* Overview: weather and aircraft full width; two independent columns between, so a long panel
+   never stretches its neighbour. Under 1080px one column, Priority actions first. */
+.dash{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,5fr);gap:16px;align-items:start}
+.dash>.d-full{grid-column:1/-1}
+.col{display:flex;flex-direction:column;gap:16px;min-width:0}
+@media (max-width:1080px){
+  .dash{grid-template-columns:minmax(0,1fr)}
+  .col{display:contents}
+  #p-attention{order:1}#p-wx{order:2}#p-maint{order:3}#p-fuel{order:4}#p-inst{order:5}#p-fleet{order:6}#p-upcoming{order:7}#p-wait{order:8}
+}
+.mc-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:4px 12px;margin:0 0 4px}
+.mc-head .mc-legend{margin:0}
+.mc-foot{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:2px 14px}
+.mc-foot .mc-fc{margin-top:0}
+.bg-chips{display:flex;flex-wrap:wrap;gap:6px}
+.bg-chip{display:inline-flex;align-items:center;gap:6px;min-height:34px;padding:3px 10px 3px 3px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:inherit;cursor:pointer;font-size:.8rem}
+.bg-chip b{font:700 italic .95rem/1 var(--font-c);padding:5px 8px;border-radius:999px;background:var(--surface-2)}
+.bg-chip:hover{border-color:var(--line-strong)}
+.bg-due{border-color:var(--crit-line);background:var(--crit-bg);color:var(--crit-ink)}.bg-due b{background:var(--red);color:#fff}
+.bg-soon{border-color:var(--soon-line);background:var(--soon-bg);color:var(--soon-ink)}.bg-soon b{background:var(--orange);color:#000}
+.fmini{display:grid;gap:6px;margin-top:12px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);font-size:.86rem}
+.fmini>div{display:grid;grid-template-columns:86px minmax(0,1fr);gap:8px;align-items:baseline}
+.fmini .k{font-size:.68rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.fmini.warn{border-color:var(--soon-line);background:var(--soon-bg)}
+.irow-c{grid-template-columns:4px minmax(0,1fr) auto;padding:8px 4px}
+.irow-c .iss{display:flex;flex-direction:column;align-items:flex-end;gap:1px;text-align:right;font-size:.84rem}
+.irow-c .more{font-size:.76rem;color:var(--muted)}
+.inst-ok{display:flex;align-items:center;gap:8px;margin:10px 0 0;font-size:.85rem;color:var(--muted)}
+.inst-ok .dot{flex:none}
+@media (max-width:520px){.irow-c{grid-template-columns:4px minmax(0,1fr)}.irow-c>.mk{grid-row:span 2}.irow-c .iss{align-items:flex-start;text-align:left}}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;min-width:0;box-shadow:var(--shadow)}
-.panel-h{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px 12px;margin:0 0 14px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.panel-h{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px 12px;margin:0 0 12px;padding-bottom:10px;border-bottom:1px solid var(--line)}
 .panel-h h2{display:flex;align-items:center;gap:10px;margin:0;font:700 italic 1.3rem/1.1 var(--font-c);text-transform:uppercase;letter-spacing:.02em}
 .panel-h .sub{color:var(--muted);font-size:.82rem}
 .panel-foot{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;margin-top:10px}
@@ -256,7 +286,7 @@ main{max-width:1320px;margin:0 auto;padding:var(--mainpad) var(--mainpad) 48px}
 
 /* ===== Lists ===== */
 .list{list-style:none;margin:0;padding:0}
-.item{display:flex;gap:12px;align-items:flex-start;padding:11px 4px;min-height:48px;color:inherit;width:100%;text-align:left;background:none;border:0;border-top:1px solid var(--line);cursor:pointer;border-radius:0}
+.item{display:flex;gap:12px;align-items:flex-start;padding:9px 4px;min-height:44px;color:inherit;width:100%;text-align:left;background:none;border:0;border-top:1px solid var(--line);cursor:pointer;border-radius:0}
 .list li:first-child .item{border-top:0}
 .item:hover{background:var(--surface-2)}
 .item .mk{width:4px;align-self:stretch;border-radius:2px;background:var(--line-strong);flex:none}
@@ -324,7 +354,7 @@ main{max-width:1320px;margin:0 auto;padding:var(--mainpad) var(--mainpad) 48px}
 .sw{display:inline-block;width:12px;height:8px;border-radius:2px;background:var(--green)}
 .sw-soon{background:var(--orange)}.sw-overdue{background:var(--red)}
 .sw-tick{width:0;height:12px;border-left:2px solid var(--ink);border-radius:0;background:none;opacity:.55}
-.mc-row{display:block;width:100%;text-align:left;background:none;border:0;border-top:1px solid var(--line);padding:11px 4px;cursor:pointer;color:inherit}
+.mc-row{display:block;width:100%;text-align:left;background:none;border:0;border-top:1px solid var(--line);padding:9px 4px;cursor:pointer;color:inherit}
 .mc-row:first-of-type{border-top:0}
 .mc-row:hover{background:var(--surface-2)}
 .mc-row:hover .mc-id{text-decoration:underline;text-underline-offset:3px}
@@ -335,7 +365,7 @@ main{max-width:1320px;margin:0 auto;padding:var(--mainpad) var(--mainpad) 48px}
 .mc-st{display:inline-flex;align-items:center;gap:6px;font-size:.8rem;color:var(--muted);white-space:nowrap}
 .mc-val{font-weight:700;font-size:.95rem;white-space:nowrap}
 .mc-val.na{font-weight:500;color:var(--muted)}
-.mc-track{display:block;position:relative;height:14px;margin:8px 0 7px;background:var(--track);border-radius:4px}
+.mc-track{display:block;position:relative;height:12px;margin:7px 0 6px;background:var(--track);border-radius:4px}
 .mc-zero{position:absolute;top:-3px;bottom:-3px;width:0;border-left:1px solid var(--ink);opacity:.5}
 .mc-bar{display:block;position:absolute;top:0;bottom:0;background:var(--green);border-radius:0 4px 4px 0;min-width:2px}
 .mc-bar.neg{border-radius:4px 0 0 4px}
@@ -592,14 +622,14 @@ main{max-width:1320px;margin:0 auto;padding:var(--mainpad) var(--mainpad) 48px}
 
 .brief-frame{width:100%;height:65vh;border:1px solid var(--line);border-radius:10px;background:#f4f4f4}
 
-.stn{margin:0 0 16px;padding:0 0 14px;border-bottom:1px solid var(--line)}
+.stn{margin:0 0 14px;padding:0 0 14px;border-bottom:1px solid var(--line)}
 .stn .wx-h{flex-wrap:wrap}
 .stn-min{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;font-size:.85rem}
 .stn-link{margin-left:auto;font-size:.85rem}
 .stn-g{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-top:8px}
-.stn-t{display:grid;gap:2px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);min-width:0}
+.stn-t{display:grid;gap:1px;padding:8px 11px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);min-width:0}
 .stn-t .k{font-size:.7rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
-.stn-t b{font-size:1.15rem;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.stn-t b{font-size:1.05rem;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
 .stn-t .s{font-size:.75rem;color:var(--muted)}
 @media (max-width:900px){.stn-g{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media (max-width:520px){.stn-g{grid-template-columns:repeat(2,minmax(0,1fr))}}
@@ -765,15 +795,22 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
   .hero::after{width:60vw;opacity:.55}
   .hero-in{grid-template-columns:1fr;grid-template-areas:"greet" "act";gap:14px}
   .h-act{display:block}
-  .quick{display:grid;grid-template-columns:1fr 1fr;margin-top:12px}
-  .quick .btn{width:100%}
-  .quick .btn:last-child:nth-child(odd){grid-column:1/-1}
+  .quick{margin-top:12px;gap:6px}
+  .quick .btn{flex:1 1 auto;padding-left:12px;padding-right:12px}
   .ops{border-radius:14px;align-items:flex-start;flex-wrap:wrap}
   .kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
   .kpi,.kpi:nth-child(n+4){grid-column:auto}
   .kpis .kpi:last-child:nth-child(odd){grid-column:1/-1}
-  .kpi{padding:12px 13px 13px}
-  .kpi-v{font-size:1.75rem}
+  .kpi{padding:11px 12px 12px}
+  .kpi-top{margin-bottom:4px}
+  .kpi-v{font-size:1.65rem}
+  .kpi-s.m{display:none}
+  #p-fuel .fstats{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+  #p-fuel .fstats>div{padding:7px 8px}
+  #p-fuel .fstats>div:last-child{grid-column:auto}
+  #p-fuel .fstats .k{font-size:.6rem;letter-spacing:.04em}
+  #p-fuel .fstats b{font-size:.92rem}
+  #p-fuel .btn-row .btn{flex:1 1 auto;padding-left:10px;padding-right:10px}
   .panel{padding:15px 15px}
   .fleet{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}
   .strip .id{font-size:1.8rem}
@@ -1641,7 +1678,7 @@ function attentionItems() {
     const st = docState(d);
     if (st.s === 'ok') return;
     push({ sev: st.s, src: 'doc', basis: 'date', k: st.d ?? 0, title: d.title, fn: () => openEditor('doc', d.id),
-      detail: `${lab(DOC_CATS, d.category)}${st.due ? `, ${d.kind === 'expiry' ? 'expires' : 'review due'} ${fmtDate(st.due)}` : ''}`,
+      detail: [d.category ? lab(DOC_CATS, d.category) : 'Document', st.due ? `${d.kind === 'expiry' ? 'expires' : 'review due'} ${fmtDate(st.due)}` : ''].filter(Boolean).join(', '),
       badge: st.s === 'missing' ? 'Not entered' : d.kind === 'expiry' ? (st.d < 0 ? 'Expired' : 'Expires soon') : (st.d < 0 ? 'Review overdue' : 'Review soon') });
   });
   const top = a => a.bcls === 'due' && a.src === 'defect' ? -1 : PRI[a.sev];
@@ -2654,10 +2691,12 @@ const fmtTick = v => Number(v).toLocaleString('en-AU', { maximumFractionDigits: 
 function bookingGuide() {
   const rows = S.aircraft.map(ac => ({ ac, f: maintForecast(ac), h: hourItemFor(ac) })).filter(x => x.f && x.f.ready)
     .sort((a, b) => a.f.bookDate.localeCompare(b.f.bookDate));
-  return `<div class="mc-cal"><h3 class="mini-h">Booking guide <span class="n2">(forecast from your hours updates, guide only)</span></h3>${rows.length ? `<ul class="list">${rows.map(({ ac, f, h }) => {
+  // One chip per aircraft, soonest first: "7788 · Book now", "1675 · Book by 01/12".
+  return `<div class="mc-cal bg"><h3 class="mini-h">Booking guide <span class="n2">· forecast from your hours updates, guide only</span></h3>${rows.length ? `<div class="bg-chips">${rows.map(({ ac, f, h }) => {
     const d = daysUntil(f.bookDate), bk = isBooked(h.m), cls = bk ? 'ok' : f.bookNow ? 'due' : d <= 14 ? 'soon' : 'ok';
-    return `<li><button class="irow" data-reg="${reg(() => openEditor('maint', h.m.id))}"><span class="mk mk-${cls}"></span><span><span class="nm">${esc(ac.ident)} ${esc(h.m.title)}</span><span class="dt">Due around ${fmtDate(f.dueDate)} · ~${fmtH(f.perWeek)} hrs/week${f.conf === 'early' ? ' · early estimate' : ''}</span></span><span class="ist ist-${cls}">${bk ? (h.m.bookingDate ? `Booked ${fmtDate(h.m.bookingDate)}` : 'Booked') : f.bookNow ? 'Book now' : `Book by ${fmtDate(f.bookDate)}`}</span></button></li>`;
-  }).join('')}</ul>` : '<p class="empty">Learning flying rates. Update aircraft hours a few times and booking dates will appear here.</p>'}</div>`;
+    const tip = `${ac.ident} ${h.m.title}: due around ${fmtDate(f.dueDate)}, ~${fmtH(f.perWeek)} hrs a week${f.conf === 'early' ? ', early estimate' : ''}`;
+    return `<button type="button" class="bg-chip bg-${cls}" title="${esc(tip)}" data-reg="${reg(() => openEditor('maint', h.m.id))}"><b>${esc(ac.ident)}</b><span>${bk ? (h.m.bookingDate ? `Booked ${fmtDate(h.m.bookingDate).slice(0, 5)}` : 'Booked') : f.bookNow ? 'Book now' : `Book by ${fmtDate(f.bookDate).slice(0, 5)}`}</span></button>`;
+  }).join('')}</div>` : '<p class="empty">Learning flying rates. Update aircraft hours a few times and booking dates will appear here.</p>'}</div>`;
 }
 function maintChart() {
   const L = hrsLevels();
@@ -2685,7 +2724,7 @@ function maintChart() {
       <span class="mc-top"><span class="mc-who"><span class="mc-id">${esc(ac.ident)}</span><span class="mc-st"><span class="dot dot-${esc(acUse(ac).cls)}"></span>${esc(acUse(ac).short)}</span></span>
         <span class="mc-val${h.rem == null ? ' na' : ''}">${HRS_LABEL[st] ? badge(st, HRS_LABEL[st]) + ' ' : ''}${val}</span></span>
       <span class="mc-track" aria-hidden="true">${zero}${bar}${tick}</span>
-      <span class="mc-sub">${sub}</span>${h.rem != null ? `<span class="mc-fc">${esc(maintFcText(maintForecast(ac), h.m))}</span>` : ''}</button>`;
+      <span class="mc-foot"><span class="mc-sub">${sub}</span>${h.rem != null ? `<span class="mc-fc">${esc(maintFcText(maintForecast(ac), h.m).replace(/^Forecast: /, ''))}</span>` : ''}</span></button>`;
   }).join('');
   const axis = `<div class="mc-axis" aria-hidden="true">${sc.ticks.map((t, i) => `<span style="left:${P(t).toFixed(2)}%">${fmtTick(t)}${i === sc.ticks.length - 1 ? ' hrs' : ''}</span>`).join('')}</div>`;
   const cal = S.maintenance.filter(m => !m.archived && m.status !== 'done' && m.counter === 'none')
@@ -2694,11 +2733,10 @@ function maintChart() {
     const ac = acById(m.aircraftId), s = dateStatus(m.dueDate);
     return `<li><button class="item" data-reg="${reg(() => openEditor('maint', m.id))}"><span class="mk mk-${s}"></span><span class="tx"><span class="t">${ac ? esc(ac.ident) + ' ' : ''}${esc(m.title)}</span><span class="d">${m.dueDate ? `Due ${fmtDate(m.dueDate)}` : 'Due date not entered'}${m.bookingDate ? `, booked ${fmtDate(m.bookingDate)}` : ''}</span></span><span class="r">${m.dueDate ? (s === 'ok' ? `<span class="ist ist-ok">${esc(dueText(m.dueDate))}</span>` : badge(s, dueText(m.dueDate))) : badge('missing', 'Not entered')}</span></button></li>`;
   }).join('')}</ul>` : '<p class="empty">No calendar-only maintenance items.</p>'}</div>`;
-  return `<div class="mc-legend" aria-hidden="true"><span><i class="sw"></i>Good, over ${+L.amber} hrs</span><span><i class="sw sw-soon"></i>Book soon, ${+L.amber} hrs or less</span><span><i class="sw sw-overdue"></i>Verify booking, ${+L.red} hrs or less, or overdue</span></div>
+  return `<div class="mc-head"><div class="mc-legend" aria-hidden="true"><span><i class="sw"></i>Good, over ${+L.amber} hrs</span><span><i class="sw sw-soon"></i>Book soon, ≤${+L.amber}</span><span><i class="sw sw-overdue"></i>Verify booking, ≤${+L.red} or overdue</span></div><button class="btn-text" data-act="warnings">Warning levels</button></div>
     <div>${body}</div>${axis}
-    <div class="panel-foot"><span class="hint">Same levels for every aircraft. Lines on each bar mark ${+L.amber} and ${+L.red} hrs.</span><button class="btn-text" data-act="warnings">Warning levels</button></div>
     ${bookingGuide()}
-    ${calHTML}`;
+    ${cal.length ? calHTML : ''}`;
 }
 
 function fuelSeries() {
@@ -2816,12 +2854,22 @@ function fuelFcCard(o) {
     <p class="fc-main">${main}</p>
     <p class="fc-sub">Estimated now ~${fmtL(f.estNow)} · using ~${fmtL(f.rate)} a day · ${f.conf === 'good' ? `learned from ${f.n} readings over ${Math.round(f.span)} days` : 'early estimate, improves as you log readings'}</p></div>`;
 }
+// Overview version of the burn and forecast cards: two lines.
+function fuelMini(o) {
+  const b = fuelBurn(), f = fuelForecast();
+  const l1 = b.ready ? `<b>~${fmtL(b.learned)} a day</b> <span class="muted">(7 days ${b.d7 == null ? '—' : fmtL(b.d7)}, 30 days ${b.d30 == null ? '—' : fmtL(b.d30)})</span>${f.ready && b.learned > 0 ? ` · about <b>${plural(Math.floor(f.estNow / b.learned), 'day')}</b> of fuel` : ''}` : '<span class="muted">Log readings a few days apart to learn the daily burn.</span>';
+  const when = o && (o.confirmedDate || o.requestedDate);
+  const l2 = o ? `${fmtL(o.litres)} on order${when ? `, ${o.confirmedDate ? 'confirmed' : 'requested'} ${fmtWkDate(when)}` : ''}` + (f.ready && when ? (() => { const est = f.estNow - f.rate * Math.max(0, daysUntil(when)); return est > 0 ? ` · about ${fmtL(est)} left when it arrives` : ' · may run low before it arrives'; })() : '')
+    : f.ready ? (f.past ? '<b>Order now</b>: estimated at or below ' + fmtL(f.target) : `Order around <b>${fmtWkDate(f.orderDate)}</b> (${f.dLeft === 0 ? 'today' : `in ${plural(f.dLeft, 'day')}`})`) : '<span class="muted">Order forecast appears after a few readings.</span>';
+  const warn = !o && f.ready && (f.past || f.dLeft <= 3);
+  return `<div class="fmini${warn ? ' warn' : ''}"><div><span class="k">Daily burn</span><span>${l1}</span></div><div><span class="k">${o ? 'On order' : 'Forecast'}</span><span>${l2}${o ? '' : ' <span class="muted">· guide only</span>'}</span></div></div>`;
+}
 function fuelSummary(page) {
   const fr = latestReading(), thr = S.settings.fuelThreshold, cap = S.settings.tankCapacity, low = isLowStock(fr);
   const add = Number(S.settings.orderTemplate.litres) || 3500;
   const age = fr ? -daysUntil(fr.date) : null;
   const ageTxt = age == null ? '' : age <= 0 ? 'today' : age === 1 ? 'yesterday' : `${age} days ago`;
-  const n = fuelSeries().length, o = nextOrder(), H = page ? 230 : 210;
+  const n = fuelSeries().length, o = nextOrder(), H = page ? 230 : 170;
   const chart = n >= 2
     ? `<div class="fchart" data-chart="fuel" data-h="${H}"></div><div class="fc-read" aria-live="polite"></div>`
     : `<div class="fchart" style="min-height:${H}px"><div class="fc-empty" style="min-height:${H}px">${n ? 'Only one reading so far. Log another reading to see how stock is changing.' : 'No readings yet. Log the tank level to start the graph.'}</div></div>`;
@@ -2846,9 +2894,9 @@ function fuelSummary(page) {
       <div class="${low ? 'warn' : ''}"><span class="k">Reorder at</span><b>${fmtL(thr)}</b></div>
     </div>
     <div class="btn-row"><button class="btn btn-primary" data-act="refill">Refill +${Math.round(add).toLocaleString('en-AU')} L</button><button class="btn btn-secondary" data-act="add" data-kind="reading">Log reading</button>${o ? `<button class="btn btn-secondary" data-reg="${reg(() => openEditor('order', o.id))}">Order details</button>` : `<button class="btn btn-secondary" data-act="orderTemplate">Order ${Math.round(add).toLocaleString('en-AU')} L</button>`}</div>
-    ${fuelBurnCard()}
+    ${page ? `${fuelBurnCard()}
     ${fuelFcCard(o)}
-    <div class="next-order"><h3 class="mini-h">Next order</h3>${order}</div>`;
+    <div class="next-order"><h3 class="mini-h">Next order</h3>${order}</div>` : fuelMini(o)}`;
 }
 
 // Refill: the delivery is in the tank. Logs a new reading of latest + order quantity
@@ -2914,15 +2962,14 @@ function stnStrip() {
   const windV = d.windKt == null ? '—' : Math.round(d.windKt) === 0 ? 'Calm' : `${d.windDir == null ? 'VRB' : String(Math.round(d.windDir)).padStart(3, '0') + '°' + ref} ${Math.round(d.windKt)} kt`;
   const tile = (k, v, sub) => `<div class="stn-t"><span class="k">${k}</span><b>${esc(v)}</b>${sub ? `<span class="s">${esc(sub)}</span>` : ''}</div>`;
   return `<div class="stn">
-    <div class="wx-h"><span class="wx-tag">YCDR STATION</span><span class="wx-when${old ? ' old' : ''}">GoFly’s station at Caloundra · ${hm24(ot, TZ)} local · ${agoTxt(ot)}${old ? ' (old)' : ''}</span>${link}</div>
+    <div class="wx-h"><span class="wx-tag">YCDR STATION</span><span class="wx-when${old ? ' old' : ''}">GoFly’s Caloundra station · ${hm24(ot, TZ)} local · ${agoTxt(ot)}${old ? ' (old)' : ''} · private, not official</span>${link}</div>
     <div class="stn-g">
       ${tile('Wind', windV, d.gustKt != null && d.windKt != null && Math.round(d.gustKt) > Math.round(d.windKt) ? `gusting ${Math.round(d.gustKt)} kt` : '')}
       ${tile('Temperature', d.tempC == null ? '—' : f1(d.tempC) + '°C', d.dewC == null ? '' : `dew point ${f1(d.dewC)}°C`)}
       ${tile('Humidity', d.humidity == null ? '—' : Math.round(d.humidity) + '%', '')}
       ${tile('Pressure', d.pressureHpa == null ? '—' : f1(d.pressureHpa) + ' hPa', 'station reading, not QNH')}
       ${tile('Rain today', d.rainTodayMm == null ? '—' : f1(d.rainTodayMm) + ' mm', d.rainRateMm ? `${f1(d.rainRateMm)} mm/hr now` : '')}
-    </div>
-    <p class="wnd-note">Private station, not an official source. Check NAIPS before flight.</p></div>`;
+    </div></div>`;
 }
 const hm24 = (d, tz) => new Intl.DateTimeFormat('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).format(d);
 const lday = d => new Intl.DateTimeFormat('en-AU', { timeZone: TZ, weekday: 'short', day: '2-digit', month: '2-digit' }).format(d);
@@ -3123,9 +3170,10 @@ function renderOverview() {
   const LV = hrsLevels();
   const near = S.aircraft.map(ac => ({ ac, h: hourItemFor(ac) })).filter(x => x.h.rem != null && x.h.rem >= 0).sort((a, b) => a.h.rem - b.h.rem)[0];
   const k2 = kpi(mOver || mRed ? 'overdue' : mAmber ? 'soon' : '', 'wrench', mOver ? ['overdue', 'Overdue'] : mRed ? ['overdue', 'Verify booking'] : mAmber ? ['soon', 'Book soon'] : ['ok', 'All good'], 'Maintenance approaching', String(mAmber + mRed), [
-    sub(`<span class="ist-overdue">${mRed} verify booking</span> (≤${+LV.red} hrs), <span class="ist-soon">${mAmber} book soon</span> (≤${+LV.amber} hrs)`, true),
-    near ? sub(`Nearest: ${esc(near.ac.ident)}, ${fmtH(near.h.rem)} hrs`) : '',
-    mOver ? sub(`<span class="ist-overdue">+${mOver} overdue</span>`) : ''], 'data-act="scroll" data-id="p-maint"');
+    mOver ? sub(`<span class="kpi-tag"><span class="dot dot-overdue"></span>${mOver} overdue</span>`) : '',
+    sub(`<span class="kpi-tag"><span class="dot dot-overdue"></span>${mRed} verify booking</span>`),
+    sub(`<span class="kpi-tag"><span class="dot dot-soon"></span>${mAmber} book soon</span>`),
+    near ? sub(`Nearest: ${esc(near.ac.ident)}, ${fmtH(near.h.rem)} hrs`, true) : ''], 'data-act="scroll" data-id="p-maint"');
   // 3. Fuel
   const fr = latestReading(), low = isLowStock(fr), thr = S.settings.fuelThreshold;
   const k3 = kpi(!fr ? 'missing' : low ? 'low' : '', 'drop', !fr ? ['missing', 'No reading'] : low ? ['low', 'Low stock'] : ['ok', 'Stock OK'], 'IOR fuel tank', fr ? `${Math.round(fr.litres).toLocaleString('en-AU')}<small>L</small>` : '—', [
@@ -3164,7 +3212,7 @@ function renderOverview() {
   const fleet = S.aircraft.map(ac => {
     const nx = acSummary(ac).next, defects = acSummary(ac).defects;
     const use = acUse(ac);
-    return `<button class="strip st-${esc(use.cls)}" data-reg="${reg(() => goAircraft(ac.ident))}"><span class="band">${esc(use.short)}${use.rem != null && use.lvl ? ` · ${fmtH(Math.max(0, use.rem))} hrs` : ''}</span><span class="in">
+    return `<button class="strip st-${esc(use.cls)}" data-reg="${reg(() => goAircraft(ac.ident))}"><span class="band">${esc(use.short)}${use.rem != null && use.lvl ? (use.rem < 0 ? '' : ` · ${fmtH(use.rem)} hrs`) : ''}</span><span class="in">
       <span class="hd"><span class="id">${esc(ac.ident)}</span>${ac.type ? `<span class="ty">${esc(ac.type)}</span>` : ''}</span>
       <span class="hrs"><span>Engine <b>${ac.engineHours != null ? fmtH(ac.engineHours) : 'Not entered'}</b></span>${ac.airTime != null ? `<span>Air <b>${fmtH(ac.airTime)}</b></span>` : ''}</span>
       <span class="acx">${acExpiries(ac).map(x => `<span class="ex-r"><span class="dot dot-${x.st.na ? 'na' : x.st.s === 'ok' ? 'ok-g' : x.st.s}"></span><span class="ex-n">${x.k === 'regoExpiry' ? 'Rego' : 'Insurance'}</span><span class="ex-d ist-${x.st.s}${x.st.na ? ' muted' : ''}">${x.st.na ? 'N/A' : x.st.due ? fmtDate(x.st.due) : 'Not entered'}</span></span>`).join('')}</span>
@@ -3176,12 +3224,17 @@ function renderOverview() {
   }).join('');
 
   const inst = S.instructors.filter(p => !p.archived).sort(sortInst).map(p => ({ p, c: checkState(p), r: renewState(p) }));
-  const quals = [];
-  S.instructors.forEach(p => { if (!p.archived) instExpiries(p).forEach(x => { if (x.st.s !== 'ok') quals.push({ p, x }); }); });
-  quals.sort((a, b) => RANK[a.x.st.s] - RANK[b.x.st.s] || (a.x.st.d ?? 1e6) - (b.x.st.d ?? 1e6));
-  const instHTML = inst.length ? `<ul class="list">${inst.map(({ p, c, r }) => `<li><button class="irow" data-reg="${reg(() => openInstructor(p.id))}"><span class="mk mk-${worstOf(c, r).s}"></span><span><span class="nm">${esc(p.name)} <span class="cchip">${esc(GRADE_SHORT[p.grade] || 'Grade?')}</span></span><span class="dt">${c.na ? '' : `Currency check ${c.due ? fmtDate(c.due) : 'not entered'} · `}${esc(renewShort(p))} ${r.due ? fmtDate(r.due) : 'not entered'}</span></span><span class="ist2">${c.na ? '' : `<span class="ist ist-${c.s}">Currency: ${esc(c.txt.toLowerCase())}</span>`}<span class="ist ist-${r.s}">${esc(renewShort(p))}: ${esc(r.txt.toLowerCase())}</span></span></button></li>`).join('')}</ul>`
-    : '<p class="empty">No instructors yet.</p><button class="btn btn-sm btn-secondary" data-act="add" data-kind="instructor">Add instructor</button>';
-  const qualHTML = `<div class="mc-cal"><h3 class="mini-h">Membership, medical and expiries</h3>${quals.length ? `<ul class="list">${quals.map(({ p, x }) => `<li><button class="irow" data-reg="${reg(() => openInstructor(p.id))}"><span class="mk mk-${x.st.s}"></span><span><span class="nm">${esc(x.label)}</span><span class="dt">${esc(p.name)}${x.st.due ? `, expires ${fmtDate(x.st.due)}` : x.mand ? ', mandatory' : ''}</span></span><span class="ist ist-${x.st.s}">${esc(x.st.txt)}</span></button></li>`).join('')}</ul>` : `<p class="empty">All memberships and medicals in date for the next ${Number(S.settings.expiryWarnDays ?? 30)} days.</p>`}</div>`;
+  // Only instructors with something due, overdue or missing; everyone else is summarised in one line.
+  const issuesOf = ({ p, c, r }) => [
+    ...(!c.na && c.s !== 'ok' ? [{ s: c.s, d: c.d, t: `Currency check: ${c.txt.toLowerCase()}` }] : []),
+    ...(r.s !== 'ok' ? [{ s: r.s, d: r.d, t: `${renewShort(p)}: ${r.txt.toLowerCase()}` }] : []),
+    ...instExpiries(p).filter(x => !x.st.na && x.st.s !== 'ok').map(x => ({ s: x.st.s, d: x.st.d, t: `${x.label}: ${x.st.txt.toLowerCase()}` }))
+  ].sort((a, b) => RANK[a.s] - RANK[b.s] || (a.d ?? 1e6) - (b.d ?? 1e6));
+  const needI = inst.map(x => ({ ...x, iss: issuesOf(x) })).filter(x => x.iss.length);
+  const okI = inst.length - needI.length;
+  const instHTML = !inst.length ? '<p class="empty">No instructors yet.</p><button class="btn btn-sm btn-secondary" data-act="add" data-kind="instructor">Add instructor</button>'
+    : `${needI.length ? `<ul class="list">${needI.map(({ p, iss }) => `<li><button class="irow irow-c" data-reg="${reg(() => openInstructor(p.id))}"><span class="mk mk-${iss[0].s}"></span><span class="nm">${esc(p.name)} <span class="cchip">${esc(GRADE_SHORT[p.grade] || 'Grade?')}</span></span><span class="iss">${iss.slice(0, 2).map(i => `<span class="ist ist-${i.s}">${esc(i.t)}</span>`).join('')}${iss.length > 2 ? `<span class="more">+${iss.length - 2} more</span>` : ''}</span></button></li>`).join('')}</ul>` : ''}
+      <p class="inst-ok"><span class="dot dot-ok-g"></span>${needI.length ? `${plural(okI, 'other instructor')} in date` : `All ${plural(inst.length, 'instructor')} in date`}${nextI && !needI.length ? `. Next: ${esc(nextI.p.name.split(' ')[0])}, ${esc(nextI.what.toLowerCase())} in ${plural(nextI.x.d, 'day')}` : ''}.</p>`;
 
   const up = upcoming(upWindow);
   const days = {};
@@ -3198,15 +3251,20 @@ function renderOverview() {
     <div class="quick"><button class="btn btn-primary" data-act="add" data-kind="task">Add task</button><button class="btn btn-secondary" data-act="hours">Update hours</button><button class="btn btn-secondary" data-act="add" data-kind="reading">Log fuel reading</button><button class="btn btn-secondary" data-act="addMenu" aria-haspopup="dialog">Add…</button><button class="btn btn-secondary" data-act="brief">${svgI('doc')}Daily brief</button></div></div></div></section>
   <section class="kpis" aria-label="Summary">${k1}${k2}${k3}${k4}${k5}</section>
   ${banners()}
-  <div class="grid">
-    <section class="panel span-12" id="p-wx"><div class="panel-h"><h2>${ICO('cloud')}<span id="wx-t">${wxTitle()[0]}</span></h2><span class="sub" id="wx-s">${wxTitle()[1]}</span></div><div id="wx-body">${wxBody()}</div></section>
-    <section class="panel span-7" id="p-maint"><div class="panel-h"><h2>${ICO('wrench')}Maintenance hours remaining</h2><span class="sub">Next hour-based item per aircraft</span></div>${maintChart()}</section>
-    <section class="panel span-5"><div class="panel-h"><h2>${ICO('drop')}IOR fuel tank</h2><button class="btn-text" data-act="go" data-view="fuel">Fuel details</button></div>${fuelSummary(false)}</section>
-    <section class="panel span-7" id="p-attention"><div class="panel-h"><h2>${ICO('flag')}Priority actions</h2><span class="sub">${esc(attSub)}</span></div>${attHTML}</section>
-    <section class="panel span-5" id="p-inst"><div class="panel-h"><h2>${ICO('user')}Instructor checks</h2><button class="btn-text" data-act="go" data-view="instructors">All instructors</button></div>${instHTML}${qualHTML}</section>
-    <section class="panel span-12"><div class="panel-h"><h2>${ICO('plane')}Aircraft</h2><span class="sub">${full + restr} of ${S.aircraft.length} available${restr ? `, ${restr} with restrictions` : ''}</span></div><div class="fleet">${fleet}</div></section>
-    <section class="panel span-5 fit"><div class="panel-h"><h2>${ICO('hourglass')}Waiting on</h2><span class="sub">${groups.length ? plural(groups.length, 'person or supplier').replace('person or suppliers', 'people or suppliers') : ''}</span></div>${waitHTML}</section>
-    <section class="panel span-7 fit" id="p-upcoming"><div class="panel-h"><h2>${ICO('calendar')}Coming up</h2><span class="seg" role="group" aria-label="Time window"><button type="button" data-act="up" data-days="7" aria-pressed="${upWindow === 7}">7 days</button><button type="button" data-act="up" data-days="30" aria-pressed="${upWindow === 30}">30 days</button></span></div>${upHTML}</section>
+  <div class="dash">
+    <section class="panel d-full" id="p-wx"><div class="panel-h"><h2>${ICO('cloud')}<span id="wx-t">${wxTitle()[0]}</span></h2><span class="sub" id="wx-s">${wxTitle()[1]}</span></div><div id="wx-body">${wxBody()}</div></section>
+    <div class="col">
+      <section class="panel" id="p-attention"><div class="panel-h"><h2>${ICO('flag')}Priority actions</h2><span class="sub">${esc(attSub)}</span></div>${attHTML}</section>
+      <section class="panel" id="p-maint"><div class="panel-h"><h2>${ICO('wrench')}Maintenance hours remaining</h2><span class="sub">Next hour-based item per aircraft</span></div>${maintChart()}</section>
+      <section class="panel" id="p-wait"><div class="panel-h"><h2>${ICO('hourglass')}Waiting on</h2><span class="sub">${groups.length ? plural(groups.length, 'person or supplier').replace('person or suppliers', 'people or suppliers') : ''}</span></div>${waitHTML}</section>
+
+    </div>
+    <div class="col">
+      <section class="panel" id="p-fuel"><div class="panel-h"><h2>${ICO('drop')}IOR fuel tank</h2><button class="btn-text" data-act="go" data-view="fuel">Fuel details</button></div>${fuelSummary(false)}</section>
+      <section class="panel" id="p-inst"><div class="panel-h"><h2>${ICO('user')}Instructor checks</h2><button class="btn-text" data-act="go" data-view="instructors">All instructors</button></div>${instHTML}</section>
+      <section class="panel" id="p-upcoming"><div class="panel-h"><h2>${ICO('calendar')}Coming up</h2><span class="seg" role="group" aria-label="Time window"><button type="button" data-act="up" data-days="7" aria-pressed="${upWindow === 7}">7 days</button><button type="button" data-act="up" data-days="30" aria-pressed="${upWindow === 30}">30 days</button></span></div>${upHTML}</section>
+    </div>
+    <section class="panel d-full" id="p-fleet"><div class="panel-h"><h2>${ICO('plane')}Aircraft</h2><span class="sub">${full + restr} of ${S.aircraft.length} available${restr ? `, ${restr} with restrictions` : ''}</span></div><div class="fleet">${fleet}</div></section>
   </div>`;
 }
 
