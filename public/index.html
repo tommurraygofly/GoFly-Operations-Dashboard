@@ -303,6 +303,11 @@ main{max-width:1320px;margin:0 auto;padding:var(--mainpad) var(--mainpad) 48px}
 .fleet{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
 .strip{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;text-align:left;padding:0;cursor:pointer;width:100%;color:inherit}
 .strip:hover{border-color:var(--line-strong);box-shadow:var(--shadow)}
+.strip-w{position:relative;display:flex;min-width:0}
+.strip-live{position:absolute;top:3px;right:6px;padding:3px 6px;border-radius:6px;color:var(--band-ink,#fff);font:700 .66rem/1.4 var(--font);letter-spacing:.06em;text-transform:uppercase;text-decoration:none;opacity:.9}
+.strip-live:hover{opacity:1;text-decoration:underline;text-underline-offset:2px}
+.strip-live:focus-visible{outline:2px solid currentColor}
+.has-live .strip .band{padding-right:76px}
 .strip .band{display:flex;align-items:center;gap:7px;padding:6px 12px;background:var(--band,var(--grey-band));color:var(--band-ink,#fff);font:700 .7rem/1.4 var(--font);letter-spacing:.08em;text-transform:uppercase}
 .strip .band::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
 .st-serviceable{--band:var(--green)}.st-caution{--band:var(--orange);--band-ink:#000}.st-sparing{--band:var(--red)}.st-restricted{--band:var(--orange);--band-ink:#000}.st-maintenance{--band:var(--grey-band)}.st-unserviceable{--band:var(--red)}
@@ -546,7 +551,7 @@ main{max-width:1320px;margin:0 auto;padding:var(--mainpad) var(--mainpad) 48px}
 .ins-last{font-size:.78rem;color:var(--muted)}
 .ins-a{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}
 .ins-ex{gap:3px}
-.ex-r{display:grid;grid-template-columns:9px 56px minmax(0,1fr);gap:6px;align-items:center;font-size:.8rem}
+.ex-r{display:grid;grid-template-columns:9px 62px minmax(0,1fr);gap:6px;align-items:center;font-size:.8rem}
 .ex-n{color:var(--muted)}
 .ex-d{font-weight:600;white-space:nowrap}
 .ex-d.ist-ok{color:var(--ink);font-weight:500}
@@ -814,6 +819,11 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
   .panel{padding:15px 15px}
   .fleet{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}
   .strip .id{font-size:1.8rem}
+  .strip .in{padding:10px 10px 12px}
+  .strip .ex-r{grid-template-columns:7px 54px minmax(0,1fr);gap:5px;font-size:.74rem}
+  .has-live .strip .band{padding-right:12px}
+  .has-live .strip .in{padding-bottom:34px}
+  .strip-live{top:auto;bottom:8px;right:8px;color:var(--orange-ink,var(--ink));background:var(--surface-2);border:1px solid var(--line);font-size:.64rem}
   .view-h h1{font-size:1.9rem}
 }
 @media (pointer:coarse){
@@ -1446,6 +1456,14 @@ function acUse(ac) {
   return { lvl, rem, short, long, cls };
 }
 
+/* Live tracking on ADS-B Exchange (Tom's choice). Each aircraft's ICAO code (6 hex characters,
+   adsbHex) opens globe.adsbexchange.com on that aircraft. Callsigns are what the aircraft broadcast
+   (Tom: 7788 and 1675 have ADS-B, the others show by MLAT); they're only used to help find the code. */
+const ADSB_CALLSIGN = { '7788': '7788', '1675': 'R1675', '8582': 'R8582', '8515': 'R8515' };
+const acCallsign = ac => ac.adsbCallsign || ADSB_CALLSIGN[ac.ident] || '';
+const acHex = ac => /^[0-9a-f]{6}$/i.test(String(ac.adsbHex || '').trim()) ? String(ac.adsbHex).trim().toLowerCase() : '';
+const trackUrl = ac => acHex(ac) ? `https://globe.adsbexchange.com/?icao=${acHex(ac)}` : '';
+const trackLink = (ac, cls, label = 'Track live') => trackUrl(ac) ? `<a class="${cls}" href="${trackUrl(ac)}" target="_blank" rel="noopener noreferrer" title="Track ${esc(ac.ident)} live on ADS-B Exchange" aria-label="Track ${esc(ac.ident)} live on ADS-B Exchange">${label} ↗</a>` : '';
 const badge = (s, txt) => `<span class="b b-${s}">${esc(txt || BADGE[s])}</span>`;
 const exChip = r => r && r.example ? '<span class="b b-example">Example</span>' : '';
 const acById = id => S.aircraft.find(a => a.id === id);
@@ -1855,7 +1873,7 @@ const SCHEMAS = {
     beforeSave: (r, old) => { if (r.status === 'done' && (!old || old.status !== 'done')) r.completedAt = nowStamp(); if (r.status !== 'done') delete r.completedAt; }
   },
   aircraft: { title: 'Aircraft', coll: 'aircraft', deletable: false,
-    beforeSave: (r, old) => { if (!old || r.engineHours !== old.engineHours || r.airTime !== old.airTime) logHours(r); },
+    beforeSave: (r, old) => { if (r.adsbHex) r.adsbHex = String(r.adsbHex).trim().toUpperCase(); if (!old || r.engineHours !== old.engineHours || r.airTime !== old.airTime) logHours(r); },
     fields: [
       { k: 'ident', l: 'Aircraft', t: 'readonly' },
       { k: 'type', l: 'Type (optional)', t: 'text' },
@@ -1866,9 +1884,12 @@ const SCHEMAS = {
       { k: 'regoExpiry', l: 'Registration expiry', t: 'date' },
       { k: 'insuranceNA', l: 'Insurance', t: 'select', o: [['no', 'Tracked'], ['yes', 'N/A (cross-hired)']], hint: 'Choose N/A for cross-hired aircraft so insurance isn’t flagged.' },
       { k: 'insuranceExpiry', l: 'Insurance expiry', t: 'date', hint: 'Not needed when insurance is N/A.' },
+      { k: 'adsbHex', l: 'ICAO code (for live tracking)', t: 'text', ph: 'e.g. 7C1A2B', hint: 'The 6-character code ADS-B Exchange shows when you select the aircraft. Adds a “Track live” button.' },
+      { k: 'adsbCallsign', l: 'Callsign it broadcasts', t: 'text', ph: 'e.g. R8582', hint: 'As shown on ADS-B Exchange or Flightradar24. Search for it there to find the ICAO code.' },
       { k: 'restrictions', l: 'Restrictions', t: 'textarea', wide: true },
       { k: 'notes', l: 'Maintenance notes', t: 'textarea', wide: true }
-    ]
+    ],
+    validate: v => v.adsbHex && !/^[0-9a-f]{6}$/i.test(String(v.adsbHex).trim()) ? 'The ICAO code is 6 characters, using 0 to 9 and A to F (e.g. 7C1A2B).' : '',
   },
   maint100: { title: '100-hourly inspection', coll: 'maintenance', archivable: false, deletable: false,
     fields: [
@@ -3212,7 +3233,7 @@ function renderOverview() {
   const fleet = S.aircraft.map(ac => {
     const nx = acSummary(ac).next, defects = acSummary(ac).defects;
     const use = acUse(ac);
-    return `<button class="strip st-${esc(use.cls)}" data-reg="${reg(() => goAircraft(ac.ident))}"><span class="band">${esc(use.short)}${use.rem != null && use.lvl ? (use.rem < 0 ? '' : ` · ${fmtH(use.rem)} hrs`) : ''}</span><span class="in">
+    return `<div class="strip-w st-${esc(use.cls)}${acHex(ac) ? ' has-live' : ''}"><button class="strip st-${esc(use.cls)}" data-reg="${reg(() => goAircraft(ac.ident))}"><span class="band">${esc(use.short)}${use.rem != null && use.lvl ? (use.rem < 0 ? '' : ` · ${fmtH(use.rem)} hrs`) : ''}</span><span class="in">
       <span class="hd"><span class="id">${esc(ac.ident)}</span>${ac.type ? `<span class="ty">${esc(ac.type)}</span>` : ''}</span>
       <span class="hrs"><span>Engine <b>${ac.engineHours != null ? fmtH(ac.engineHours) : 'Not entered'}</b></span>${ac.airTime != null ? `<span>Air <b>${fmtH(ac.airTime)}</b></span>` : ''}</span>
       <span class="acx">${acExpiries(ac).map(x => `<span class="ex-r"><span class="dot dot-${x.st.na ? 'na' : x.st.s === 'ok' ? 'ok-g' : x.st.s}"></span><span class="ex-n">${x.k === 'regoExpiry' ? 'Rego' : 'Insurance'}</span><span class="ex-d ist-${x.st.s}${x.st.na ? ' muted' : ''}">${x.st.na ? 'N/A' : x.st.due ? fmtDate(x.st.due) : 'Not entered'}</span></span>`).join('')}</span>
@@ -3220,7 +3241,7 @@ function renderOverview() {
       <span class="nx"><span class="k">Next maintenance</span>${nx ? `<span>${esc(nx.m.title)}</span><span>${nx.st.parts.map(p => badge(p.s, p.txt)).join(' ')}</span>` : '<span class="muted">None entered</span>'}</span>
       ${(() => { const od = S.defects.filter(d => d.aircraftId === ac.id && !d.archived && d.status !== 'closed'); const g = od.filter(d => d.severity === 'grounding').length, u = od.filter(d => d.severity === 'urgent').length;
         return g ? `<span class="ln def-g">${plural(g, 'grounding defect')}</span>` : u ? `<span class="ln def-u">${plural(u, 'urgent defect')}</span>` : defects ? `<span class="ln">${plural(defects, 'open defect')}</span>` : ''; })()}
-    </span></button>`;
+    </span></button>${trackLink(ac, 'strip-live', 'Live')}</div>`;
   }).join('');
 
   const inst = S.instructors.filter(p => !p.archived).sort(sortInst).map(p => ({ p, c: checkState(p), r: renewState(p) }));
@@ -3322,9 +3343,9 @@ function renderAircraft() {
         <div class="ac-state"><span class="stt">${esc(use.long)}</span>${use.lvl && use.lvl !== 'overdue' ? `<span class="muted" style="display:block">${fmtH(use.rem)} hrs to the next hour-based maintenance item</span>` : ''}${ac.restrictions ? `<span class="restr">${esc(ac.restrictions)}</span>` : '<span class="muted">No restrictions recorded</span>'}
           <span class="ac-next"><span class="k">Next maintenance:</span>${nx ? `<strong>${esc(nx.m.title)}</strong> ${nx.st.parts.map(p => badge(p.s, p.txt)).join(' ')}` : '<span class="muted">None entered</span>'}</span>${(() => { const f = maintForecast(ac); return f ? `<span class="mc-fc" style="margin-top:6px">${esc(maintFcText(f, hourItemFor(ac).m))}</span>` : ''; })()}</div>
         <dl class="ctr"><div><dt>Engine hours</dt><dd>${ac.engineHours != null ? fmtH(ac.engineHours) : badge('missing', 'Not entered')}</dd></div><div><dt>Air time</dt><dd>${ac.airTime != null ? fmtH(ac.airTime) : '<span class="na muted">Not tracked</span>'}</dd></div></dl>
-        <div class="ac-act"><button class="btn btn-sm btn-secondary" data-reg="${reg(() => openEditor('aircraft', ac.id))}">Update record</button></div>
+        <div class="ac-act"><button class="btn btn-sm btn-secondary" data-reg="${reg(() => openEditor('aircraft', ac.id))}">Update record</button>${trackLink(ac, 'btn btn-sm btn-secondary')}</div>
         <div class="ac-exp">${acExpiries(ac).map(x => `<span><span class="k">${esc(x.label)}</span> ${x.st.due ? fmtDate(x.st.due) + ' ' : ''}${x.st.s === 'ok' ? `<span class="ist ist-ok">${esc(x.st.txt)}</span>` : badge(x.st.s, x.st.txt)}</span>`).join('')}</div>
-        <p class="ac-meta">Responsible: ${ac.responsible ? esc(ac.responsible) : badge('missing', 'Not set')}. Updated ${ac.updatedAt ? fmtStamp(ac.updatedAt) + (ac.updatedBy ? ' by ' + esc(ac.updatedBy) : '') : 'never'}.</p>
+        <p class="ac-meta">${acHex(ac) ? '' : `Live tracking: add the ICAO code in Update record${acCallsign(ac) ? ` (search ${esc(acCallsign(ac))} on ADS-B Exchange to find it)` : ''}. `}Responsible: ${ac.responsible ? esc(ac.responsible) : badge('missing', 'Not set')}. Updated ${ac.updatedAt ? fmtStamp(ac.updatedAt) + (ac.updatedBy ? ' by ' + esc(ac.updatedBy) : '') : 'never'}.</p>
       </div>
       ${acHoursBar(ac)}
       ${ac.notes ? `<div class="ac-notes"><strong>Maintenance notes:</strong> ${esc(ac.notes)}</div>` : ''}

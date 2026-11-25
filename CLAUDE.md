@@ -68,6 +68,12 @@ Instructor. It is separate from the public GoFly website.
   `SCHEMAS.maint100` (engine hours or air time). "Log 100-hourly done" (`openLog100`) records
   date, who, notes into `history`/`lastDone` (no hours at completion, Tom asked), sets the next due hours
   (suggested current reading +100, must be above it; Tom confirms), optional next due date, status open, booking cleared.
+- Live tracking (Tom's choice: ADS-B Exchange, free, link only, no data pulled in): aircraft
+  fields `adsbHex` (6-character ICAO code, validated, stored upper case) and `adsbCallsign`
+  (defaults in `ADSB_CALLSIGN`: 7788, R1675, R8582, R8515; 7788 and 1675 have ADS-B, the others
+  show by MLAT). With a code, `trackLink` adds "Track live" on the Aircraft tab and "Live" on the
+  overview aircraft cards (in the status band; bottom corner on phones), opening
+  `globe.adsbexchange.com/?icao=<hex>`. Without one, the Aircraft tab says how to find it.
 - Aircraft tab shows the hours bar (`acHoursBar`) under each aircraft, same scale and colours as
   the overview chart.
 - Hour-based maintenance levels, the same for every aircraft (`hoursState`, `hrsLevels`):
