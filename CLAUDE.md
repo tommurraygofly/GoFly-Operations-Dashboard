@@ -70,7 +70,7 @@ Instructor. It is separate from the public GoFly website.
   (suggested current reading +100, must be above it; Tom confirms), optional next due date, status open, booking cleared.
 - Live tracking (Tom's choice: ADS-B Exchange, free, link only, no data pulled in): aircraft
   fields `adsbHex` (6-character ICAO code, validated, stored upper case) and `adsbCallsign`
-  (defaults in `ADSB_CALLSIGN`: 7788, R1675, R8582, R8515; 7788 and 1675 have ADS-B, the others
+  (defaults in `ADSB_CALLSIGN`: 7788, R1675, R8582, R8515, R8514; 7788 and 1675 have ADS-B, the others
   show by MLAT). With a code, `trackLink` adds "Track live" on the Aircraft tab and "Live" on the
   overview aircraft cards (in the status band; bottom corner on phones), opening
   `globe.adsbexchange.com/?icao=<hex>`. Without one, the Aircraft tab says how to find it.

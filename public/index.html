@@ -1459,7 +1459,7 @@ function acUse(ac) {
 /* Live tracking on ADS-B Exchange (Tom's choice). Each aircraft's ICAO code (6 hex characters,
    adsbHex) opens globe.adsbexchange.com on that aircraft. Callsigns are what the aircraft broadcast
    (Tom: 7788 and 1675 have ADS-B, the others show by MLAT); they're only used to help find the code. */
-const ADSB_CALLSIGN = { '7788': '7788', '1675': 'R1675', '8582': 'R8582', '8515': 'R8515' };
+const ADSB_CALLSIGN = { '7788': '7788', '1675': 'R1675', '8582': 'R8582', '8515': 'R8515', '8514': 'R8514' };
 const acCallsign = ac => ac.adsbCallsign || ADSB_CALLSIGN[ac.ident] || '';
 const acHex = ac => /^[0-9a-f]{6}$/i.test(String(ac.adsbHex || '').trim()) ? String(ac.adsbHex).trim().toLowerCase() : '';
 const trackUrl = ac => acHex(ac) ? `https://globe.adsbexchange.com/?icao=${acHex(ac)}` : '';
